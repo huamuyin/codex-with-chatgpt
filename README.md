@@ -1,7 +1,6 @@
 # Codex with ChatGPT
 
-> ChatGPT thinks. Codex works.
-> ChatGPT 负责思考，Codex 负责干活。
+> ChatGPT owns planning, review, and governance. Codex provides the coding engine.
 
 > [!IMPORTANT]
 > **遇到问题？** 请先向 Codex 发送 **「更新 Codex with ChatGPT」** 并重试。更新到最新版本可以解决大多数已知问题。  
@@ -9,26 +8,31 @@
 
 ## The problem · 解决什么问题
 
-**中文** — ChatGPT 付费订阅的网页版额度大量闲置，Codex 却在消耗紧张的
-API 额度做规划和 Review。本项目把"思考"交给你已付费的网页版 ChatGPT，
-Codex 只负责执行。不用 API Key、不搞逆向代理——官方网页 + 只读 MCP 桥接。
+**中文** — ChatGPT 主对话负责规划、Review 和治理。经明确 mutation consent 后，
+主对话也可以直接调用受治理的结构化仓库修改工具；Codex 仍是大量编码、长时间实现、
+测试、构建及 MCP 有界能力之外操作的执行引擎。不用 API Key、不搞逆向代理——
+官方网页 + OAuth scope 控制的 MCP 桥接。
 
-**EN** — ChatGPT Plus/Pro web quota sits idle while your coding agent burns
-scarce API/Codex tokens on planning and review. This project moves the
-thinking to the subscription you already pay for; Codex only executes.
-No API keys, no reverse proxy — official web UI plus a read-only MCP bridge.
+**EN** — Main Chat owns planning, review, and governance. With explicit mutation
+consent, it can also use governed structured repository mutations directly.
+Codex remains the engine for substantial coding, long-running implementation,
+tests, builds, and operations outside the bounded MCP capability. No API keys,
+no reverse proxy — official web UI plus an OAuth-scoped MCP bridge.
 
 ## What it is · 这是什么
 
-**中文** — 把 ChatGPT 网页版变成 Codex 编码会话的"规划与审查大脑"，执行权
-完全保留在 Codex 手里。你的仓库永远不会被上传：ChatGPT 通过一条安全的、
-OAuth 保护的**只读** MCP 连接，按需读取当前工作区里它真正需要的那几行代码。
+**中文** — Main Chat 拥有项目规划、Review 与治理决策权。默认 connector 只读；
+单独明确授权后，Main Chat 可直接执行 MCP 提供的有界结构化仓库修改。Codex 仍负责
+大规模或长时间编码、测试、构建及有界 MCP 未提供的操作。工具能力不会转移治理权限。
+仓库不会整体上传：ChatGPT 通过 OAuth 保护的 MCP 连接按需读取或修改获准内容。
 
-**EN** — Use the ChatGPT web app as the planning and review brain for your
-Codex coding sessions, while Codex keeps full ownership of execution. Your
-repository is never uploaded: ChatGPT reads exactly the lines it needs through
-a secure, OAuth-protected, **read-only** MCP connection to your current
-workspace.
+**EN** — Main Chat owns project planning, review, and governance. The default
+connector is read-only; after separate, explicit mutation-scope consent, Main
+Chat can directly use bounded structured repository mutations exposed over MCP.
+Codex remains the engine for substantial or long-running coding, tests, builds,
+and operations outside that bounded capability. Tool capability does not
+transfer governance authority. The repository is accessed on demand through
+the secure OAuth-protected MCP connection rather than uploaded wholesale.
 
 Detailed docs below are in English · 详细中文文档见 **[README.zh-CN.md](README.zh-CN.md)**
 
@@ -170,7 +174,8 @@ Credentials stay in the OS app state directory, not in the project.
 - **Control plane (Computer Use)**: Codex and ChatGPT exchange tiny structured
   `[C2C]` state messages — `INIT → PLAN → EXECUTED → REVIEW → DONE`. No diffs,
   no logs, no file bodies are ever pasted.
-- **Data plane (MCP)**: ChatGPT pulls what it needs itself through 9 read-only
+- **Data plane (MCP)**: ChatGPT pulls what it needs through read tools and may
+  use a narrow, separately authorized structured-write surface:
   tools: `workspace_info`, `list_directory`, `read_file`, `search_workspace`,
   `git_status`, `git_diff`, `test_status`, `execution_summary`,
   `execution_output`.
@@ -180,8 +185,12 @@ Credentials stay in the OS app state directory, not in the project.
 
 ## Security model (short version)
 
-- **Read-only by construction**: write/delete/shell/commit tools simply do not
-  exist on the server. No prompt injection can enable them.
+- **Read-only by default**: write scopes are never implied by a legacy token or
+  omitted scope. The authorization page requires explicit consent before a
+  connector can receive `workspace.write`, `git.write`, or `git.push`.
+- **Structured mutation only**: bounded UTF-8 writes/patches and narrow Git
+  operations are available; arbitrary shell, delete, reset, rebase, history
+  rewrite, and force push are not exposed.
 - **One workspace = one boundary**: every token is bound to a single workspace;
   path containment uses canonical realpaths (symlink/`../`/absolute-path escapes
   are all blocked and tested).
@@ -220,7 +229,7 @@ Docs: [architecture](docs/architecture.md) · [protocol](docs/protocol.md) ·
 ```
 src/
   bridge/     loopback HTTP server, port recovery, admin API
-  mcp/        9 read-only tools, stateless Streamable HTTP
+  mcp/        scoped read and structured mutation tools, stateless Streamable HTTP
   auth/       OAuth 2.1 (PKCE, DCR, refresh rotation, revocation)
   pairing/    one-time pairing codes (CSPRNG, TTL, rate limits)
   workspace/  path containment, sensitive-file policy, search, git

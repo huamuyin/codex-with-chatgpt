@@ -33,10 +33,18 @@
 
 ## Token & scope design
 
-Scopes: `workspace.read`, `workspace.search`, `git.read`, `execution.read`,
-`offline_access`. Tools enforce scopes individually (`INSUFFICIENT_SCOPE`).
-Access tokens: 1 hour. Refresh tokens: 30 days, rotated. All tokens bound to
-`workspace_id` and `client_id`.
+Read scopes: `workspace.read`, `workspace.search`, `git.read`, `execution.read`,
+`offline_access`. Governed mutation scopes are `workspace.write`, `git.write`,
+and `git.push`. Tools enforce each scope server-side (`INSUFFICIENT_SCOPE`).
+The default connector request is read-only. The authorization page requires an
+unchecked-by-default explicit confirmation when a request includes any mutation
+scope. Legacy read-only tokens stay read-only; refresh rotation copies existing
+scopes and never upgrades them. A separately consented mutation token retains
+exactly those scopes on refresh rotation, with no additions. An existing
+connector/client registration can request consent again; its
+identity and workspace binding do not need to be recreated. Access tokens: 1
+hour. Refresh tokens: 30 days, rotated. All tokens bound to `workspace_id` and
+`client_id`.
 
 ## Storage
 
@@ -50,8 +58,32 @@ tokens are persisted — a stolen state file does not yield usable bearer tokens
 than OS-keychain-based. Raw tokens are never written anywhere. Keychain
 integration is a V2 item.
 
-## What ChatGPT can never do (V1)
+## Governed mutation boundary (0.2 candidate)
 
-Write files, delete files, run shell commands, commit, install packages —
-these tools do not exist on the server, so no prompt injection, scope bug, or
-UI confusion can enable them.
+The candidate adds `write_file`, `apply_patch`, structured Git inspection,
+branch/worktree creation, explicit-path commits, origin-only fast-forward pushes,
+fast-forward-only merges, and `git_remote_refs` for live origin branch reads
+without fetch or tracking-ref updates. File replacement requires the exact
+previous SHA-256; patches require a SHA-256 preimage (or explicit absence) for
+every target; commits require a SHA-256 identity for each and only each committed
+path; and worktrees are created as a new branch directly from the exact reviewed
+commit SHA. Pushes require the exact local SHA, the exact live remote SHA (or
+expected absence), and a descendant/fast-forward proof. They use an internally
+generated exact ref lease at the push boundary plus exact live readback. This is
+an **EXACT LEASED FAST_FORWARD_PUSH**: the lease closes the expected-ref race but
+does not authorize a non-fast-forward update or history rewriting. Callers cannot
+supply force, lease, or refspec arguments. It exposes no arbitrary shell, delete, reset,
+rebase, history rewrite, branch/worktree deletion, tag mutation, or package
+installation tool. Writes require relative paths under the connected workspace
+or a worktree created and registered by this bridge session. Central path checks
+reject traversal, absolute/drive/UNC paths, Git internals, sensitive paths, and
+symlink/junction traversal. File and patch writes use same-directory atomic
+replacement; multi-file patches validate every target before writing and use
+best-effort internal rollback if an I/O error occurs. Git commits require a
+clean index and explicit regular-file paths; each staged index blob is checked
+against its authorized SHA-256 immediately before plain `git commit` consumes
+that verified index snapshot. A later worktree edit cannot replace the staged
+bytes in the commit. Pushes are checked for ancestry and read back from `origin`.
+
+This is a candidate capability, not a claim that deployed instances have these
+tools. Deployment requires a later reviewed release and explicit OAuth consent.

@@ -76,24 +76,33 @@ afterAll(async () => {
 });
 
 describe("MCP tools over Streamable HTTP", () => {
-  it("lists all nine read-only tools", async () => {
+  it("advertises the read and governed mutation tool surface", async () => {
     const { tools } = await client.listTools();
     const names = tools.map((tool) => tool.name).sort();
     expect(names).toEqual([
+      "apply_patch",
+      "create_branch",
+      "create_worktree",
       "execution_output",
       "execution_summary",
+      "git_ancestry",
+      "git_commit",
       "git_diff",
+      "git_log",
+      "git_merge_base",
+      "git_merge_ff_only",
+      "git_push",
+      "git_remote_refs",
+      "git_show",
       "git_status",
       "list_directory",
       "read_file",
       "search_workspace",
       "test_status",
       "workspace_info",
+      "write_file",
     ]);
-    // no write tools in V1
-    for (const forbidden of ["write_file", "delete_file", "execute_shell", "git_commit", "install_package"]) {
-      expect(names).not.toContain(forbidden);
-    }
+    for (const forbidden of ["delete_file", "execute_shell", "install_package", "git_reset", "git_rebase"]) expect(names).not.toContain(forbidden);
 
     expectToolOutputSchema(tools, "workspace_info", ["workspaceId", "workspaceName", "projectType", "git"]);
     expectToolOutputSchema(tools, "list_directory", ["path", "entries", "total", "hasMore"]);
@@ -104,6 +113,34 @@ describe("MCP tools over Streamable HTTP", () => {
     expectToolOutputSchema(tools, "test_status", ["available", "tests", "outputAvailable", "outputId"]);
     expectToolOutputSchema(tools, "execution_summary", ["records"]);
     expectToolOutputSchema(tools, "execution_output", ["action", "items", "text"]);
+    expectToolOutputSchema(tools, "write_file", ["path", "root", "action", "byteCount", "previous_sha256", "sha256", "diff"]);
+    expectToolOutputSchema(tools, "apply_patch", ["root", "changedFiles", "diff"]);
+    expectToolOutputSchema(tools, "git_show", ["commit", "parents", "changedPaths"]);
+    expectToolOutputSchema(tools, "git_log", ["entries"]);
+    expectToolOutputSchema(tools, "git_merge_base", ["left", "right", "mergeBase"]);
+    expectToolOutputSchema(tools, "git_ancestry", ["ancestor", "descendant", "isAncestor"]);
+    expectToolOutputSchema(tools, "create_branch", ["branch", "base", "commit"]);
+    expectToolOutputSchema(tools, "create_worktree", ["name", "rootAlias", "path", "branch", "head", "clean", "expectedSourceSha"]);
+    expectToolOutputSchema(tools, "git_commit", ["parent", "commit", "committedPaths", "expectedFiles", "expectedBranch", "expectedHead", "observedHead"]);
+    expectToolOutputSchema(tools, "git_push", ["remote", "remoteBranch", "expectedLocalSha", "expectedRemoteSha", "pushedSha", "remoteReadbackSha"]);
+    expectToolOutputSchema(tools, "git_merge_ff_only", ["before", "after", "changedPaths", "expectedBranch", "expectedHead", "status"]);
+    expectToolOutputSchema(tools, "git_remote_refs", ["remote", "refs"]);
+    const input = (name: string) => tools.find((tool) => tool.name === name)?.inputSchema as { required?: string[]; properties?: Record<string, unknown>; additionalProperties?: boolean };
+    expect(input("git_commit").required).toEqual(expect.arrayContaining(["expected_branch", "expected_head", "expected_files"]));
+    expect(input("apply_patch").required).toContain("expected_files");
+    expect(input("create_worktree").required).toEqual(expect.arrayContaining(["branch", "expected_source_sha"]));
+    expect(input("create_worktree").properties).not.toHaveProperty("branch_or_ref");
+    expect(input("git_merge_ff_only").required).toEqual(expect.arrayContaining(["expected_branch", "expected_head"]));
+    expect(input("git_push").required).toEqual(expect.arrayContaining(["expected_local_sha", "expected_remote_sha"]));
+    expect(input("git_push")).toHaveProperty("additionalProperties", false);
+    expect(Object.keys(input("git_push").properties ?? {})).not.toEqual(expect.arrayContaining(["force", "lease", "refspec"]));
+    const commitDescription = tools.find((tool) => tool.name === "git_commit")?.description ?? "";
+    expect(commitDescription).toContain("staged index blob");
+    expect(commitDescription).toContain("verified index snapshot");
+    expect(input("write_file").required).not.toContain("expected_sha256");
+    expect(tools.find((tool) => tool.name === "read_file")?.annotations?.readOnlyHint).toBe(true);
+    expect(tools.find((tool) => tool.name === "git_remote_refs")?.annotations?.readOnlyHint).toBe(true);
+    expect(tools.find((tool) => tool.name === "write_file")?.annotations?.readOnlyHint).toBe(false);
   });
 
   it("documents git_diff pagination with its output field names", async () => {
@@ -315,7 +352,89 @@ describe("MCP tools over Streamable HTTP", () => {
     expect(textOf(outputDenied)).toContain("INSUFFICIENT_SCOPE");
     const allowed = await limitedClient.callTool({ name: "read_file", arguments: { path: "hello.txt" } });
     expect(allowed.isError ?? false).toBe(false);
+    const writeDenied = await limitedClient.callTool({ name: "write_file", arguments: { path: "no.txt", content: "x" } });
+    expect(writeDenied.isError).toBe(true);
+    expect(textOf(writeDenied)).toContain("INSUFFICIENT_SCOPE");
     await limitedClient.close();
+  });
+
+  it("documents the exact leased fast-forward push and rejects caller-supplied push controls", async () => {
+    const { tools } = await client.listTools();
+    const tool = tools.find((entry) => entry.name === "git_push");
+    expect(tool?.description).toContain("EXACT LEASED FAST_FORWARD_PUSH");
+    expect(tool?.description).toContain("never authorizes history rewriting");
+    expect(tool?.inputSchema?.additionalProperties).toBe(false);
+    expect(Object.keys((tool?.inputSchema?.properties ?? {}) as Record<string, unknown>)).not.toEqual(expect.arrayContaining(["force", "lease", "refspec"]));
+
+    // MCP input validation rejects unknown controls before the scope-gated handler runs.
+    const result = await client.callTool({ name: "git_push", arguments: {
+      branch: "main", remote_branch: "candidate", expected_local_sha: "a".repeat(40), expected_remote_sha: null,
+      lease: "--force", refspec: "refs/heads/main:refs/heads/main",
+    } });
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toMatch(/Unrecognized key|unrecognized_keys|lease|refspec/i);
+  });
+
+  it("requires the distinct git.push scope in addition to git.write", async () => {
+    const token = bridge.authStore.issueTokens({ clientId: "git-writer", scopes: ["workspace.read", "git.read", "git.write"] });
+    const scoped = new Client({ name: "git-writer", version: "1.0.0" });
+    await scoped.connect(new StreamableHTTPClientTransport(new URL(`${bridge.localBaseUrl()}/mcp`), {
+      requestInit: { headers: { authorization: `Bearer ${token.accessToken}` } },
+    }));
+    const denied = await scoped.callTool({ name: "git_push", arguments: { branch: "main", remote_branch: "main", expected_local_sha: "a".repeat(40), expected_remote_sha: null } });
+    expect(denied.isError).toBe(true);
+    expect(textOf(denied)).toContain("git.push");
+    await scoped.close();
+  });
+
+  it("allows a scoped file write only when the authenticated workspace.write scope is present", async () => {
+    const token = bridge.authStore.issueTokens({ clientId: "workspace-writer", scopes: ["workspace.read", "workspace.write"] });
+    const scoped = new Client({ name: "workspace-writer", version: "1.0.0" });
+    await scoped.connect(new StreamableHTTPClientTransport(new URL(`${bridge.localBaseUrl()}/mcp`), {
+      requestInit: { headers: { authorization: `Bearer ${token.accessToken}` } },
+    }));
+    const result = await scoped.callTool({ name: "write_file", arguments: { path: "mcp-write.txt", content: "authorized\n" } });
+    expect(result.isError ?? false).toBe(false);
+    expect(fs.readFileSync(path.join(root, "mcp-write.txt"), "utf8")).toBe("authorized\n");
+    await scoped.close();
+  });
+
+  it("requires the existing-file SHA precondition and leaves stale writes untouched", async () => {
+    const token = bridge.authStore.issueTokens({ clientId: "workspace-writer-precondition", scopes: ["workspace.read", "workspace.write"] });
+    const scoped = new Client({ name: "workspace-writer-precondition", version: "1.0.0" });
+    await scoped.connect(new StreamableHTTPClientTransport(new URL(`${bridge.localBaseUrl()}/mcp`), {
+      requestInit: { headers: { authorization: `Bearer ${token.accessToken}` } },
+    }));
+    const original = fs.readFileSync(path.join(root, "hello.txt"), "utf8");
+    const missing = await scoped.callTool({ name: "write_file", arguments: { path: "hello.txt", content: "bad" } });
+    expect(missing.isError).toBe(true);
+    expect(textOf(missing)).toContain("PRECONDITION_REQUIRED");
+    const stale = await scoped.callTool({ name: "write_file", arguments: { path: "hello.txt", content: "bad", expected_sha256: "0".repeat(64) } });
+    expect(stale.isError).toBe(true);
+    expect(textOf(stale)).toContain("STATE_MISMATCH");
+    expect(fs.readFileSync(path.join(root, "hello.txt"), "utf8")).toBe(original);
+    await scoped.close();
+  });
+
+  it("exposes live origin refs as read-only and does not fetch tracking refs", async () => {
+    const bare = makeTmpDir("mcp-bare-origin");
+    git(bare, "init", "--bare");
+    git(root, "remote", "add", "origin", bare);
+    const head = git(root, "rev-parse", "HEAD").trim();
+    git(root, "push", "origin", "HEAD:refs/heads/main");
+    const before = git(root, "for-each-ref", "--format=%(refname)", "refs/remotes/origin");
+    const result = structuredJsonOf<{ remote: string; refs: { branch: string; ref: string; sha: string | null }[] }>(
+      await client.callTool({ name: "git_remote_refs", arguments: { branches: ["main", "missing"] } })
+    );
+    const after = git(root, "for-each-ref", "--format=%(refname)", "refs/remotes/origin");
+    expect(result.remote).toBe("origin");
+    expect(result.refs).toEqual([
+      { branch: "main", ref: "refs/heads/main", sha: head },
+      { branch: "missing", ref: "refs/heads/missing", sha: null },
+    ]);
+    expect(after).toBe(before);
+    git(root, "remote", "remove", "origin");
+    cleanup(bare);
   });
 
   it("git_diff over MCP excludes sensitive files like .npmrc and service-account*.json", async () => {

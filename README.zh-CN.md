@@ -2,19 +2,21 @@
 
 [English](README.md) | **简体中文**
 
-> ChatGPT 负责思考，Codex 负责干活。
+> Main Chat 负责规划、Review 与治理；Codex 提供编码引擎。
 
 ## 解决什么问题
 
-ChatGPT 付费订阅的网页版额度大量闲置，Codex 却在消耗紧张的 API 额度做
-规划和 Review。本项目把"思考"交给你已付费的网页版 ChatGPT，Codex 只负责
-执行。不用 API Key、不搞逆向代理——官方网页 + 只读 MCP 桥接。
+Main Chat 负责规划、Review 与治理。经明确 mutation consent 后，Main Chat 也可以
+直接调用受治理的结构化仓库修改工具；Codex 仍是大量编码、长时间实现、测试、构建及
+有界 MCP 能力之外操作的执行引擎。不用 API Key、不搞逆向代理——官方网页 + OAuth
+scope 控制的 MCP 桥接。
 
 ## 这是什么
 
-把 ChatGPT 网页版变成 Codex 编码会话的"规划与审查大脑"，而执行权完全保留在
-Codex 手里。你的仓库永远不会被上传——ChatGPT 通过一条安全的、OAuth 保护的
-**只读** MCP 连接，按需读取当前工作区里它真正需要的那几行代码。
+Main Chat 拥有项目规划、Review 与治理决策权。默认 connector 只读；单独明确授权后，
+Main Chat 可直接执行 MCP 提供的有界结构化仓库修改。Codex 仍负责大规模或长时间编码、
+测试、构建及有界 MCP 未提供的操作。工具能力不会转移治理权限。仓库不会整体上传——
+ChatGPT 通过 OAuth 保护的 MCP 连接按需读取或修改获准内容。
 
 ## 一段话安装（纯小白专用）
 
@@ -104,7 +106,7 @@ Ready.
 - **控制面（Computer Use）**：Codex 与 ChatGPT 之间只交换极小的结构化 `[C2C]`
   状态消息——`INIT → PLAN → EXECUTED → REVIEW → DONE`。绝不粘贴 diff、日志
   或文件内容。
-- **数据面（MCP）**：ChatGPT 缺什么自己拉什么，共 9 个只读工具：
+- **数据面（MCP）**：ChatGPT 缺什么自己拉什么，默认只读；单独授权后可使用受限结构化写工具：
   `workspace_info`、`list_directory`、`read_file`、`search_workspace`、
   `git_status`、`git_diff`、`test_status`、`execution_summary`、
   `execution_output`。
@@ -113,8 +115,10 @@ Ready.
 
 ## 安全模型（简版）
 
-- **从构造上只读**：服务端根本不存在写文件/删除/Shell/提交类工具，任何提示
-  注入都无法启用它们。
+- **默认只读**：旧令牌或省略 scope 都不会获得写权限。OAuth 页面必须明确勾选，才会授予
+  `workspace.write`、`git.write` 或 `git.push`。
+- **只提供结构化修改**：支持受限 UTF-8 文件写入、补丁及窄范围 Git 操作；不提供任意 Shell、删除、
+  reset、rebase、历史改写或 force push。
 - **一个工作区 = 一道边界**：每个令牌绑定单一工作区；路径校验基于规范化
   realpath（symlink、`../`、绝对路径逃逸全部被拦截并有测试覆盖）。
 - **敏感文件永不外泄**：`.env*`、密钥、SSH、各类凭据默认拒绝
@@ -150,7 +154,7 @@ c2c status / doctor / pair / unpair / logs / stop
 ```
 src/
   bridge/     本机回环 HTTP 服务、端口自动恢复、管理 API
-  mcp/        9 个只读工具、无状态 Streamable HTTP
+  mcp/        scope 控制的读取与结构化修改工具、无状态 Streamable HTTP
   auth/       OAuth 2.1（PKCE、动态注册、refresh 轮换、吊销）
   pairing/    一次性配对码（CSPRNG、TTL、限速）
   workspace/  路径收敛、敏感文件策略、搜索、git

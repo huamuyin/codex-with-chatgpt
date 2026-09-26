@@ -11,7 +11,10 @@ const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "
  * sandboxed environments where the system temp dir is not writable.
  */
 export function makeTmpDir(name: string): string {
-  const dir = path.join(projectRoot, ".tooling", "test-tmp", `${name}-${randomBytes(4).toString("hex")}`);
+  const base = process.env.C2C_TEST_TMP_ROOT
+    ? path.resolve(process.env.C2C_TEST_TMP_ROOT)
+    : path.join(projectRoot, ".tooling", "test-tmp");
+  const dir = path.join(base, `${name}-${randomBytes(4).toString("hex")}`);
   fs.mkdirSync(dir, { recursive: true });
   return fs.realpathSync.native(dir);
 }

@@ -78,7 +78,13 @@ describe("Windows background subprocess windowsHide: true (RED verification)", (
   });
 
   it("4. findBinary in src/tunnel/detect.ts passes windowsHide: true for binary probe", () => {
-    findBinary("cloudflared");
+    const configuredPath = process.env.C2C_CLOUDFLARED_PATH;
+    delete process.env.C2C_CLOUDFLARED_PATH;
+    try { findBinary("cloudflared"); }
+    finally {
+      if (configuredPath === undefined) delete process.env.C2C_CLOUDFLARED_PATH;
+      else process.env.C2C_CLOUDFLARED_PATH = configuredPath;
+    }
     const probeCall = spawnSyncCalls.find((c) => Array.isArray(c.args) && c.args[0] === "--version");
     expect(probeCall).toBeDefined();
     expect(probeCall?.options).toHaveProperty("windowsHide", true);

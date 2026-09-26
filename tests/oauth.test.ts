@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import path from "node:path";
 import { startBridge, type Bridge } from "../src/bridge/server.js";
 import { makeTmpDir, cleanup, write, isolateStateDir, pkceVerifierAndChallenge } from "./helpers.js";
+import { filterScopes } from "../src/auth/store.js";
 
 let root: string;
 let bridge: Bridge;
@@ -42,7 +43,9 @@ async function authorizeWithPairing(
   clientId: string,
   challenge: string,
   pairingCode: string,
-  state = "st-123"
+  state = "st-123",
+  scopes = "workspace.read workspace.search git.read execution.read offline_access",
+  allowMutations = false
 ): Promise<{ code: string | null; location: string | null; page?: string; status?: number }> {
   const authorizeUrl = new URL(`${base}/oauth/authorize`);
   authorizeUrl.searchParams.set("client_id", clientId);
@@ -51,7 +54,7 @@ async function authorizeWithPairing(
   authorizeUrl.searchParams.set("state", state);
   authorizeUrl.searchParams.set("code_challenge", challenge);
   authorizeUrl.searchParams.set("code_challenge_method", "S256");
-  authorizeUrl.searchParams.set("scope", "workspace.read workspace.search git.read execution.read offline_access");
+  authorizeUrl.searchParams.set("scope", scopes);
 
   const pageResponse = await fetch(authorizeUrl, { redirect: "manual" });
   const html = await pageResponse.text();
@@ -61,7 +64,7 @@ async function authorizeWithPairing(
   const postResponse = await fetch(`${base}/oauth/authorize`, {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ request_id: requestId, pairing_code: pairingCode }),
+    body: new URLSearchParams({ request_id: requestId, pairing_code: pairingCode, ...(allowMutations ? { allow_mutations: "on" } : {}) }),
     redirect: "manual",
   });
   if (postResponse.status !== 302) {
@@ -110,6 +113,46 @@ describe("discovery metadata", () => {
 });
 
 describe("authorization + token flow", () => {
+  it("defaults missing/unknown scopes to read-only and never silently grants mutations", () => {
+    expect(filterScopes(undefined)).toEqual(expect.arrayContaining(["workspace.read", "git.read"]));
+    expect(filterScopes("unrecognized")).not.toContain("workspace.write");
+    expect(filterScopes("workspace.read")).not.toContain("git.write");
+  });
+
+  it("requires explicit consent for mutation scopes and preserves them only after consent", async () => {
+    const clientId = await registerClient();
+    const { verifier, challenge } = pkceVerifierAndChallenge();
+    const pairing = bridge.pairing.create();
+    const scopes = "workspace.read git.read workspace.write git.write git.push offline_access";
+    const denied = await authorizeWithPairing(clientId, challenge, pairing.code, "write-consent", scopes, false);
+    expect(denied.status).toBe(400);
+    expect(denied.page).toContain("Explicit confirmation");
+
+    const accepted = await authorizeWithPairing(clientId, challenge, pairing.code, "write-consent", scopes, true);
+    expect(accepted.code).toBeTruthy();
+    const exchanged = await exchangeToken(clientId, accepted.code!, verifier);
+    expect(exchanged.status).toBe(200);
+    expect(exchanged.body.scope).toContain("workspace.write");
+    expect(exchanged.body.scope).toContain("git.write");
+    expect(exchanged.body.scope).toContain("git.push");
+
+    const authorizedScopes = exchanged.body.scope!.split(/\s+/).sort();
+    const rotatedResponse = await fetch(`${base}/oauth/token`, {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        refresh_token: exchanged.body.refresh_token!,
+        client_id: clientId,
+      }),
+    });
+    const rotated = await rotatedResponse.json() as Record<string, string>;
+    expect(rotatedResponse.status).toBe(200);
+    expect(rotated.refresh_token).not.toBe(exchanged.body.refresh_token);
+    expect(rotated.scope.split(/\s+/).sort()).toEqual(authorizedScopes);
+    expect(rotated.scope.split(/\s+/)).toEqual(expect.arrayContaining(["workspace.read", "git.read", "workspace.write", "git.write", "git.push", "offline_access"]));
+  });
+
   it("completes the full pairing + PKCE flow and calls MCP", async () => {
     const clientId = await registerClient();
     const { verifier, challenge } = pkceVerifierAndChallenge();
@@ -326,6 +369,9 @@ describe("refresh token rotation", () => {
     const rotated = await refresh(initial.body.refresh_token);
     expect(rotated.status).toBe(200);
     expect(rotated.body.refresh_token).not.toBe(initial.body.refresh_token);
+    expect(rotated.body.scope).not.toContain("workspace.write");
+    expect(rotated.body.scope).not.toContain("git.write");
+    expect(rotated.body.scope).not.toContain("git.push");
 
     const replayed = await refresh(initial.body.refresh_token);
     expect(replayed.status).toBe(400);

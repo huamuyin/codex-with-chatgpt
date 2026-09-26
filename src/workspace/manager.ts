@@ -9,6 +9,14 @@ export type WorkspaceErrorCode =
   | "INVALID_PATH"
   | "PATH_OUTSIDE_WORKSPACE"
   | "ACCESS_DENIED_SENSITIVE_FILE"
+  | "ACCESS_DENIED_GIT_INTERNALS"
+  | "SYMLINK_NOT_ALLOWED"
+  | "WORKTREE_ROOT_NOT_CONFIGURED"
+  | "WORKTREE_NOT_AUTHORIZED"
+  | "INVALID_WORKTREE_NAME"
+  | "CONCURRENT_MODIFICATION"
+  | "PRECONDITION_REQUIRED"
+  | "STATE_MISMATCH"
   | "FILE_NOT_FOUND"
   | "NOT_A_FILE"
   | "NOT_A_DIRECTORY"
@@ -27,6 +35,29 @@ export class WorkspaceError extends Error {
 
 const CASE_INSENSITIVE = process.platform === "win32" || process.platform === "darwin";
 const normCase = (p: string): string => (CASE_INSENSITIVE ? p.toLowerCase() : p);
+
+function isContained(root: string, candidate: string): boolean {
+  const relative = path.relative(root, candidate);
+  return relative === "" || (!path.isAbsolute(relative) && relative !== ".." && !relative.startsWith(`..${path.sep}`));
+}
+
+/** Derive the companion worktree root only for the documented canonical layouts. */
+export function deriveAllowedWorktreeRoot(rootInput: string): string | null {
+  const root = path.resolve(rootInput);
+  const parsed = path.parse(root);
+  const reposRoot = path.join(parsed.root, "Repos");
+  const worktreesRoot = path.join(parsed.root, "Worktrees");
+  const relativeToRepos = path.relative(reposRoot, root);
+  if (relativeToRepos && !path.isAbsolute(relativeToRepos) && !relativeToRepos.startsWith(`..${path.sep}`) && !relativeToRepos.includes(path.sep)) {
+    return path.join(worktreesRoot, relativeToRepos);
+  }
+  const relativeToWorktrees = path.relative(worktreesRoot, root);
+  if (relativeToWorktrees && !path.isAbsolute(relativeToWorktrees) && !relativeToWorktrees.startsWith(`..${path.sep}`)) {
+    const [repoName] = relativeToWorktrees.split(path.sep);
+    return path.join(worktreesRoot, repoName);
+  }
+  return null;
+}
 
 export interface ReadFileResult {
   path: string;
@@ -87,8 +118,10 @@ export class Workspace {
   readonly name: string;
   readonly ignoreRules: IgnoreRules;
   readonly projectConfig: ProjectConfig;
+  readonly allowedWorktreeRoot: string | null;
+  private readonly authorizedRoots = new Map<string, Workspace>();
 
-  constructor(rootInput: string) {
+  constructor(rootInput: string, opts: { allowedWorktreeRoot?: string | null } = {}) {
     const resolved = path.resolve(rootInput);
     let real: string;
     try {
@@ -104,6 +137,13 @@ export class Workspace {
     this.ignoreRules = new IgnoreRules(real);
     this.projectConfig = parseProjectConfig(readJsonIfExists<unknown>(path.join(real, ".c2c.json")));
     this.name = this.projectConfig.name ?? path.basename(real);
+    const configured = opts.allowedWorktreeRoot;
+    this.allowedWorktreeRoot = configured === null
+      ? null
+      : configured !== undefined
+        ? path.resolve(configured)
+        : deriveAllowedWorktreeRoot(real);
+    this.authorizedRoots.set("workspace", this);
   }
 
   private contains(candidate: string): boolean {
@@ -130,6 +170,98 @@ export class Workspace {
         current = parent;
       }
     }
+  }
+
+  /** Return the connected workspace or a worktree explicitly created by this server session. */
+  rootFor(alias = "workspace"): Workspace {
+    const root = this.authorizedRoots.get(alias);
+    if (!root) throw new WorkspaceError("WORKTREE_NOT_AUTHORIZED", `Mutation/read root is not registered: ${alias}`);
+    return root;
+  }
+
+  /** Register a Git worktree created by the structured create_worktree operation. */
+  registerWorktree(name: string, pathInput: string): string {
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(name) || name.includes("..")) {
+      throw new WorkspaceError("INVALID_WORKTREE_NAME", "Worktree name must be 1-64 safe letters, digits, dot, underscore or hyphen.");
+    }
+    if (!this.allowedWorktreeRoot) {
+      throw new WorkspaceError("WORKTREE_ROOT_NOT_CONFIGURED", "No allowed worktree root is configured or derivable for this workspace.");
+    }
+    let allowedRoot = this.allowedWorktreeRoot;
+    let realPath: string;
+    try {
+      allowedRoot = this.canonicalize(allowedRoot);
+      realPath = fs.realpathSync.native(pathInput);
+    } catch {
+      throw new WorkspaceError("FILE_NOT_FOUND", "Worktree path does not exist after Git creation.");
+    }
+    if (!isContained(allowedRoot, realPath) || realPath === allowedRoot) {
+      throw new WorkspaceError("PATH_OUTSIDE_WORKSPACE", "Created worktree did not resolve under the authorized worktree root.");
+    }
+    const alias = `worktree:${name}`;
+    if (this.authorizedRoots.has(alias)) throw new WorkspaceError("WORKTREE_NOT_AUTHORIZED", `Worktree name is already registered: ${name}`);
+    this.authorizedRoots.set(alias, new Workspace(realPath, { allowedWorktreeRoot: this.allowedWorktreeRoot }));
+    return alias;
+  }
+
+  /**
+   * Resolve a write target. Unlike read resolution, mutation paths must be relative,
+   * may not traverse, may not enter Git internals, and may not pass through links.
+   */
+  resolveMutationPath(requested: string, rootAlias = "workspace"): { abs: string; rel: string; workspace: Workspace; rootAlias: string } {
+    if (typeof requested !== "string" || requested.length === 0 || requested.includes("\0")) {
+      throw new WorkspaceError("INVALID_PATH", "Mutation path must be a non-empty relative path.");
+    }
+    const target = this.rootFor(rootAlias);
+    const normalized = requested.replace(/\\/g, "/");
+    if (
+      normalized.startsWith("/") ||
+      /^[A-Za-z]:/.test(normalized) ||
+      normalized.startsWith("workspace:") ||
+      normalized.split("/").some((segment) => segment === "..")
+    ) {
+      throw new WorkspaceError("INVALID_PATH", "Absolute paths, workspace aliases, and parent traversal are not allowed for mutations.");
+    }
+    const segments = normalized.split("/").filter((segment) => segment !== "" && segment !== ".");
+    if (segments.length === 0) throw new WorkspaceError("INVALID_PATH", "A file path is required.");
+    if (process.platform === "win32" && segments.some((segment) =>
+      segment.includes(":") || /[ .]$/.test(segment) || /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$/i.test(segment)
+    )) {
+      throw new WorkspaceError("INVALID_PATH", "Windows alternate streams, reserved devices, trailing dots, and trailing spaces are not allowed.");
+    }
+    if (segments.some((segment) => segment.toLowerCase() === ".git")) {
+      throw new WorkspaceError("ACCESS_DENIED_GIT_INTERNALS", "Writes to Git internals are prohibited.");
+    }
+    const joined = path.resolve(target.root, ...segments);
+    const canonical = target.canonicalize(joined);
+    if (!target.contains(canonical)) {
+      throw new WorkspaceError("PATH_OUTSIDE_WORKSPACE", "Mutation path resolves outside its authorized root.");
+    }
+    const rel = path.relative(target.root, canonical).split(path.sep).join("/");
+    if (!rel || rel === ".." || rel.startsWith("../")) {
+      throw new WorkspaceError("INVALID_PATH", "Mutation path must identify a file.");
+    }
+    if (target.ignoreRules.isSensitive(rel) || (process.platform === "win32" && target.ignoreRules.isSensitive(rel.toLowerCase()))) {
+      throw new WorkspaceError("ACCESS_DENIED_SENSITIVE_FILE", `Path '${rel}' matches the sensitive-file policy.`);
+    }
+
+    // Check every existing component with lstat so an in-root symlink/junction
+    // cannot be used as a write-through alias. canonicalize above also catches escapes.
+    let current = target.root;
+    for (const segment of segments) {
+      current = path.join(current, segment);
+      try {
+        const stat = fs.lstatSync(current);
+        if (stat.isSymbolicLink()) {
+          throw new WorkspaceError("SYMLINK_NOT_ALLOWED", "Mutation paths may not traverse symlinks or junctions.");
+        }
+      } catch (error) {
+        if (error instanceof WorkspaceError) throw error;
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") break;
+        throw error;
+      }
+    }
+    return { abs: canonical, rel, workspace: target, rootAlias };
   }
 
   /**

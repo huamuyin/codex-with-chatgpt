@@ -31,6 +31,8 @@ function tunnelForWorkspace(workspaceId: string, logger: Logger): TunnelProvider
 
 export interface BridgeOptions {
   workspaceRoot: string;
+  /** Explicit trusted worktree root; otherwise derive D:\Worktrees\<repo> from canonical repo/worktree layouts. */
+  allowedWorktreeRoot?: string;
   port?: number;
   host?: string;
   logger?: Logger;
@@ -81,7 +83,7 @@ function listen(app: express.Express, host: string, preferredPort: number): Prom
 
 export async function startBridge(opts: BridgeOptions): Promise<Bridge> {
   const logger = opts.logger ?? nullLogger;
-  const workspace = new Workspace(opts.workspaceRoot);
+  const workspace = new Workspace(opts.workspaceRoot, { allowedWorktreeRoot: opts.allowedWorktreeRoot });
   const host = opts.host ?? DEFAULT_HOST;
   if (host !== "127.0.0.1" && host !== "::1" && host !== "localhost") {
     throw new Error("The bridge only binds to loopback addresses. Public exposure goes through the tunnel.");

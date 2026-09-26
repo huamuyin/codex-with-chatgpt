@@ -213,7 +213,7 @@ async function ensureBridgeAndTunnel(
 
 program
   .name("c2c")
-  .description(`${PRODUCT_NAME} — ChatGPT thinks. Codex works.`)
+  .description(`${PRODUCT_NAME} — governed MCP bridge for ChatGPT and Codex`)
   .version(VERSION, "-v, --version")
   .configureHelp({ sortSubcommands: true });
 
@@ -228,11 +228,13 @@ program
   .command("serve", { hidden: true })
   .description("Run the bridge in the foreground (internal)")
   .requiredOption("--workspace <path>")
+  .option("--worktree-root <path>", "trusted allowed worktree root (defaults to canonical D:/Repos or D:/Worktrees derivation)")
   .option("--port <port>", "preferred port")
-  .action(async (opts: { workspace: string; port?: string }) => {
+  .action(async (opts: { workspace: string; worktreeRoot?: string; port?: string }) => {
     const logger = new Logger({ name: "bridge", console: true });
     const bridge = await startBridge({
       workspaceRoot: resolveWorkspace(opts.workspace),
+      allowedWorktreeRoot: opts.worktreeRoot ? path.resolve(opts.worktreeRoot) : undefined,
       port: opts.port ? parseInt(opts.port, 10) : undefined,
       logger,
     });

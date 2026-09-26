@@ -3,13 +3,16 @@ import fs from "node:fs";
 import path from "node:path";
 import { ensureDir, getStateDir, readJsonIfExists, writeSecureJson } from "../config/paths.js";
 
-export const SUPPORTED_SCOPES = [
+export const READ_ONLY_SCOPES = [
   "workspace.read",
   "workspace.search",
   "git.read",
   "execution.read",
   "offline_access",
 ] as const;
+
+export const MUTATION_SCOPES = ["workspace.write", "git.write", "git.push"] as const;
+export const SUPPORTED_SCOPES = [...READ_ONLY_SCOPES, ...MUTATION_SCOPES] as const;
 
 export type Scope = (typeof SUPPORTED_SCOPES)[number];
 
@@ -271,8 +274,9 @@ export class AuthStore {
 }
 
 export function filterScopes(requested: string | undefined): string[] {
-  if (!requested || requested.trim() === "") return [...SUPPORTED_SCOPES];
+  // A client omitting scope, including a legacy connector, remains read-only.
+  if (!requested || requested.trim() === "") return [...READ_ONLY_SCOPES];
   const asked = requested.split(/[\s+]+/).filter(Boolean);
-  const granted = asked.filter((scope) => (SUPPORTED_SCOPES as readonly string[]).includes(scope));
-  return granted.length > 0 ? granted : [...SUPPORTED_SCOPES];
+  const granted = [...new Set(asked.filter((scope) => (SUPPORTED_SCOPES as readonly string[]).includes(scope)))];
+  return granted.length > 0 ? granted : [...READ_ONLY_SCOPES];
 }

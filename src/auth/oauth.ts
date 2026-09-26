@@ -77,7 +77,14 @@ function pairingPage(opts: {
     "git.read": "Read git status and diffs",
     "execution.read": "Read Codex execution summaries",
     offline_access: "Stay connected between sessions",
+    "workspace.write": "Create and modify regular UTF-8 text files in this workspace or a registered worktree",
+    "git.write": "Create branches/worktrees, commit explicit paths, and fast-forward merge",
+    "git.push": "Push a validated branch to the configured origin remote (non-force only)",
   };
+  const mutationConsentRequired = opts.scopes.some((scope) => MUTATION_SCOPE_SET.has(scope));
+  const accessDescription = mutationConsentRequired
+    ? "read and write access; write permissions require your explicit confirmation"
+    : "read-only access";
   const scopeList = opts.scopes
     .map((scope) => `<li>${escapeHtml(scopeLabels[scope] ?? scope)}</li>`)
     .join("");
@@ -114,15 +121,17 @@ function pairingPage(opts: {
   button:hover { background: #0077ed; }
   .error { color: #d70015; font-size: 13px; margin: 12px 0 0; }
   .hint { color: #86868b; font-size: 12px; margin-top: 16px; text-align: center; }
+  .consent { display: block; font-size: 13px; line-height: 1.4; margin: 0 0 16px; }
 </style>
 </head>
 <body>
 <div class="card">
   <h1>${escapedProductName}</h1>
-  <p class="sub">ChatGPT is requesting access to workspace <strong>${escapedWorkspaceName}</strong> (read-only):</p>
+  <p class="sub">ChatGPT is requesting ${accessDescription} for workspace <strong>${escapedWorkspaceName}</strong>:</p>
   <ul>${scopeList}</ul>
   <form method="POST" action="authorize">
     <input type="hidden" name="request_id" value="${escapedRequestId}">
+    ${mutationConsentRequired ? `<label class="consent"><input type="checkbox" name="allow_mutations" value="on" required> I explicitly authorize the listed write permissions for this workspace.</label>` : ""}
     <input type="text" name="pairing_code" id="pairing_code" placeholder="XXXX-XXXX"
            autocomplete="one-time-code" autofocus maxlength="9" required>
     ${errorHtml}
@@ -133,6 +142,8 @@ function pairingPage(opts: {
 </body>
 </html>`;
 }
+
+const MUTATION_SCOPE_SET = new Set<string>(["workspace.write", "git.write", "git.push"]);
 
 export function createOAuthRouter(deps: OAuthDeps): Router {
   const router = Router();
@@ -242,11 +253,24 @@ export function createOAuthRouter(deps: OAuthDeps): Router {
 
   router.post("/oauth/authorize", urlencoded({ extended: false }), (req, res) => {
     prunePending();
-    const body = req.body as { request_id?: string; pairing_code?: string };
+    const body = req.body as { request_id?: string; pairing_code?: string; allow_mutations?: string };
     const request = body.request_id ? pendingRequests.get(body.request_id) : undefined;
     if (!request) {
       setAuthSecurityHeaders(res);
       res.status(400).send("This authorization request has expired. Please reconnect from ChatGPT.");
+      return;
+    }
+    if (request.scopes.some((scope) => MUTATION_SCOPE_SET.has(scope)) && body.allow_mutations !== "on") {
+      setAuthSecurityHeaders(res);
+      res
+        .status(400)
+        .type("html")
+        .send(pairingPage({
+          requestId: request.id,
+          workspaceName: deps.workspaceName,
+          scopes: request.scopes,
+          error: "Explicit confirmation of the listed write permissions is required.",
+        }));
       return;
     }
     const verdict = deps.pairing.verify(body.pairing_code ?? "", req.ip);
