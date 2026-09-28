@@ -1,8 +1,10 @@
 import { spawnSync } from "node:child_process";
+import fs from "node:fs";
+import { PNG } from "pngjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { listExecutionOutputs } from "../src/execution/output.js";
+import { listExecutionOutputs, readExecutionOutput } from "../src/execution/output.js";
 import { appendExecutionRecord, readExecutionRecords, type ExecutionRecord } from "../src/execution/records.js";
 import { Workspace } from "../src/workspace/manager.js";
 import { cleanup, makeTmpDir } from "./helpers.js";
@@ -35,6 +37,31 @@ function withRecordEnvironment(run: (root: string, workspace: Workspace) => void
 }
 
 describe("c2c record", () => {
+  it("publishes a bounded image without placing its path in public metadata", () => {
+    withRecordEnvironment((root, workspace) => {
+      const file = path.join(root, "synthetic.png");
+      fs.writeFileSync(file, PNG.sync.write(new PNG({ width: 3, height: 2 })));
+      const result = runRecord(root, ["--iteration", "0", "--command", "synthetic image", "--image-root", root, "--image-file", file]);
+      expect(result.status).toBe(0);
+      const outputs = listExecutionOutputs(workspace.id);
+      expect(outputs).toHaveLength(1);
+      expect(outputs[0].image?.mimeType).toBe("image/png");
+      expect(JSON.stringify(outputs)).not.toContain(root);
+      const read = readExecutionOutput(workspace.id, outputs[0].id);
+      expect(read.ok && read.image?.bytes.length).toBeGreaterThan(0);
+    });
+  });
+
+  it("rejects incomplete image publication arguments without recording", () => {
+    withRecordEnvironment((root, workspace) => {
+      for (const args of [["--image-file", "x.png"], ["--image-root", root], ["--image-root", root, "--image-file", "x.png"]]) {
+        expect(runRecord(root, ["--iteration", "0", ...args]).status).toBe(1);
+        expect(listExecutionOutputs(workspace.id)).toEqual([]);
+        expect(readExecutionRecords(workspace.id)).toEqual([]);
+      }
+    });
+  });
+
   it("records valid numeric options and command output", () => {
     withRecordEnvironment((root, workspace) => {
       const result = runRecord(root, [

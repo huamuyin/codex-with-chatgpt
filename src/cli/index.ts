@@ -5,6 +5,7 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { startBridge } from "../bridge/server.js";
 import { findBridgeObservation, findLiveBridge, type RuntimeState } from "../bridge/runtime.js";
+import { checkPublicBridgeWithRepair } from "../bridge/public-health.js";
 import { adminFetch, ensureBridge, stopBridge } from "../process/daemon.js";
 import { Workspace } from "../workspace/manager.js";
 import { AuthStore } from "../auth/store.js";
@@ -560,35 +561,31 @@ program
       const expectedPublic = Boolean(lastEndpoint?.publicUrl) || namedReady;
       let currentUrl = info.publicUrl ?? info.tunnel.url;
       let healthy = false;
-      if (currentUrl) {
-        try {
-          const response = await fetch(`${currentUrl}/health`, { signal: AbortSignal.timeout(8000) });
-          healthy = response.ok;
-        } catch {
-          healthy = false;
+      try {
+        const verified = await checkPublicBridgeWithRepair(
+          currentUrl,
+          workspace!.id,
+          opts.fix && (expectedPublic || info.tunnel.running)
+            ? async () => {
+                if (!detectTunnelBinaries().cloudflared) throw new Error("NEED_CLOUDFLARED");
+                const started = await adminFetch<TunnelStartResponse>(runtime!, "POST", "/admin/tunnel/start", 90_000);
+                return started.url ?? null;
+              }
+            : undefined
+        );
+        currentUrl = verified.url;
+        healthy = verified.ready;
+        if (!healthy && (currentUrl || expectedPublic)) {
+          report.tunnel = { ok: false, detail: verified.detail };
         }
-      }
-
-      if ((!currentUrl || !healthy) && opts.fix && (expectedPublic || info.tunnel.running)) {
-        try {
-          const binaries = detectTunnelBinaries();
-          if (!binaries.cloudflared) {
-            report.tunnel = { ok: false, detail: "NEED_CLOUDFLARED" };
-          } else {
-            const started = await adminFetch<TunnelStartResponse>(runtime, "POST", "/admin/tunnel/start", 90_000);
-            if (started.url) {
-              const previousUrl = lastEndpoint?.publicUrl;
-              currentUrl = started.url;
-              healthy = true;
-              info = await adminFetch<AdminInfo>(runtime, "GET", "/admin/info");
-              const sameAddress =
-                previousUrl && normalizePublicUrl(previousUrl) === normalizePublicUrl(started.url);
-              results.push(sameAddress ? "已重新建立安全连接" : "已重新建立安全连接（地址已更换）");
-            }
-          }
-        } catch (error) {
-          report.tunnel = { ok: false, detail: (error as Error).message };
+        if (verified.started && healthy && currentUrl) {
+          info = await adminFetch<AdminInfo>(runtime, "GET", "/admin/info");
+          const previousUrl = lastEndpoint?.publicUrl;
+          const sameAddress = previousUrl && normalizePublicUrl(previousUrl) === normalizePublicUrl(currentUrl);
+          results.push(sameAddress ? "已重新建立安全连接" : "已重新建立安全连接（地址已更换）");
         }
+      } catch (error) {
+        report.tunnel = { ok: false, detail: (error as Error).message };
       }
 
       if (currentUrl && healthy) {
@@ -1069,6 +1066,8 @@ program
   .option("--command <text>", "command whose output may be offered to ChatGPT")
   .option("--output <text>", "command output (prefer --output-file for long logs)")
   .option("--output-file <path>", "read command output from a local file")
+  .option("--image-file <path>", "publish a sanitized PNG/JPEG image with this output")
+  .option("--image-root <path>", "explicit authorized local root containing the image")
   .option("--exit-code <n>", "numeric exit code of that command", parseInteger)
   .action(
     (opts: {
@@ -1082,8 +1081,13 @@ program
       command?: string;
       output?: string;
       outputFile?: string;
+      imageFile?: string;
+      imageRoot?: string;
       exitCode?: number;
     }) => {
+      if (Boolean(opts.imageFile) !== Boolean(opts.imageRoot) || (opts.imageFile && !opts.command)) {
+        throw new Error("Image publication requires --image-file, --image-root and --command together.");
+      }
       const workspace = new Workspace(resolveWorkspace(opts.workspace));
       const changed = parseChangedFiles(opts.changedFiles);
       let outputId: number | undefined;
@@ -1091,7 +1095,7 @@ program
       const rawOutput =
         opts.outputFile !== undefined
           ? readCappedUtf8(path.resolve(opts.outputFile), MAX_RECORD_OUTPUT_READ)
-          : opts.output;
+          : opts.output ?? (opts.imageFile ? "Published synthetic/review image attachment." : undefined);
       if (opts.command && rawOutput !== undefined) {
         const savedOutput = saveExecutionOutput(workspace.id, {
           command: opts.command,
@@ -1099,6 +1103,7 @@ program
           exitCode: opts.exitCode ?? null,
           taskId: opts.task,
           iteration: opts.iteration,
+          ...(opts.imageFile && opts.imageRoot ? { image: { file: opts.imageFile, artifactRoot: path.resolve(opts.imageRoot) } } : {}),
         });
         outputId = savedOutput.id;
         outputAvailable = savedOutput.allowed;
