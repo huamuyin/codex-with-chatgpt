@@ -1,0 +1,14 @@
+{
+  "task_id": "C2C_V2_GITHUB_EVIDENCE_PLANE_POC_R1",
+  "iteration": 1,
+  "implementation_commit": "4d12f2109d74fac12833af6c530d66db6d7946fc",
+  "command": "python -m unittest discover -s tests/poc_v2 -v",
+  "passed": 4,
+  "failed": 0,
+  "tests": [
+    "test_canonical_identity_is_case_insensitive",
+    "test_display_value_keeps_the_trimmed_original_spelling",
+    "test_records_have_deterministic_canonical_order",
+    "test_trims_outer_whitespace_and_preserves_display_case"
+  ]
+}

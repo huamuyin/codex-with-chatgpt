@@ -1,0 +1,22 @@
+{
+  "task_id": "C2C_V2_GITHUB_EVIDENCE_PLANE_POC_R1",
+  "iteration": 1,
+  "base_commit": "12e42bfe1fe7f2709cbe4f25f3753a49bb9e7f31",
+  "current_commit": "4d12f2109d74fac12833af6c530d66db6d7946fc",
+  "commit_binding": "current_commit is the tested implementation commit. This review request and test_summary are stored in the subsequent evidence commit. The short review reference COMMIT must identify the PR branch head containing these evidence files; compare it exactly with the GitHub branch head.",
+  "goal": "Review the Round 1 deterministic identifier registry for trimming surrounding whitespace, case-insensitive canonical identity, preservation of trimmed display spelling, and deterministic record ordering. Later-round collision and Unicode-normalization requirements are intentionally not enabled yet.",
+  "changed_paths": [
+    "poc_v2/identifier_registry.py",
+    "tests/poc_v2/test_identifier_registry.py"
+  ],
+  "tests": {
+    "passed": 4,
+    "failed": 0,
+    "command": "python -m unittest discover -s tests/poc_v2 -v"
+  },
+  "questions": [
+    "Does the implementation satisfy the four Round 1 requirements without implementing later-round collision handling or Unicode normalization early?",
+    "Does sorting records by canonical identity provide deterministic output for distinct identifiers while preserving display spelling?",
+    "Identify any correctness gap visible in the committed code or tests and give the smallest evidence-based next Codex instruction."
+  ]
+}
