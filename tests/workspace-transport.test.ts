@@ -1,5 +1,8 @@
+import fs from "node:fs";
+import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { configureSharedRuntime } from "../src/config/shared-runtime.js";
+import { getStateDir } from "../src/config/paths.js";
 import { getWorkspaceTransport, setWorkspaceTransport } from "../src/session/transport.js";
 import { resolveConversation } from "../src/session/state.js";
 import { cleanup, makeTmpDir } from "./helpers.js";
@@ -48,6 +51,29 @@ describe("per-workspace transport selection", () => {
   it("rejects malformed workspace identity and invalid transport modes", () => {
     expect(() => getWorkspaceTransport("../other-workspace")).toThrow();
     expect(() => setWorkspaceTransport("workspace-a", "global" as never)).toThrow();
+  });
+
+  it("fails closed on corrupted or cross-workspace persisted preferences", () => {
+    const dir = makeTmpDir("workspace-transport-corrupt");
+    dirs.push(dir);
+    process.env.C2C_STATE_DIR = dir;
+    const preferenceDir = path.join(getStateDir(), "transports");
+    fs.mkdirSync(preferenceDir, { recursive: true });
+    const file = path.join(preferenceDir, "workspace-a.json");
+
+    fs.writeFileSync(file, "{not-json");
+    expect(() => getWorkspaceTransport("workspace-a")).toThrow("WORKSPACE_TRANSPORT_INVALID");
+
+    fs.writeFileSync(
+      file,
+      JSON.stringify({
+        schemaVersion: 1,
+        workspaceId: "workspace-b",
+        mode: "local-cdp",
+        configuredAt: "2026-09-30T00:00:00.000Z",
+      })
+    );
+    expect(() => getWorkspaceTransport("workspace-a")).toThrow("WORKSPACE_TRANSPORT_INVALID");
   });
 
   it("keeps legacy, project and long-chat conversation resolution unchanged", () => {
