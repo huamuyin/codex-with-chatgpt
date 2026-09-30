@@ -31,11 +31,14 @@ interface Fixture {
   input: BrowserReceiptExpected & { message: string };
   sent: string[];
   attachCount: () => number;
+  clickCount: () => number;
+  draft: () => string;
   session: () => SavedSession;
   setAssistant(text: string | null): void;
   setAutomaticReply(enabled: boolean): void;
   setReplyControlId(controlId: string): void;
-  setVisibleRequest(): void;
+  setVisibleRequest(text?: string): void;
+  setSession(value: SavedSession): void;
 }
 
 function makeFixture(options: { conversationMode?: "project" | "long-chat"; composer?: boolean; send?: boolean } = {}): Fixture {
@@ -67,31 +70,46 @@ function makeFixture(options: { conversationMode?: "project" | "long-chat"; comp
   const sent: string[] = [];
   const receipts = new Map<string, BrowserReceipt>();
   const key = (expected: BrowserReceiptExpected): string => `${expected.workspaceId}|${expected.taskId}|${expected.round}|${expected.controlId}`;
+  let draft = "";
+  let submittedMessage = "";
+  let clickCount = 0;
   const locator = (selector: string): CdpLocator => ({
     count: async () => {
       if (selector === "div[data-chatgpt-selection-message-id]") return assistantText ? 1 : 0;
-      if (selector === '[data-message-author-role="assistant"]') return 0;
+      if (selector === '[data-message-author-role="assistant"]') return assistantText ? 1 : 0;
       if (selector === '[data-message-author-role="user"]') return occurrences > 0 ? 1 : 0;
-      if (selector.includes("prompt-textarea")) return options.composer === false ? 0 : 1;
-      if (selector.includes("send-button")) return options.send === false ? 0 : 1;
+      if (selector.includes("prompt-textarea") || selector.includes("contenteditable")) return options.composer === false ? 0 : 1;
+      if (selector.includes("send-button") || selector.includes("composer-submit-button") || selector.includes("aria-label") || selector === "role") {
+        return options.send === false || !draft ? 0 : 1;
+      }
       if (selector.includes("stop-button") || selector.includes("Stop") || selector.includes("停止")) return 0;
       return 0;
     },
-    isVisible: async () => selector.includes("send-button")
-      ? options.send !== false
-      : selector.includes("prompt-textarea")
+    isVisible: async () => selector.includes("send-button") || selector.includes("composer-submit-button") || selector.includes("aria-label") || selector === "role"
+      ? options.send !== false && Boolean(draft)
+      : selector.includes("prompt-textarea") || selector.includes("contenteditable")
         ? options.composer !== false
         : !selector.includes("stop-button"),
-    isEnabled: async () => options.send !== false,
+    isEnabled: async () => options.send !== false && Boolean(draft),
     first() { return this; },
     nth() { return this; },
-    innerText: async () => selector === '[data-message-author-role="user"]' ? sent.at(-1) ?? "" : assistantText ?? "",
-    fill: async (text) => { sent.push(text); },
+    innerText: async () => selector === '[data-message-author-role="user"]' ? submittedMessage : assistantText ?? "",
+    fill: async (text) => { draft = text; },
     click: async () => {
       occurrences = 1;
-      const message = sent.at(-1) ?? "";
+      const message = draft;
       if (message) occurrences = 1;
-      if (automaticReply && message) assistantText = reviewerReply(replyControlId);
+      if (message) {
+        submittedMessage = message;
+        sent.push(message);
+        clickCount += 1;
+        draft = "";
+      }
+      if (automaticReply && message) {
+        const taskId = message.split(/\r?\n/).find((line) => line.startsWith("MISSION_ID: "))?.slice("MISSION_ID: ".length) ?? "";
+        const round = Number(message.split(/\r?\n/).find((line) => line.startsWith("ROUND: "))?.slice("ROUND: ".length) ?? 0);
+        assistantText = reviewerReply(replyControlId, taskId, round);
+      }
     },
     press: async () => {},
   });
@@ -101,7 +119,21 @@ function makeFixture(options: { conversationMode?: "project" | "long-chat"; comp
     goto: async () => {},
     locator,
     getByRole: () => locator("role"),
-    getByText: () => ({ ...locator("control-text"), count: async () => occurrences + (assistantText ? 1 : 0) }),
+    getByText: (text) => {
+      const user = locator('[data-message-author-role="user"]');
+      const assistant = locator('[data-message-author-role="assistant"]');
+      return {
+        count: async () => (occurrences > 0 && submittedMessage.includes(text) ? 1 : 0) + (assistantText?.includes(text) ? 1 : 0),
+        first() { return this.nth(0); },
+        nth(index) { return index === 0 && occurrences > 0 && submittedMessage.includes(text) ? user : assistant; },
+        isVisible: async () => false,
+        isEnabled: async () => false,
+        innerText: async () => "",
+        fill: async () => {},
+        click: async () => {},
+        press: async () => {},
+      };
+    },
     waitForTimeout: async (milliseconds) => { clock += milliseconds; },
   };
   const browser: ControlBrowser = {
@@ -142,19 +174,22 @@ function makeFixture(options: { conversationMode?: "project" | "long-chat"; comp
     input,
     sent,
     attachCount: () => attached,
+    clickCount: () => clickCount,
+    draft: () => draft,
     session: () => session,
     setAssistant(text) { assistantText = text; if (text) occurrences = 1; },
     setAutomaticReply(enabled) { automaticReply = enabled; },
     setReplyControlId(controlId) { replyControlId = controlId; },
-    setVisibleRequest() { sent.push(MESSAGE); occurrences = 1; },
+    setVisibleRequest(text = MESSAGE) { submittedMessage = text; occurrences = 1; },
+    setSession(value) { session = value; },
   };
 }
 
-function reviewerReply(controlId = CONTROL): string {
+function reviewerReply(controlId = CONTROL, taskId = "CONTROL_TRANSPORT_TEST", round = 1): string {
   return [
     "STATE: REVIEW",
-    "MISSION_ID: CONTROL_TRANSPORT_TEST",
-    "ROUND: 1",
+    `MISSION_ID: ${taskId}`,
+    `ROUND: ${round}`,
     `CONTROL_ID: ${controlId}`,
     "Review result: accepted.",
   ].join("\n");
@@ -197,8 +232,16 @@ describe("local CDP control transport", () => {
     await expect(deliverLocalControl(noComposer.input, noComposer.deps)).rejects.toThrow("CHAT_COMPOSER_NOT_READY");
     expect(noComposer.sent).toHaveLength(0);
     const noSend = makeFixture({ send: false });
-    await expect(deliverLocalControl(noSend.input, noSend.deps)).rejects.toThrow("CHAT_SEND_CONTROL_NOT_FOUND");
+    noSend.deps.waitTimeoutMs = 0;
+    await expect(deliverLocalControl(noSend.input, noSend.deps)).rejects.toThrow("CHAT_SEND_CONTROL_NOT_READY");
     expect(noSend.sent).toHaveLength(0);
+    expect(noSend.draft()).toBe("");
+
+    const invalidIdentity = makeFixture();
+    invalidIdentity.input.controlId = `C${"x".repeat(160)}`;
+    invalidIdentity.input.message = MESSAGE.replace(CONTROL, invalidIdentity.input.controlId);
+    await expect(deliverLocalControl(invalidIdentity.input, invalidIdentity.deps)).rejects.toThrow("CONTROL_MESSAGE_IDENTITY_INVALID");
+    expect(invalidIdentity.attachCount()).toBe(0);
   });
 
   it("rejects a stale or mismatched CONTROL_ID response and never creates a receipt", async () => {
@@ -207,6 +250,7 @@ describe("local CDP control transport", () => {
     fixture.setReplyControlId("CTRL-STALE");
     await expect(deliverLocalControl(fixture.input, fixture.deps)).rejects.toThrow("CONTROL_RESPONSE_TIMEOUT");
     expect(fixture.sent).toHaveLength(1);
+    expect(fixture.clickCount()).toBe(1);
     expect(fixture.session().checkpoint?.protocolState).toBe("EXECUTED_LOCAL");
   });
 
@@ -220,6 +264,22 @@ describe("local CDP control transport", () => {
     const result = await resumeLocalControl(fixture.input.workspaceId, MESSAGE, fixture.deps);
     expect(result).toMatchObject({ status: "EXECUTED_SENT", recovered: true });
     expect(fixture.sent).toHaveLength(1);
+  });
+
+  it("rejects same identity with a different visible body and leaves EXECUTED_LOCAL", async () => {
+    isolate("control-transport-recovery-body-mismatch");
+    const fixture = makeFixture();
+    fixture.setAutomaticReply(false);
+    await expect(deliverLocalControl(fixture.input, fixture.deps)).rejects.toThrow("CONTROL_RESPONSE_TIMEOUT");
+    const altered = `${MESSAGE}\nAltered payload with the same identity.`;
+    fixture.setVisibleRequest(altered);
+    fixture.setAssistant(reviewerReply());
+    await expect(resumeLocalControl(fixture.input.workspaceId, MESSAGE, fixture.deps)).rejects.toThrow(
+      "CONTROL_REQUEST_PAYLOAD_MISMATCH"
+    );
+    expect(fixture.clickCount()).toBe(1);
+    expect(fixture.deps.getReceipt(fixture.input, Date.now())).toBeNull();
+    expect(fixture.session().checkpoint?.protocolState).toBe("EXECUTED_LOCAL");
   });
 
   it("does not attach for legacy workspaces", async () => {
@@ -237,6 +297,47 @@ describe("local CDP control transport", () => {
     fixture.setVisibleRequest();
     fixture.setAssistant(reviewerReply());
     await expect(deliverLocalControl(fixture.input, fixture.deps)).rejects.toThrow("DELIVERY_INTENT_MISSING");
+  });
+
+  it("writes and rereads the largest bounded delivery journal without exceeding its byte cap", async () => {
+    isolate("control-transport-journal-roundtrip");
+    const fixture = makeFixture();
+    const deliveriesDir = path.join(getStateDir(), "deliveries");
+    fs.mkdirSync(deliveriesDir, { recursive: true });
+    const operations = Array.from({ length: 100 }, (_, index) => ({
+      workspaceId: fixture.input.workspaceId,
+      taskId: `T${String(index).padStart(2, "0")}${"x".repeat(157)}`,
+      round: index,
+      controlId: `C${String(index).padStart(2, "0")}${"x".repeat(157)}`,
+      chatUrl: CHAT,
+      requestTimestamp: "2026-09-30T07:00:00.000Z",
+      requestPayloadHash: "a".repeat(64),
+      status: "completed" as const,
+      sendAttemptedAt: "2026-09-30T07:00:01.000Z",
+      completedAt: "2026-09-30T07:00:02.000Z",
+    }));
+    fs.writeFileSync(path.join(deliveriesDir, `${fixture.input.workspaceId}.json`), JSON.stringify({ schemaVersion: 1, workspaceId: fixture.input.workspaceId, operations }, null, 2));
+
+    await deliverLocalControl(fixture.input, fixture.deps);
+    const file = path.join(deliveriesDir, `${fixture.input.workspaceId}.json`);
+    expect(fs.statSync(file).size).toBeLessThanOrEqual(512 * 1024);
+    expect(JSON.parse(fs.readFileSync(file, "utf8")).operations).toHaveLength(100);
+
+    const secondControl = "CTRL-ROUNDTRIP-2";
+    const secondTask = "CONTROL_TRANSPORT_ROUNDTRIP_2";
+    const secondMessage = ["STATE: REVIEW_REQUEST", `MISSION_ID: ${secondTask}`, "ROUND: 2", `CONTROL_ID: ${secondControl}`].join("\n");
+    fixture.setSession(markExecutedLocal(
+      { conversationMode: "long-chat", url: CHAT, savedAt: "2026-09-30T07:00:00.000Z" },
+      { taskId: secondTask, iteration: 2, controlId: secondControl, chatUrl: CHAT, waitingFor: "none" }
+    ));
+    fixture.input.taskId = secondTask;
+    fixture.input.round = 2;
+    fixture.input.controlId = secondControl;
+    fixture.input.message = secondMessage;
+    fixture.setReplyControlId(secondControl);
+    await deliverLocalControl(fixture.input, fixture.deps);
+    expect(JSON.parse(fs.readFileSync(file, "utf8")).operations).toHaveLength(100);
+    expect(fixture.session().checkpoint?.protocolState).toBe("EXECUTED_SENT");
   });
 
   it("fails closed on a wrong conversation target or attach failure and preserves EXECUTED_LOCAL", async () => {

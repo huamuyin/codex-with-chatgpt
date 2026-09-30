@@ -33,8 +33,8 @@ c2c control-resume -w D:\Repos\example --message-file D:\ProjectData\example\con
 ```
 
 The message file path must be absolute and the file is limited to 64 KiB. The
-message must contain exact `MISSION_ID`, `ROUND`, and `CONTROL_ID` lines matching
-the saved checkpoint. The sender uses the visible composer and send control,
+message must contain exact `STATE`, `MISSION_ID`, `ROUND`, and `CONTROL_ID`
+lines matching the saved checkpoint. The sender uses the visible composer and send control,
 then waits for an assistant reply with exact identity lines and a stable
 completed response.
 

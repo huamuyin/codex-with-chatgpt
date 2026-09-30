@@ -99,6 +99,22 @@ function operationKey(value: Pick<DeliveryOperation, "taskId" | "round" | "contr
   return `${value.taskId}\u001f${value.round}\u001f${value.controlId}`;
 }
 
+function validateDeliveryOperation(item: DeliveryOperation, workspaceId: string): void {
+  if (
+    item.workspaceId !== workspaceId ||
+    typeof item.taskId !== "string" || item.taskId.trim().length < 1 || item.taskId.length > 160 ||
+    !Number.isSafeInteger(item.round) || item.round < 0 || item.round > 1_000_000 ||
+    typeof item.controlId !== "string" || !/^[A-Za-z0-9._:-]{1,160}$/.test(item.controlId) ||
+    typeof item.chatUrl !== "string" || item.chatUrl.length > 2048 || canonicalChatTargetUrl(item.chatUrl) !== item.chatUrl ||
+    typeof item.requestTimestamp !== "string" || !Number.isFinite(Date.parse(item.requestTimestamp)) ||
+    new Date(item.requestTimestamp).toISOString() !== item.requestTimestamp ||
+    !/^[a-f0-9]{64}$/.test(item.requestPayloadHash) ||
+    !["prepared", "send-attempted", "completed"].includes(item.status) ||
+    (item.sendAttemptedAt !== undefined && (!Number.isFinite(Date.parse(item.sendAttemptedAt)) || new Date(item.sendAttemptedAt).toISOString() !== item.sendAttemptedAt)) ||
+    (item.completedAt !== undefined && (!Number.isFinite(Date.parse(item.completedAt)) || new Date(item.completedAt).toISOString() !== item.completedAt))
+  ) throw new Error("DELIVERY_JOURNAL_INVALID");
+}
+
 function readOperations(workspaceId: string): DeliveryOperation[] {
   const file = operationStoreFile(workspaceId);
   if (!fs.existsSync(file)) return [];
@@ -115,21 +131,7 @@ function readOperations(workspaceId: string): DeliveryOperation[] {
     }
     const keys = new Set<string>();
     for (const item of parsed.operations) {
-      if (
-        item.workspaceId !== workspaceId ||
-        typeof item.taskId !== "string" || item.taskId.length < 1 || item.taskId.length > 160 ||
-        !Number.isSafeInteger(item.round) ||
-        typeof item.controlId !== "string" || item.controlId.length < 1 || item.controlId.length > 160 ||
-        typeof item.chatUrl !== "string" || item.chatUrl.length > 2048 || canonicalChatTargetUrl(item.chatUrl) !== item.chatUrl ||
-        typeof item.requestTimestamp !== "string" ||
-        !Number.isFinite(Date.parse(item.requestTimestamp)) || new Date(item.requestTimestamp).toISOString() !== item.requestTimestamp ||
-        !/^[a-f0-9]{64}$/.test(item.requestPayloadHash) ||
-        !["prepared", "send-attempted", "completed"].includes(item.status) ||
-        (item.sendAttemptedAt !== undefined && !Number.isFinite(Date.parse(item.sendAttemptedAt))) ||
-        (item.completedAt !== undefined && !Number.isFinite(Date.parse(item.completedAt)))
-      ) {
-        throw new Error("DELIVERY_JOURNAL_INVALID");
-      }
+      validateDeliveryOperation(item, workspaceId);
       const key = operationKey(item);
       if (keys.has(key)) throw new Error("DELIVERY_JOURNAL_INVALID");
       keys.add(key);
@@ -143,17 +145,30 @@ function readOperations(workspaceId: string): DeliveryOperation[] {
 
 function writeOperations(workspaceId: string, operations: DeliveryOperation[]): void {
   const bounded = operations.slice(-MAX_DELIVERY_OPERATIONS);
-  writeSecureJson(operationStoreFile(workspaceId), { schemaVersion: 1, workspaceId, operations: bounded } satisfies DeliveryOperationStore);
+  const keys = new Set<string>();
+  for (const item of bounded) {
+    validateDeliveryOperation(item, workspaceId);
+    const key = operationKey(item);
+    if (keys.has(key)) throw new Error("DELIVERY_JOURNAL_INVALID");
+    keys.add(key);
+  }
+  const store = { schemaVersion: 1, workspaceId, operations: bounded } satisfies DeliveryOperationStore;
+  const serialized = JSON.stringify(store, null, 2);
+  if (Buffer.byteLength(serialized, "utf8") > MAX_DELIVERY_STORE_BYTES) throw new Error("DELIVERY_JOURNAL_TOO_LARGE");
+  writeSecureJson(operationStoreFile(workspaceId), store);
 }
 
 function requestHash(message: string): string {
   return createHash("sha256").update(message, "utf8").digest("hex");
 }
 
-function assertControlMessage(input: ControlTransportInput): { chatUrl: string; requestPayloadHash: string } {
+function assertControlMessage(input: ControlTransportInput): { chatUrl: string; requestPayloadHash: string; requestState: string } {
   const chatUrl = canonicalChatTargetUrl(input.chatUrl);
   if (!chatUrl) throw new Error("CHATGPT_CHAT_URL_INVALID");
   if (Buffer.byteLength(input.message, "utf8") > MAX_CONTROL_MESSAGE_BYTES) throw new Error("CONTROL_MESSAGE_TOO_LARGE");
+  if (!input.taskId.trim() || input.taskId.length > 160 || !/^[A-Za-z0-9._:-]{1,160}$/.test(input.controlId)) {
+    throw new Error("CONTROL_MESSAGE_IDENTITY_INVALID");
+  }
   const lines = input.message.split(/\r?\n/);
   const identities = [
     `MISSION_ID: ${input.taskId}`,
@@ -163,8 +178,10 @@ function assertControlMessage(input: ControlTransportInput): { chatUrl: string; 
   if (identities.some((identity) => lines.filter((line) => line === identity).length !== 1)) {
     throw new Error("CONTROL_MESSAGE_IDENTITY_MISMATCH");
   }
-  if (!Number.isSafeInteger(input.round) || input.round < 0) throw new Error("CONTROL_ROUND_INVALID");
-  return { chatUrl, requestPayloadHash: requestHash(input.message) };
+  if (!Number.isSafeInteger(input.round) || input.round < 0 || input.round > 1_000_000) throw new Error("CONTROL_ROUND_INVALID");
+  const stateLines = lines.filter((line) => /^STATE: [A-Z_]+$/.test(line));
+  if (stateLines.length !== 1) throw new Error("CONTROL_MESSAGE_STATE_INVALID");
+  return { chatUrl, requestPayloadHash: requestHash(input.message), requestState: stateLines[0]!.slice("STATE: ".length) };
 }
 
 function expectedFromCheckpoint(workspaceId: string, session: SavedSession): BrowserReceiptExpected {
@@ -213,18 +230,32 @@ async function matchingAssistantText(target: SelectedChatTarget, expected: Brows
   return null;
 }
 
-async function matchingUserRequest(target: SelectedChatTarget, expected: BrowserReceiptExpected): Promise<boolean> {
-  const messages = target.page.locator('[data-message-author-role="user"]');
+async function matchingUserRequest(
+  target: SelectedChatTarget,
+  expected: BrowserReceiptExpected,
+  requestPayloadHash: string,
+  requestState: string
+): Promise<"matched" | "mismatch" | "ambiguous" | null> {
+  const messages = target.page.getByText(expected.controlId, { exact: false });
   const count = await messages.count().catch(() => 0);
-  for (let i = Math.max(0, count - 20); i < count; i++) {
-    const text = (await messages.nth(i).innerText({ timeout: 2_000 }).catch(() => "")).trim();
+  let matching = 0;
+  let mismatching = 0;
+  for (let i = Math.max(0, count - 30); i < count; i++) {
+    const candidate = messages.nth(i);
+    if (!(await candidate.isVisible().catch(() => false))) continue;
+    const text = (await candidate.innerText({ timeout: 2_000 }).catch(() => "")).trim();
     if (
-      exactLine(text, "MISSION_ID", expected.taskId) &&
-      exactLine(text, "ROUND", expected.round) &&
-      exactLine(text, "CONTROL_ID", expected.controlId)
-    ) return true;
+      !exactLine(text, "MISSION_ID", expected.taskId) ||
+      !exactLine(text, "ROUND", expected.round) ||
+      !exactLine(text, "CONTROL_ID", expected.controlId) ||
+      !exactLine(text, "STATE", requestState)
+    ) continue;
+    if (requestHash(text) === requestPayloadHash) matching += 1;
+    else mismatching += 1;
   }
-  return false;
+  if (mismatching) return "mismatch";
+  if (matching > 1) return "ambiguous";
+  return matching === 1 ? "matched" : null;
 }
 
 async function controlOccurrences(target: SelectedChatTarget, controlId: string): Promise<number> {
@@ -238,7 +269,7 @@ async function findComposer(page: CdpUiPage, wait: ControlTransportDependencies[
     page.locator('div[contenteditable="true"][role="textbox"]'),
   ];
   const end = Date.now() + timeoutMs;
-  while (Date.now() < end) {
+  while (Date.now() <= end) {
     for (const candidate of selectors) {
       if ((await candidate.count().catch(() => 0)) && await candidate.first().isVisible().catch(() => false)) {
         return candidate.first();
@@ -247,6 +278,32 @@ async function findComposer(page: CdpUiPage, wait: ControlTransportDependencies[
     await wait(page, 250);
   }
   return null;
+}
+
+async function findSendControl(
+  page: CdpUiPage,
+  wait: ControlTransportDependencies["wait"],
+  timeoutMs: number
+): Promise<ReturnType<CdpUiPage["locator"]>> {
+  const selectors = [
+    page.locator('button[data-testid="send-button"]'),
+    page.locator('button[data-testid="composer-submit-button"]'),
+    page.locator("#composer-submit-button"),
+    page.locator('button[aria-label*="Send" i],button[aria-label*="发送"]'),
+    page.getByRole("button", { name: /send|发送/i }),
+  ];
+  const end = Date.now() + timeoutMs;
+  while (Date.now() <= end) {
+    for (const candidate of selectors) {
+      if (
+        (await candidate.count().catch(() => 0)) &&
+        await candidate.first().isVisible().catch(() => false) &&
+        await candidate.first().isEnabled().catch(() => false)
+      ) return candidate.first();
+    }
+    await wait(page, 250);
+  }
+  throw new Error("CHAT_SEND_CONTROL_NOT_READY");
 }
 
 function boundedResponse(text: string): string {
@@ -295,6 +352,8 @@ function receiptSummary(receipt: BrowserReceipt): ControlTransportResult["receip
 async function waitForAssistant(
   target: SelectedChatTarget,
   expected: BrowserReceiptExpected,
+  requestPayloadHash: string,
+  requestState: string,
   dependencies: ControlTransportDependencies
 ): Promise<{ responseText: string; occurrences: number }> {
   const deadline = dependencies.now() + dependencies.waitTimeoutMs;
@@ -303,11 +362,13 @@ async function waitForAssistant(
   while (dependencies.now() <= deadline) {
     const responseText = await matchingAssistantText(target, expected);
     const occurrences = await controlOccurrences(target, expected.controlId);
-    const requestVisible = await matchingUserRequest(target, expected);
+    const requestStateResult = await matchingUserRequest(target, expected, requestPayloadHash, requestState);
+    if (requestStateResult === "mismatch") throw new Error("CONTROL_REQUEST_PAYLOAD_MISMATCH");
+    if (requestStateResult === "ambiguous") throw new Error("CONTROL_HISTORY_AMBIGUOUS");
     const busy = await target.page.locator(
       'button[data-testid="stop-button"],button[aria-label*="Stop"],button[aria-label*="停止"]'
     ).count().catch(() => 0);
-    if (requestVisible && responseText && occurrences >= 2 && busy === 0) {
+    if (requestStateResult === "matched" && responseText && busy === 0) {
       if (responseText === previousText) {
         if (!stableAt) stableAt = dependencies.now();
         if (dependencies.now() - stableAt >= CONTROL_STABLE_MS) return { responseText, occurrences };
@@ -321,11 +382,12 @@ async function waitForAssistant(
     }
     await dependencies.wait(target.page, CONTROL_POLL_INTERVAL_MS);
   }
-    const responseText = await matchingAssistantText(target, expected);
-    const occurrences = await controlOccurrences(target, expected.controlId);
-    const requestVisible = await matchingUserRequest(target, expected);
-    if (occurrences > 0 && !requestVisible) throw new Error("CONTROL_REQUEST_IDENTITY_MISMATCH");
-  if (responseText && occurrences < 2) throw new Error("CONTROL_REQUEST_NOT_CONFIRMED_IN_VISIBLE_CHAT");
+  const responseText = await matchingAssistantText(target, expected);
+  const occurrences = await controlOccurrences(target, expected.controlId);
+  const requestStateResult = await matchingUserRequest(target, expected, requestPayloadHash, requestState);
+  if (requestStateResult === "mismatch") throw new Error("CONTROL_REQUEST_PAYLOAD_MISMATCH");
+  if (requestStateResult === "ambiguous") throw new Error("CONTROL_HISTORY_AMBIGUOUS");
+  if (occurrences > 0 && requestStateResult !== "matched") throw new Error("CONTROL_REQUEST_NOT_CONFIRMED_IN_VISIBLE_CHAT");
   throw new Error("CONTROL_RESPONSE_TIMEOUT");
 }
 
@@ -410,7 +472,7 @@ export async function deliverLocalControl(
 ): Promise<ControlTransportResult> {
   const dependencies = { ...defaults, ...overrides };
   if (dependencies.getTransport(input.workspaceId) !== "local-cdp") throw new Error("LOCAL_CDP_NOT_OPTED_IN");
-  const { chatUrl, requestPayloadHash } = assertControlMessage(input);
+  const { chatUrl, requestPayloadHash, requestState } = assertControlMessage(input);
   const session = dependencies.readSession(input.workspaceId);
   if (!session?.checkpoint) throw new Error("PROTOCOL_CHECKPOINT_REQUIRED");
   const expected = expectedFromCheckpoint(input.workspaceId, session);
@@ -454,23 +516,23 @@ export async function deliverLocalControl(
 
     const priorResponse = await matchingAssistantText(target, expected);
     const priorOccurrences = await controlOccurrences(target, input.controlId);
-    const priorRequestVisible = await matchingUserRequest(target, expected);
-    if (priorOccurrences > 0 && !priorRequestVisible) throw new Error("CONTROL_REQUEST_IDENTITY_MISMATCH");
-    if (priorResponse && priorOccurrences >= 2) {
+    const priorRequest = await matchingUserRequest(target, expected, requestPayloadHash, requestState);
+    if (priorRequest === "mismatch") throw new Error("CONTROL_REQUEST_PAYLOAD_MISMATCH");
+    if (priorRequest === "ambiguous") throw new Error("CONTROL_HISTORY_AMBIGUOUS");
+    if (priorRequest === "matched" && priorResponse) {
       if (!previousOperation) throw new Error("DELIVERY_INTENT_MISSING");
       const receipt = receiptFromResponse(expected, previousOperation, priorResponse, new Date(dependencies.now()).toISOString());
       return gateAndPersist(input.workspaceId, session, receipt, dependencies, dependencies.now(), true);
     }
-    if (priorOccurrences > 2) throw new Error("CONTROL_HISTORY_AMBIGUOUS");
-    if (priorOccurrences > 0) {
+    if (priorRequest === "matched") {
       if (!previousOperation) throw new Error("DELIVERY_INTENT_MISSING");
       const operation = previousOperation;
       upsertOperation(input.workspaceId, { ...operation, status: "send-attempted", sendAttemptedAt: operation.sendAttemptedAt ?? new Date(now).toISOString() });
-      const response = await waitForAssistant(target, expected, dependencies);
+      const response = await waitForAssistant(target, expected, requestPayloadHash, requestState, dependencies);
       const receipt = receiptFromResponse(expected, operation, response.responseText, new Date(dependencies.now()).toISOString());
       return gateAndPersist(input.workspaceId, session, receipt, dependencies, dependencies.now(), true);
     }
-    if (priorOccurrences !== 0) throw new Error("CONTROL_HISTORY_AMBIGUOUS");
+    if (priorOccurrences > 0) throw new Error("CONTROL_HISTORY_AMBIGUOUS");
 
     const operation: DeliveryOperation = previousOperation ?? {
       ...key,
@@ -482,13 +544,17 @@ export async function deliverLocalControl(
     };
     const composer = await findComposer(target.page, dependencies.wait, Math.min(60_000, dependencies.waitTimeoutMs));
     if (!composer) throw new Error("CHAT_COMPOSER_NOT_READY");
-    const send = target.page.locator('button[data-testid="send-button"]');
-    if (!(await send.count().catch(() => 0)) || !(await send.first().isVisible().catch(() => false))) throw new Error("CHAT_SEND_CONTROL_NOT_FOUND");
-    if (!(await send.first().isEnabled().catch(() => false))) throw new Error("CHAT_SEND_CONTROL_NOT_READY");
     upsertOperation(input.workspaceId, { ...operation, status: "send-attempted", sendAttemptedAt: new Date(dependencies.now()).toISOString() });
     await composer.fill(input.message, { timeout: 15_000 });
+    let send: ReturnType<CdpUiPage["locator"]>;
+    try {
+      send = await findSendControl(target.page, dependencies.wait, Math.min(15_000, dependencies.waitTimeoutMs));
+    } catch (error) {
+      await composer.fill("").catch(() => {});
+      throw error;
+    }
     await send.first().click({ timeout: 15_000 });
-    const response = await waitForAssistant(target, expected, dependencies);
+    const response = await waitForAssistant(target, expected, requestPayloadHash, requestState, dependencies);
     const receipt = receiptFromResponse(expected, operation, response.responseText, new Date(dependencies.now()).toISOString());
     return gateAndPersist(input.workspaceId, session, receipt, dependencies, dependencies.now(), false);
   } finally {
