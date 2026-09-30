@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+import unicodedata
+
 
 class IdentifierRegistry:
     """Store trimmed display values under case-insensitive identities."""
@@ -10,7 +13,8 @@ class IdentifierRegistry:
         self._display_by_identity: dict[str, str] = {}
 
     def register(self, value: str) -> None:
-        display_value = value.strip()
+        trimmed_value = value.strip()
+        display_value = unicodedata.normalize("NFC", trimmed_value)
         canonical_identity = display_value.casefold()
         existing_display_value = self._display_by_identity.get(canonical_identity)
         self._display_by_identity[canonical_identity] = (
@@ -28,3 +32,12 @@ class IdentifierRegistry:
             }
             for identity in sorted(self._display_by_identity)
         ]
+
+    def serialize(self) -> str:
+        """Return canonical JSON for this registry's records."""
+        return json.dumps(
+            self.records(),
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
