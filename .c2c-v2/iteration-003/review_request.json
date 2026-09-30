@@ -1,0 +1,29 @@
+{
+  "task_id": "C2C_V2_GITHUB_EVIDENCE_PLANE_POC_R1",
+  "iteration": 3,
+  "base_commit": "12e42bfe1fe7f2709cbe4f25f3753a49bb9e7f31",
+  "previous_evidence_commit": "59a7187f3829894a73bc7a30444d29e525155921",
+  "previous_chat_review_sha256": "8C68B1C467FB8FA0CD99AC22DD78A368532ED8AB1E7ADCEE93D8BB098484E5D9",
+  "implementation_commit": "79b482edc606f009e3cfa3a4fdf8623bb7057ba2",
+  "commit_binding": "implementation_commit is the tested Round 3 code commit. This review request and test_summary are added in the subsequent evidence commit. The short review reference COMMIT must identify the PR branch head containing these evidence files; compare it exactly with the GitHub branch head.",
+  "goal": "Add NFC normalization before case-fold identity derivation, stable JSON serialization, and independent-process determinism while preserving the accepted Round 1 and Round 2 behavior.",
+  "changed_paths": [
+    "poc_v2/identifier_registry.py",
+    "tests/poc_v2/test_identifier_registry.py"
+  ],
+  "tests": {
+    "passed": 13,
+    "failed": 0,
+    "command": "python -m unittest discover -s tests/poc_v2 -v",
+    "syntax_check": "python -m py_compile poc_v2/identifier_registry.py: passed",
+    "diff_check": "git diff --check: passed",
+    "cross_process_check": "Two subprocesses used PYTHONHASHSEED values 1 and 999 with opposite insertion orders; serialized stdout matched exactly."
+  },
+  "questions": [
+    "Verify that NFC normalization is applied to the trimmed display value before canonical identity derivation.",
+    "Verify that composed and decomposed equivalents collapse to one logical identity and store an NFC display value.",
+    "Verify that serialization is deterministic and canonical for repeated calls, equivalent Unicode values, and reversed insertion orders.",
+    "Verify that the cross-process test launches separate interpreters with different hash seeds and compares exact serialized stdout.",
+    "Check that no Round 1 or Round 2 behavior regressed, and give any smallest evidence-based correction needed."
+  ]
+}

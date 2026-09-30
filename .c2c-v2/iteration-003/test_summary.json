@@ -1,0 +1,33 @@
+{
+  "task_id": "C2C_V2_GITHUB_EVIDENCE_PLANE_POC_R1",
+  "iteration": 3,
+  "previous_evidence_commit": "59a7187f3829894a73bc7a30444d29e525155921",
+  "implementation_commit": "79b482edc606f009e3cfa3a4fdf8623bb7057ba2",
+  "command": "python -m unittest discover -s tests/poc_v2 -v",
+  "passed": 13,
+  "failed": 0,
+  "syntax_check": "python -m py_compile poc_v2/identifier_registry.py",
+  "diff_check": "git diff --check",
+  "cross_process_test": {
+    "test": "test_serialization_is_stable_across_processes_and_hash_seeds",
+    "processes": 2,
+    "python_hash_seeds": [1, 999],
+    "insertion_orders": ["forward", "reverse"],
+    "serialized_stdout_equal": true
+  },
+  "tests": [
+    "test_canonical_identity_is_case_insensitive",
+    "test_case_variants_share_identity_and_choose_smallest_display",
+    "test_casefold_identity_is_derived_from_normalized_unicode",
+    "test_collision_result_is_independent_of_insertion_order",
+    "test_composed_and_decomposed_inputs_serialize_identically",
+    "test_composed_and_decomposed_values_share_nfc_identity",
+    "test_display_value_keeps_the_trimmed_original_spelling",
+    "test_records_have_deterministic_canonical_order",
+    "test_repeated_exact_value_is_idempotent",
+    "test_serialization_is_stable_across_processes_and_hash_seeds",
+    "test_serialize_is_independent_of_insertion_order",
+    "test_serialize_is_repeatable_and_contains_records_as_json",
+    "test_trims_outer_whitespace_and_preserves_display_case"
+  ]
+}
