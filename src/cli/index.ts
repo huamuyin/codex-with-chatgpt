@@ -26,6 +26,13 @@ import {
 } from "../tunnel/state.js";
 import { Logger } from "../logger/index.js";
 import { getStateDir } from "../config/paths.js";
+import {
+  configureSharedRuntime,
+  readSharedRuntimeConfig,
+  type BrowserLifecycleMode,
+  type ReviewerBrowser,
+} from "../config/shared-runtime.js";
+import { getWorkspaceTransport, setWorkspaceTransport, type WorkspaceTransportMode } from "../session/transport.js";
 import { ensureSandboxAllowlist, getCodexConfigPath, isStateDirAllowlisted } from "../config/sandbox-allow.js";
 import { mergeUiPrefs, readUiPrefs, SETUP_MODES, type SetupMode } from "../config/ui-prefs.js";
 import {
@@ -999,6 +1006,104 @@ session
     if (!result.cleared) say("尚未记录 ChatGPT 会话。");
     else if (result.keptProject) check("已清除当前对话，合集绑定仍保留");
     else check("已清除会话记录，下次任务将新建 ChatGPT 会话");
+  });
+
+// ---------------------------------------------------------------- shared v2 runtime configuration (opt-in only)
+
+const runtime = program
+  .command("runtime")
+  .description("Inspect or configure the shared local Reviewer browser runtime");
+
+runtime
+  .command("config")
+  .description("Read or set machine-wide attach-only Reviewer browser metadata")
+  .option("--json", "machine-readable output", false)
+  .option("--set", "write the supplied local CDP configuration", false)
+  .option("--cdp-endpoint <url>")
+  .option("--browser <browser>", "chrome or edge")
+  .option("--profile-identity <name>")
+  .option("--lifecycle <mode>", "external or resident")
+  .action((opts: {
+    json: boolean;
+    set: boolean;
+    cdpEndpoint?: string;
+    browser?: string;
+    profileIdentity?: string;
+    lifecycle?: string;
+  }) => {
+    if (!opts.set) {
+      const config = readSharedRuntimeConfig();
+      if (opts.json) say(JSON.stringify({ ok: true, configured: Boolean(config), config }));
+      else if (!config) say("共享 Reviewer Browser runtime 尚未配置。");
+      else say(`local-cdp ${config.cdpEndpoint} · ${config.browser}/${config.profileIdentity} · ${config.lifecycleMode}`);
+      return;
+    }
+    if (!opts.cdpEndpoint || !opts.browser || !opts.profileIdentity || !opts.lifecycle) {
+      throw new Error("--set requires --cdp-endpoint, --browser, --profile-identity and --lifecycle");
+    }
+    if (opts.browser !== "chrome" && opts.browser !== "edge") throw new Error("--browser must be chrome or edge");
+    if (opts.lifecycle !== "external" && opts.lifecycle !== "resident") throw new Error("--lifecycle must be external or resident");
+    const config = configureSharedRuntime({
+      transportMode: "local-cdp",
+      cdpEndpoint: opts.cdpEndpoint,
+      browser: opts.browser as ReviewerBrowser,
+      profileIdentity: opts.profileIdentity,
+      lifecycleMode: opts.lifecycle as BrowserLifecycleMode,
+    });
+    if (opts.json) say(JSON.stringify({ ok: true, configured: true, config }));
+    else check(`已配置共享 local-cdp runtime：${config.cdpEndpoint}`);
+  });
+
+const transport = program.command("transport").description("Inspect or opt one workspace into a control transport");
+
+transport
+  .command("get")
+  .option("-w, --workspace <path>")
+  .option("--json", "machine-readable output", false)
+  .action((opts: { workspace?: string; json: boolean }) => {
+    const workspace = new Workspace(resolveWorkspace(opts.workspace));
+    const preference = getWorkspaceTransport(workspace.id);
+    if (opts.json) say(JSON.stringify({ ok: true, workspaceId: workspace.id, transport: preference }));
+    else say(`${preference.mode} (${workspace.id})`);
+  });
+
+transport
+  .command("set")
+  .requiredOption("--mode <mode>", "legacy or local-cdp")
+  .option("-w, --workspace <path>")
+  .option("--json", "machine-readable output", false)
+  .action((opts: { workspace?: string; mode: string; json: boolean }) => {
+    if (opts.mode !== "legacy" && opts.mode !== "local-cdp") throw new Error("--mode must be legacy or local-cdp");
+    const workspace = new Workspace(resolveWorkspace(opts.workspace));
+    const preference = setWorkspaceTransport(workspace.id, opts.mode as WorkspaceTransportMode);
+    if (opts.json) say(JSON.stringify({ ok: true, workspaceId: workspace.id, transport: preference }));
+    else check(`已将 workspace ${workspace.id} 设为 ${preference.mode}`);
+  });
+
+runtime
+  .command("status")
+  .option("-w, --workspace <path>")
+  .option("--json", "machine-readable output", false)
+  .action((opts: { workspace?: string; json: boolean }) => {
+    const workspace = new Workspace(resolveWorkspace(opts.workspace));
+    const config = readSharedRuntimeConfig();
+    const transportPreference = getWorkspaceTransport(workspace.id);
+    const savedSession = readSession(workspace.id);
+    const conversation = resolveConversation(savedSession);
+    const status = {
+      ok: true,
+      configured: Boolean(config),
+      config,
+      workspaceId: workspace.id,
+      transport: transportPreference.mode,
+      transportConfiguredAt: transportPreference.configuredAt || null,
+      conversationMode: conversation.mode,
+      chatUrlPresent: Boolean(conversation.chatUrl),
+      projectUrlPresent: Boolean(conversation.projectUrl),
+      browserReachability: "not-probed",
+    };
+    if (opts.json) say(JSON.stringify(status));
+    else say(`${status.transport} · ${status.conversationMode} · browser ${status.browserReachability}`);
   });
 
 const prefsCmd = program
