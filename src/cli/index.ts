@@ -64,6 +64,9 @@ import {
 } from "../session/state.js";
 import { appendExecutionRecord } from "../execution/records.js";
 import { saveExecutionOutput } from "../execution/output.js";
+import { LocalCdpAdapter } from "../browser/cdp-adapter.js";
+import { resumeLocalControl } from "../browser/control-transport.js";
+import { getBrowserReceipt, listBrowserReceipts } from "../session/browser-receipt.js";
 
 const program = new Command();
 
@@ -1139,13 +1142,14 @@ runtime
   .command("status")
   .option("-w, --workspace <path>")
   .option("--json", "machine-readable output", false)
-  .action((opts: { workspace?: string; json: boolean }) => {
+  .option("--probe", "attach to the configured browser and inspect visible page metadata")
+  .action(async (opts: { workspace?: string; json: boolean; probe?: boolean }) => {
     const workspace = new Workspace(resolveWorkspace(opts.workspace));
     const config = readSharedRuntimeConfig();
     const transportPreference = getWorkspaceTransport(workspace.id);
     const savedSession = readSession(workspace.id);
     const conversation = resolveConversation(savedSession);
-    const status = {
+    const status: Record<string, unknown> = {
       ok: true,
       configured: Boolean(config),
       config,
@@ -1157,8 +1161,80 @@ runtime
       projectUrlPresent: Boolean(conversation.projectUrl),
       browserReachability: "not-probed",
     };
+    if (opts.probe) {
+      if (!config) throw new Error("SHARED_RUNTIME_NOT_CONFIGURED");
+      const adapter = await LocalCdpAdapter.attach(config);
+      try {
+        const targets = adapter.listVisibleTargets();
+        status.browserReachability = "reachable";
+        status.visiblePageCount = targets.length;
+        status.chatGPTPageCount = targets.filter((target) => /^https:\/\/(?:www\.)?chatgpt\.com(?:\/|$)/i.test(target.url)).length;
+      } finally {
+        await adapter.disconnect();
+      }
+    }
     if (opts.json) say(JSON.stringify(status));
     else say(`${status.transport} · ${status.conversationMode} · browser ${status.browserReachability}`);
+  });
+
+const receipt = program.command("receipt").description("Inspect bounded local BrowserReceipt metadata");
+
+receipt
+  .command("list")
+  .option("-w, --workspace <path>")
+  .option("--json", "machine-readable output", false)
+  .action((opts: { workspace?: string; json: boolean }) => {
+    const workspace = new Workspace(resolveWorkspace(opts.workspace));
+    const items = listBrowserReceipts(workspace.id).map(({ responseText, ...item }) => ({
+      ...item,
+      responseTextPresent: Boolean(responseText),
+    }));
+    if (opts.json) say(JSON.stringify({ ok: true, workspaceId: workspace.id, receipts: items }));
+    else say(items.length ? items.map((item) => `${item.taskId} #${item.round} ${item.controlId} · ${item.validationStatus}`).join("\n") : "没有 BrowserReceipt。");
+  });
+
+receipt
+  .command("validate")
+  .requiredOption("--task <id>")
+  .requiredOption("--round <n>")
+  .requiredOption("--control-id <id>")
+  .requiredOption("--chat-url <url>")
+  .option("-w, --workspace <path>")
+  .option("--json", "machine-readable output", false)
+  .action((opts: { task: string; round: string; controlId: string; chatUrl: string; workspace?: string; json: boolean }) => {
+    const workspace = new Workspace(resolveWorkspace(opts.workspace));
+    const expected = {
+      workspaceId: workspace.id,
+      taskId: opts.task,
+      round: parseNonNegativeInteger(opts.round),
+      controlId: opts.controlId,
+      chatUrl: opts.chatUrl,
+    };
+    const found = getBrowserReceipt(expected);
+    if (!found) throw new Error("BROWSER_RECEIPT_NOT_FOUND_OR_INVALID");
+    const { responseText, ...safe } = found;
+    if (opts.json) say(JSON.stringify({ ok: true, receipt: { ...safe, responseTextPresent: Boolean(responseText) } }));
+    else check(`BrowserReceipt matched ${found.controlId}`);
+  });
+
+program
+  .command("control-resume")
+  .description("Resume one saved local-cdp control using a private message file")
+  .option("-w, --workspace <path>")
+  .option("--message-file <path>", "absolute path to the exact control message")
+  .option("--json", "machine-readable output", false)
+  .action(async (opts: { workspace?: string; messageFile?: string; json: boolean }) => {
+    const workspace = new Workspace(resolveWorkspace(opts.workspace));
+    let message: string | undefined;
+    if (opts.messageFile) {
+      if (!path.isAbsolute(opts.messageFile)) throw new Error("MESSAGE_FILE_PATH_MUST_BE_ABSOLUTE");
+      const stat = fs.statSync(opts.messageFile);
+      if (!stat.isFile() || stat.size > 64 * 1024) throw new Error("CONTROL_MESSAGE_FILE_INVALID");
+      message = fs.readFileSync(opts.messageFile, "utf8");
+    }
+    const result = await resumeLocalControl(workspace.id, message);
+    if (opts.json) say(JSON.stringify({ ok: true, workspaceId: workspace.id, result }));
+    else say(JSON.stringify(result));
   });
 
 const prefsCmd = program

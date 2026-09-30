@@ -3,6 +3,8 @@ import type { SharedRuntimeConfig } from "../config/shared-runtime.js";
 
 export interface CdpLocator {
   count(): Promise<number>;
+  isVisible(): Promise<boolean>;
+  isEnabled(): Promise<boolean>;
   first(): CdpLocator;
   nth(index: number): CdpLocator;
   innerText(options?: { timeout?: number }): Promise<string>;
@@ -18,6 +20,7 @@ export interface CdpUiPage {
   goto(url: string, options?: { waitUntil?: "domcontentloaded" | "load"; timeout?: number }): Promise<unknown>;
   locator(selector: string): CdpLocator;
   getByRole(role: string, options?: { name?: string | RegExp }): CdpLocator;
+  getByText(text: string, options?: { exact?: boolean }): CdpLocator;
   waitForTimeout(milliseconds: number): Promise<void>;
 }
 
@@ -30,6 +33,7 @@ export interface CdpTarget {
 
 export interface CdpConnection {
   listTargets(): Promise<CdpTarget[]>;
+  openChat?(canonicalChatUrl: string): Promise<CdpTarget>;
   disconnect(): Promise<void>;
 }
 
@@ -137,6 +141,15 @@ function playwrightConnection(browser: Browser): CdpConnection {
       }
       return targets;
     },
+    async openChat(canonicalChatUrl) {
+      const url = canonicalChatTargetUrl(canonicalChatUrl);
+      if (!url) throw cdpError("CHATGPT_CHAT_URL_INVALID");
+      const context = browser.contexts()[0];
+      if (!context) throw cdpError("CDP_CONTEXT_NOT_FOUND");
+      const page = await context.newPage();
+      await page.goto(url, { waitUntil: "domcontentloaded", timeout: CDP_TIMEOUT_MS });
+      return { type: "page", url: page.url().slice(0, 2048), title: (await page.title().catch(() => "")).slice(0, 256), page: page as unknown as CdpUiPage };
+    },
     async disconnect() {
       // Playwright's connected Browser.close() disconnects the CDP client; it does not launch or own Edge.
       await browser.close();
@@ -237,11 +250,36 @@ export class LocalCdpAdapter {
   listVisibleTargets(): Array<{ type: string; url: string; title: string }> {
     return this.targets
       .filter((target) => target.type === "page")
-      .map((target) => ({ type: "page", url: target.url, title: (target.title ?? "").slice(0, 256) }));
+      .map((target) => {
+        let origin = "unknown:";
+        try {
+          origin = new URL(target.url).origin;
+        } catch {
+          // Do not expose an unparseable target URL to callers.
+        }
+        return { type: "page", url: origin.slice(0, 256), title: (target.title ?? "").slice(0, 256) };
+      });
   }
 
   selectChatPage(requestedChatUrl?: string): SelectedChatTarget {
     return selectChatGPTTarget(this.targets, requestedChatUrl);
+  }
+
+  async openOrSelectChatPage(requestedChatUrl: string): Promise<SelectedChatTarget> {
+    const expected = canonicalChatTargetUrl(requestedChatUrl);
+    if (!expected) throw cdpError("CHATGPT_CHAT_URL_INVALID");
+    const exact = this.targets.filter((target) =>
+      target.type === "page" && target.page && canonicalChatTargetUrl(target.url) === expected
+    );
+    if (exact.length === 1) return selectChatGPTTarget(exact, expected);
+    if (exact.length > 1) throw cdpError("AMBIGUOUS_CHATGPT_TARGET");
+    if (!this.connection.openChat) throw cdpError("CHATGPT_TARGET_NOT_FOUND");
+    const opened = await this.connection.openChat(expected);
+    if (opened.type !== "page" || !opened.page || canonicalChatTargetUrl(opened.url) !== expected) {
+      throw cdpError("CHATGPT_TARGET_NOT_FOUND");
+    }
+    this.targets.push(opened);
+    return selectChatGPTTarget([opened], expected);
   }
 
   async disconnect(): Promise<void> {

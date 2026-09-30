@@ -19,6 +19,8 @@ const CHAT_B = "https://chatgpt.com/c/223e4567-e89b-12d3-a456-426614174000";
 function page(url: string, title = "Reviewer"): CdpUiPage {
   const locator = {
     count: async () => 0,
+    isVisible: async () => false,
+    isEnabled: async () => false,
     first() { return this; },
     nth() { return this; },
     innerText: async () => "",
@@ -32,6 +34,7 @@ function page(url: string, title = "Reviewer"): CdpUiPage {
     goto: async (target) => target,
     locator: () => locator,
     getByRole: () => locator,
+    getByText: () => locator,
     waitForTimeout: async () => {},
   };
 }
@@ -153,6 +156,46 @@ describe("LocalCdpAdapter", () => {
     expect(selected.url).toBe(CHAT_A);
   });
 
+  it("opens only a canonical saved ChatGPT conversation when no exact target exists", async () => {
+    let openedUrl = "";
+    const adapter = await LocalCdpAdapter.attach(
+      { cdpEndpoint: "http://127.0.0.1:9222" },
+      {
+        ...dependencies([target("https://example.com")]),
+        connect: async () => ({
+          listTargets: async () => [target("https://example.com")],
+          openChat: async (url) => {
+            openedUrl = url;
+            return target(url, { page: page(url) });
+          },
+          disconnect: async () => {},
+        }),
+      }
+    );
+    expect((await adapter.openOrSelectChatPage(`${CHAT_A}?model=latest`)).url).toBe(CHAT_A);
+    expect(openedUrl).toBe(CHAT_A);
+    await expect(adapter.openOrSelectChatPage("https://example.com/c/not-chatgpt")).rejects.toThrow(
+      "CHATGPT_CHAT_URL_INVALID"
+    );
+    await adapter.disconnect();
+  });
+
+  it("rejects an opened page whose final visible URL differs from the saved chat", async () => {
+    const adapter = await LocalCdpAdapter.attach(
+      { cdpEndpoint: "http://127.0.0.1:9222" },
+      {
+        ...dependencies([]),
+        connect: async () => ({
+          listTargets: async () => [],
+          openChat: async () => target(CHAT_B),
+          disconnect: async () => {},
+        }),
+      }
+    );
+    await expect(adapter.openOrSelectChatPage(CHAT_A)).rejects.toThrow("CHATGPT_TARGET_NOT_FOUND");
+    await adapter.disconnect();
+  });
+
   it("does not create receipt or session state and exposes no auth/network collection surface", async () => {
     const dir = makeTmpDir("cdp-adapter-read-only");
     dirs.push(dir);
@@ -173,7 +216,7 @@ describe("LocalCdpAdapter", () => {
     });
     expect(adapter.selectChatPage(CHAT_A).url).toBe(CHAT_A);
     expect(Object.keys(adapter.selectChatPage(CHAT_A).page).sort()).toEqual([
-      "getByRole", "goto", "locator", "title", "url", "waitForTimeout",
+      "getByRole", "getByText", "goto", "locator", "title", "url", "waitForTimeout",
     ]);
     expect(fetched).toBe("http://127.0.0.1:9222");
     expect(connected).toBe("ws://127.0.0.1:9222/devtools/browser/test");
