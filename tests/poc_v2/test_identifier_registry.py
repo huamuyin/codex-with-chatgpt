@@ -3,7 +3,7 @@ import unittest
 from poc_v2.identifier_registry import IdentifierRegistry
 
 
-class IdentifierRegistryRoundOneTests(unittest.TestCase):
+class IdentifierRegistryTests(unittest.TestCase):
     def test_trims_outer_whitespace_and_preserves_display_case(self) -> None:
         registry = IdentifierRegistry()
 
@@ -42,6 +42,37 @@ class IdentifierRegistryRoundOneTests(unittest.TestCase):
             ],
         )
         self.assertEqual(registry.records(), registry.records())
+
+    def test_repeated_exact_value_is_idempotent(self) -> None:
+        registry = IdentifierRegistry()
+
+        registry.register("Alice")
+        first_records = registry.records()
+        registry.register("Alice")
+
+        self.assertEqual(registry.records(), first_records)
+
+    def test_case_variants_share_identity_and_choose_smallest_display(self) -> None:
+        registry = IdentifierRegistry()
+
+        registry.register("Alice")
+        registry.register("ALICE")
+
+        self.assertEqual(
+            registry.records(),
+            [{"canonical": "alice", "display": "ALICE"}],
+        )
+
+    def test_collision_result_is_independent_of_insertion_order(self) -> None:
+        alice_then_upper = IdentifierRegistry()
+        alice_then_upper.register("Alice")
+        alice_then_upper.register("ALICE")
+
+        upper_then_alice = IdentifierRegistry()
+        upper_then_alice.register("ALICE")
+        upper_then_alice.register("Alice")
+
+        self.assertEqual(alice_then_upper.records(), upper_then_alice.records())
 
 
 if __name__ == "__main__":

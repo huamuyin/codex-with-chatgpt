@@ -12,7 +12,12 @@ class IdentifierRegistry:
     def register(self, value: str) -> None:
         display_value = value.strip()
         canonical_identity = display_value.casefold()
-        self._display_by_identity[canonical_identity] = display_value
+        existing_display_value = self._display_by_identity.get(canonical_identity)
+        self._display_by_identity[canonical_identity] = (
+            display_value
+            if existing_display_value is None
+            else min(existing_display_value, display_value)
+        )
 
     def records(self) -> list[dict[str, str]]:
         """Return records in canonical-identity order."""
