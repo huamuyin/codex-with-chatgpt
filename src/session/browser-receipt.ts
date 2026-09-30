@@ -6,8 +6,8 @@ import { getStateDir, writeSecureJson } from "../config/paths.js";
 export const MAX_BROWSER_RECEIPTS_PER_WORKSPACE = 100;
 export const MAX_BROWSER_RECEIPT_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 export const MAX_BROWSER_RECEIPT_FUTURE_SKEW_MS = 5 * 60 * 1000;
-export const MAX_BROWSER_RESPONSE_TEXT_LENGTH = 16_384;
-const MAX_RECEIPT_STORE_BYTES = MAX_BROWSER_RECEIPTS_PER_WORKSPACE * (MAX_BROWSER_RESPONSE_TEXT_LENGTH + 2048);
+export const MAX_BROWSER_RESPONSE_TEXT_BYTES = 16_384;
+const MAX_RECEIPT_STORE_BYTES = MAX_BROWSER_RECEIPTS_PER_WORKSPACE * (MAX_BROWSER_RESPONSE_TEXT_BYTES * 6 + 4096);
 
 export interface BrowserReceipt {
   schemaVersion: 1;
@@ -60,8 +60,14 @@ const RECEIPT_FIELDS = new Set([
 ]);
 
 function receiptStoreFile(workspaceId: string): string {
-  validateToken(workspaceId, "workspace", 160);
+  validateWorkspaceId(workspaceId);
   return path.join(getStateDir(), "receipts", `${workspaceId}.json`);
+}
+
+function validateWorkspaceId(value: unknown): asserts value is string {
+  if (typeof value !== "string" || !/^[A-Za-z0-9_-]{1,160}$/.test(value)) {
+    throw new Error("RECEIPT_WORKSPACE_INVALID");
+  }
 }
 
 function validateToken(value: unknown, label: string, maxLength: number): asserts value is string {
@@ -119,7 +125,8 @@ function normalizeReceipt(
   if (Object.keys(raw).some((key) => !RECEIPT_FIELDS.has(key))) throw new Error("RECEIPT_FIELD_NOT_ALLOWED");
   if (raw.schemaVersion !== 1) throw new Error("RECEIPT_SCHEMA_INVALID");
 
-  validateToken(raw.workspaceId, "workspace", 160);
+  validateWorkspaceId(raw.workspaceId);
+  validateWorkspaceId(expected.workspaceId);
   if (raw.workspaceId !== expected.workspaceId) throw new Error("RECEIPT_WORKSPACE_MISMATCH");
   validateToken(raw.taskId, "task", 160);
   if (raw.taskId !== expected.taskId) throw new Error("RECEIPT_TASK_MISMATCH");
@@ -153,7 +160,10 @@ function normalizeReceipt(
     }
   }
   if (raw.responseText !== undefined && typeof raw.responseText !== "string") throw new Error("RECEIPT_RESPONSE_TEXT_INVALID");
-  if (typeof raw.responseText === "string" && raw.responseText.length > MAX_BROWSER_RESPONSE_TEXT_LENGTH) {
+  if (
+    typeof raw.responseText === "string" &&
+    Buffer.byteLength(raw.responseText, "utf8") > MAX_BROWSER_RESPONSE_TEXT_BYTES
+  ) {
     throw new Error("RECEIPT_RESPONSE_TEXT_TOO_LONG");
   }
   if (
@@ -259,10 +269,13 @@ export function storeBrowserReceipt(receipt: BrowserReceipt, now = Date.now()): 
   retained.push(normalized);
   retained.sort((a, b) => Date.parse(a.requestTimestamp) - Date.parse(b.requestTimestamp) || logicalKey(a).localeCompare(logicalKey(b)));
   const bounded = retained.slice(-MAX_BROWSER_RECEIPTS_PER_WORKSPACE);
-  writeSecureJson(receiptStoreFile(normalized.workspaceId), {
+  const nextStore: ReceiptStore = {
     schemaVersion: 1,
     workspaceId: normalized.workspaceId,
     receipts: bounded,
-  } satisfies ReceiptStore);
+  };
+  const serialized = JSON.stringify(nextStore, null, 2);
+  if (Buffer.byteLength(serialized, "utf8") > MAX_RECEIPT_STORE_BYTES) throw new Error("RECEIPT_STORE_TOO_LARGE");
+  writeSecureJson(receiptStoreFile(normalized.workspaceId), nextStore);
   return normalized;
 }

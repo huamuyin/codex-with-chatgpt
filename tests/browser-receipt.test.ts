@@ -73,6 +73,7 @@ describe("BrowserReceipt", () => {
     [{ validationStatus: "unverified" }, "RECEIPT_VALIDATION_INVALID"],
     [{ responsePayloadHash: "0".repeat(64) }, "RECEIPT_RESPONSE_HASH_MISMATCH"],
     [{ responseText: "x".repeat(17_000) }, "RECEIPT_RESPONSE_TEXT_TOO_LONG"],
+    [{ responseText: "😀".repeat(5_000) }, "RECEIPT_RESPONSE_TEXT_TOO_LONG"],
     [{ cookie: "must-not-be-accepted" } as Partial<BrowserReceipt>, "RECEIPT_FIELD_NOT_ALLOWED"],
   ] as Array<[Partial<BrowserReceipt>, string]>)("rejects invalid receipt fields (%s)", (overrides, code) => {
     expect(() => validateBrowserReceipt(receipt(overrides), EXPECTED, NOW)).toThrow(code);
@@ -135,6 +136,49 @@ describe("BrowserReceipt", () => {
     fs.mkdirSync(receiptDir, { recursive: true });
     fs.writeFileSync(path.join(receiptDir, "workspace-a.json"), "{not-json");
     expect(() => listBrowserReceipts("workspace-a", NOW)).toThrow("RECEIPT_STORE_INVALID");
+  });
+
+  it.each(["../other", "../shared-runtime", "../../shared-runtime", "a/b", "a\\b", "C:\\temp\\receipt", "\\\\server\\share"])(
+    "rejects unsafe workspace id %s without touching sibling machine state",
+    (workspaceId) => {
+      const dir = makeTmpDir("browser-receipt-path-guard");
+      dirs.push(dir);
+      process.env.C2C_STATE_DIR = dir;
+      const sibling = path.join(getStateDir(), "shared-runtime.json");
+      fs.writeFileSync(sibling, "sentinel");
+      expect(() =>
+        storeBrowserReceipt(receipt({ workspaceId, taskId: "path-test" }), NOW)
+      ).toThrow("RECEIPT_WORKSPACE_INVALID");
+      expect(fs.readFileSync(sibling, "utf8")).toBe("sentinel");
+      expect(fs.existsSync(path.join(getStateDir(), "receipts", "..", "other.json"))).toBe(false);
+    }
+  );
+
+  it("keeps multibyte and JSON-escaped bounded text readable after persistence", () => {
+    const dir = makeTmpDir("browser-receipt-unicode");
+    dirs.push(dir);
+    process.env.C2C_STATE_DIR = dir;
+    const multibyteText = "é".repeat(6_000);
+    const unicodeReceipt = receipt({
+      responseText: multibyteText,
+      responsePayloadHash: hash(multibyteText),
+    });
+    storeBrowserReceipt(unicodeReceipt, NOW);
+    expect(getBrowserReceipt(EXPECTED, NOW)?.responseText).toBe(multibyteText);
+
+    const escapedText = "\u0000".repeat(2_000);
+    const escapedExpected = { ...EXPECTED, round: 3, controlId: "CTRL-ESCAPED" };
+    storeBrowserReceipt(
+      receipt({
+        ...escapedExpected,
+        responseControlId: escapedExpected.controlId,
+        responseText: escapedText,
+        responsePayloadHash: hash(escapedText),
+      }),
+      NOW
+    );
+    expect(listBrowserReceipts(EXPECTED.workspaceId, NOW)).toHaveLength(2);
+    expect(getBrowserReceipt(escapedExpected, NOW)?.responseText).toBe(escapedText);
   });
 
   it("enforces per-workspace retention and cannot prune another workspace", () => {
