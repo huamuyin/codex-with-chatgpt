@@ -40,6 +40,7 @@ export interface TaskCheckpoint {
   nextExpectedStep?: string;
   chatUrl?: string;
   projectUrl?: string;
+  controlId?: string;
   updatedAt: string;
 }
 
@@ -246,6 +247,7 @@ export function mergeSession(previous: SavedSession | null, patch: SessionPatch)
       ),
       chatUrl: patch.checkpoint.chatUrl ?? previous?.checkpoint?.chatUrl ?? url,
       projectUrl: patch.checkpoint.projectUrl ?? previous?.checkpoint?.projectUrl ?? projectUrl,
+      controlId: patch.checkpoint.controlId ?? previous?.checkpoint?.controlId,
       updatedAt: new Date().toISOString(),
     };
   }

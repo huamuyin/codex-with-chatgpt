@@ -33,6 +33,7 @@ import {
   type ReviewerBrowser,
 } from "../config/shared-runtime.js";
 import { getWorkspaceTransport, setWorkspaceTransport, type WorkspaceTransportMode } from "../session/transport.js";
+import { advanceExecutedSent, markExecutedLocal } from "../session/protocol.js";
 import { ensureSandboxAllowlist, getCodexConfigPath, isStateDirAllowlisted } from "../config/sandbox-allow.js";
 import { mergeUiPrefs, readUiPrefs, SETUP_MODES, type SetupMode } from "../config/ui-prefs.js";
 import {
@@ -923,6 +924,7 @@ session
   .option("--project-url <url>", "ChatGPT Project collection URL (…/g/g-p-…/project)")
   .option("--connector-name <name>", "exact connector title for this workspace")
   .option("--protocol-state <state>", "checkpoint protocol state, e.g. EXECUTED_SENT")
+  .option("--control-id <id>", "expected protocol control identity for a local-CDP checkpoint")
   .option("--waiting-for <who>", "none | GPT_PLAN | GPT_REVIEW | USER")
   .option("--goal <text>", "original task goal for resume / HANDOFF")
   .option("--completed-subtasks <text>")
@@ -941,6 +943,7 @@ session
       projectUrl?: string;
       connectorName?: string;
       protocolState?: string;
+      controlId?: string;
       waitingFor?: string;
       goal?: string;
       completedSubtasks?: string;
@@ -966,7 +969,8 @@ session
       if (waitingNorm && !WAITING_FOR.includes(waitingNorm as WaitingFor)) {
         throw new Error(`waiting-for must be one of ${WAITING_FOR.join(", ")}`);
       }
-      const saved = mergeSession(readSession(workspace.id), {
+      const previous = readSession(workspace.id);
+      const patch = {
         url: opts.url,
         title: opts.title,
         taskId: opts.task,
@@ -980,13 +984,64 @@ session
           ? {
               protocolState: protocolRaw as ProtocolState,
               waitingFor: (waitingNorm as WaitingFor | undefined) ?? undefined,
+              controlId: opts.controlId,
               originalGoal: opts.goal,
               completedSubtasks: opts.completedSubtasks,
               knownIssues: opts.knownIssues,
               nextExpectedStep: opts.nextStep,
             }
           : undefined,
-      });
+      };
+      const transportMode = getWorkspaceTransport(workspace.id).mode;
+      let saved;
+      if (protocolRaw === "EXECUTED_SENT" && transportMode === "local-cdp") {
+        if (!previous) throw new Error("PROTOCOL_CHECKPOINT_REQUIRED");
+        if (
+          (opts.url && opts.url !== previous.url) ||
+          (modeRaw && modeRaw !== previous.conversationMode) ||
+          (opts.projectUrl && opts.projectUrl !== previous.projectUrl) ||
+          (opts.task && opts.task !== previous.checkpoint?.taskId) ||
+          (opts.iteration && parseInt(opts.iteration, 10) !== previous.checkpoint?.iteration) ||
+          (opts.controlId && opts.controlId !== previous.checkpoint?.controlId)
+        ) {
+          throw new Error("LOCAL_CDP_SENT_TRANSITION_CANNOT_CHANGE_IDENTITY");
+        }
+        saved = advanceExecutedSent(previous, workspace.id, { kind: "browser-receipt" });
+        saved = mergeSession(saved, {
+          title: opts.title,
+          lastState: opts.state,
+          connectorName: opts.connectorName,
+        });
+      } else {
+        if (
+          protocolRaw === "EXECUTED_SENT" &&
+          transportMode === "legacy" &&
+          previous?.checkpoint?.protocolState === "EXECUTED_LOCAL"
+        ) {
+          saved = advanceExecutedSent(previous, workspace.id, { kind: "legacy-ack", acknowledged: true });
+          saved = mergeSession(saved, {
+            title: opts.title,
+            lastState: opts.state,
+            connectorName: opts.connectorName,
+          });
+        } else {
+          const candidate = mergeSession(previous, patch);
+          saved = protocolRaw === "EXECUTED_LOCAL" && transportMode === "local-cdp"
+            ? markExecutedLocal(candidate, {
+              taskId: candidate.checkpoint?.taskId ?? "",
+              iteration: candidate.checkpoint?.iteration ?? 0,
+              chatUrl: candidate.checkpoint?.chatUrl ?? candidate.url ?? "",
+              controlId: candidate.checkpoint?.controlId ?? "",
+              waitingFor: candidate.checkpoint?.waitingFor ?? "none",
+              originalGoal: candidate.checkpoint?.originalGoal,
+              completedSubtasks: candidate.checkpoint?.completedSubtasks,
+              knownIssues: candidate.checkpoint?.knownIssues,
+              nextExpectedStep: candidate.checkpoint?.nextExpectedStep,
+              projectUrl: candidate.checkpoint?.projectUrl,
+            })
+            : candidate;
+        }
+      }
       writeSession(workspace.id, saved);
       if (saved.projectUrl && saved.conversationMode === "project") {
         check("已记录 ChatGPT 合集，后续从合集页新开或复用对话");
