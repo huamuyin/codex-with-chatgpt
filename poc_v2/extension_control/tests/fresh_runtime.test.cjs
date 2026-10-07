@@ -362,9 +362,12 @@ test("draft inspection is read only and returns no raw draft while proving exact
   assert.equal(answer.inspected, true); assert.equal(answer.draft_summary.owned_attempt_id, R.attempt_id);
   assert.equal(answer.draft_summary.length, R.message.length); assert.equal(JSON.stringify(answer).includes(R.message), false);
   assert.equal(composer.value, R.message); assert.equal(c.clicks(), 0);
+  composer.value = R.message.replace("\n", " ");
+  const wrapped = c.message({ type: "C2C_FRESH_INSPECT_DRAFT", request: R, candidates: [R] });
+  assert.equal(wrapped.draft_summary.owned_attempt_id, null); assert.equal(wrapped.draft_summary.normalized_owned_attempt_id, R.attempt_id);
   composer.value = "unknown private draft";
   const unknown = c.message({ type: "C2C_FRESH_INSPECT_DRAFT", request: R, candidates: [R] });
-  assert.equal(unknown.draft_summary.owned_attempt_id, null); assert.equal(composer.value, "unknown private draft");
+  assert.equal(unknown.draft_summary.owned_attempt_id, null); assert.equal(unknown.draft_summary.normalized_owned_attempt_id, null); assert.equal(composer.value, "unknown private draft");
 });
 
 test("loading target is distinct from ambiguity and diagnostics never select pending URLs", async () => {

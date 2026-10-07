@@ -340,12 +340,15 @@
         if (!Contract.validRequest(r) || r.target_tab_id !== boundContentTabId || r.conversation_url !== location.href
             || !Contract.componentMatches(componentIdentity())) throw Error("draft_binding_unconfirmed");
         const found = firstVisible(COMPOSER_RULES), draft = found ? readText(found.element) : "";
-        const candidates = (Array.isArray(m.candidates) ? m.candidates.slice(-10) : []).filter((a) => Contract.validRequest(a)
+        const known = (Array.isArray(m.candidates) ? m.candidates.slice(-10) : []).filter((a) => Contract.validRequest(a)
           && a.request_id === r.request_id && a.control_id === r.control_id && a.target_tab_id === r.target_tab_id
-          && a.conversation_url === r.conversation_url && draft === a.message);
+          && a.conversation_url === r.conversation_url);
+        const candidates = known.filter((a) => draft === a.message);
+        const normalized = known.filter((a) => Locator.normalizeText(draft) === Locator.normalizeText(a.message));
         respond({ inspected: true, draft_summary: { composer_present: Boolean(found), composer_tag: found?.element.tagName || "",
           contenteditable: found?.element.isContentEditable === true, length: draft.length, empty: !draft.trim(),
-          format_only: /^[\p{White_Space}\p{Cf}]*$/u.test(draft), owned_attempt_id: candidates.length === 1 ? candidates[0].attempt_id : null } });
+          format_only: /^[\p{White_Space}\p{Cf}]*$/u.test(draft), owned_attempt_id: candidates.length === 1 ? candidates[0].attempt_id : null,
+          normalized_owned_attempt_id: normalized.length === 1 ? normalized[0].attempt_id : null } });
       } catch (e) { respond({ inspected: false, error_code: e.message }); }
       return false;
     }

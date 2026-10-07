@@ -247,12 +247,13 @@ class FreshState:
                 if type(generation) is int and generation > 0: result["content_generation"] = generation
                 if pending["message"]["action"] == "inspect_draft" and isinstance(m.get("draft_summary"), dict):
                     d = m["draft_summary"]
-                    if (set(d) == {"composer_present", "composer_tag", "contenteditable", "length", "empty", "format_only", "owned_attempt_id"}
+                    if (set(d) == {"composer_present", "composer_tag", "contenteditable", "length", "empty", "format_only", "owned_attempt_id", "normalized_owned_attempt_id"}
                         and type(d["length"]) is int and 0 <= d["length"] <= 200000
                         and all(type(d[k]) is bool for k in ("composer_present", "contenteditable", "empty", "format_only"))
                         and d["composer_tag"] in ("TEXTAREA", "INPUT", "DIV", "P", "")
-                        and (d["owned_attempt_id"] is None or type(d["owned_attempt_id"]) is int
-                             and 1 <= d["owned_attempt_id"] <= len(self.requests.lookup(pending["message"]["request"]["request_id"])["attempts"]))):
+                        and all(d[k] is None or type(d[k]) is int
+                             and 1 <= d[k] <= len(self.requests.lookup(pending["message"]["request"]["request_id"])["attempts"])
+                             for k in ("owned_attempt_id", "normalized_owned_attempt_id"))):
                         result["draft_summary"] = copy.deepcopy(d)
                 if pending["message"]["action"] == "probe_reply_rejection":
                     if m.get("field") == pending["message"]["field"]: result["field"] = m["field"]
