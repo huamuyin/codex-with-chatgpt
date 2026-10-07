@@ -1,0 +1,99 @@
+{
+  "STATE": "REVIEW_RESULT",
+  "ROUND": 5,
+  "REQUEST_ID": "5be32ac2-84cf-413e-9c0f-5049e3e25d36",
+  "CONTROL_ID": "6f8abda3-3fe6-4e75-9df7-d377e165d770",
+  "ATTEMPT_ID": 1,
+  "REVIEWED_COMMIT": "d709310578023d811005512ca890c92f9f9ea82b",
+  "VERDICT": "CHANGES_REQUIRED",
+  "FINDINGS": [
+    {
+      "severity": "MAJOR",
+      "path": "poc_v2/extension_control/chrome_extension/fresh_background.js",
+      "finding": "Concurrent status() samples can publish out of order. status() captures a local ready selection, then awaits bound-tab reads and another content ping before unconditionally sending fresh_status. A newer status sample can complete first with loading/unavailable state, after which the older sample can resume and publish its stale ready diagnostic. There is no status epoch/latest-started guard. selectTarget() also mutates shared target/targetDiagnostic from every concurrent call. fresh_bridge consumes each arriving fresh_status by directly replacing self.status, so an older readiness sample can overwrite newer controller readiness."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The existing concurrent test does not close this defect: it runs one status() while a separate selectTarget() query mutates shared diagnostics and verifies that the first status uses its local diagnostic. It does not run two concurrent status() calls or prove that an older completion cannot be emitted after a newer sample."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Content retirement itself is fail-closed in the reviewed source: reinjection disposes the prior instance and removes its listener, pause() checks active state before and after waits, disposal wakes waiters, successful result publication calls ensureCurrent(), and error publication is gated by active."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Unfinished-reply handling is also bounded: streaming/incomplete assistants are not accepted, stable completion requires repeated equal text samples separated by at least 500 ms, and PING wakeups cannot themselves advance stableSamples faster than that spacing gate."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The preceding Round4 correction is correctly bounded. GitHub compare from dde4b200d2b2d23e4a6885f55aa6447cb8edd46c to 5d93be365140d8682515f8d21e7215a28c741882 is one commit changing Fresh delivery replay semantics, protocol documentation, focused delivery tests and action evidence; the late-failure completed-attempt defect is corrected and reported regression totals are 120 Python and 171 Node passes."
+    }
+  ],
+  "REVIEW_SUMMARY": "The exact incoming authority d709310578023d811005512ca890c92f9f9ea82b was independently reviewed without substituting branch HEAD; PR #1 head matched the incoming commit at review start. review_request.json binds implementation and previous action to 5d93be365140d8682515f8d21e7215a28c741882. All three required turn-005 evidence files and all three required source/test files were independently read at those immutable refs, and their Git blobs match source_hashes.json. The implementation-to-evidence delta is one evidence-only commit. The preceding Round4 CHANGES_REQUIRED action is substantively satisfied. Content retirement and unfinished-reply completion are well guarded, but concurrent readiness publication has a real stale-sample race: two status() executions can finish in reverse order and an older ready sample can overwrite a newer unavailable/loading sample at the bridge. Because readiness is control authority, this requires a bounded correction before stability turn 5 can pass.",
+  "GITHUB_RESOURCES_READ": [
+    {
+      "path": ".c2c-v2/stability-r1/turn-005/review_request.json",
+      "ref_commit": "d709310578023d811005512ca890c92f9f9ea82b",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/d709310578023d811005512ca890c92f9f9ea82b/.c2c-v2/stability-r1/turn-005/review_request.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"focus\": \"Content retirement, concurrent readiness samples and unfinished replies\""
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-005/test_summary.json",
+      "ref_commit": "d709310578023d811005512ca890c92f9f9ea82b",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/d709310578023d811005512ca890c92f9f9ea82b/.c2c-v2/stability-r1/turn-005/test_summary.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"python_passed\": 120, \"node_passed\": 171"
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-005/source_hashes.json",
+      "ref_commit": "d709310578023d811005512ca890c92f9f9ea82b",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/d709310578023d811005512ca890c92f9f9ea82b/.c2c-v2/stability-r1/turn-005/source_hashes.json",
+      "read_method": "GitHub fetch_file plus blob verification",
+      "source_excerpt": "\"implementation_commit\": \"5d93be365140d8682515f8d21e7215a28c741882\""
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-005/previous_action.json",
+      "ref_commit": "d709310578023d811005512ca890c92f9f9ea82b",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/d709310578023d811005512ca890c92f9f9ea82b/.c2c-v2/stability-r1/turn-005/previous_action.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"codex_action\": \"Preserved completed attempt projections and canonical result under late failure or uncertainty events\""
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_content.js",
+      "ref_commit": "5d93be365140d8682515f8d21e7215a28c741882",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5d93be365140d8682515f8d21e7215a28c741882/poc_v2/extension_control/chrome_extension/fresh_content.js",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "dispose() { active = false; wake(); }"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_background.js",
+      "ref_commit": "5d93be365140d8682515f8d21e7215a28c741882",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5d93be365140d8682515f8d21e7215a28c741882/poc_v2/extension_control/chrome_extension/fresh_background.js",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "send({ type: \"fresh_status\", connected: Boolean(tab && bridgeMatches(bridge))"
+    },
+    {
+      "path": "poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+      "ref_commit": "5d93be365140d8682515f8d21e7215a28c741882",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5d93be365140d8682515f8d21e7215a28c741882/poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "test(\"concurrent target queries cannot mix a healthy status with another query's missing identity\""
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_bridge.py",
+      "ref_commit": "5d93be365140d8682515f8d21e7215a28c741882",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5d93be365140d8682515f8d21e7215a28c741882/poc_v2/extension_control/bridge/fresh_bridge.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "if m.get(\"type\") == \"fresh_status\": self.status = copy.deepcopy(m); return"
+    },
+    {
+      "path": "commit 5d93be365140d8682515f8d21e7215a28c741882",
+      "ref_commit": "5d93be365140d8682515f8d21e7215a28c741882",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/commit/5d93be365140d8682515f8d21e7215a28c741882",
+      "read_method": "GitHub fetch_commit and immutable compare",
+      "source_excerpt": "poc: execute reviewer-directed stability turn 04 action"
+    }
+  ],
+  "NEXT_CODEX_INSTRUCTION": "Patch only Fresh readiness sampling, focused runtime tests/docs if needed, and turn-006 evidence: make concurrent fresh_background status() publication latest-started-wins so an older async sample can never emit or commit stale target/targetDiagnostic state after a newer sample has begun. Keep target selection data local during awaits and commit shared readiness only for the current sample; use the local reload_content selection/generation proof rather than a concurrently mutable diagnostic. Add deterministic tests with two overlapping status() calls: (1) hold an older ready sample, let a newer unavailable/loading sample publish, then release the older sample and prove no trailing ready fresh_status or shared-ready state appears; (2) hold an older unavailable sample, let a newer ready sample publish, then release the older sample and prove ready remains authoritative. Assert no review dispatch, storage/attempt mutation or extra authority creation. Preserve content retirement and four-sample unfinished-reply rules. Run full Python/Node/syntax/manifest/diff gates and publish immutable turn-006 evidence only; do not change version/protocol/build, legacy behavior or unrelated runtime paths."
+}

@@ -6,6 +6,7 @@ const BASE = `http://${I.host}:${I.port}`, WS = `ws://${I.host}:${I.port}/ws`;
 const CACHE_KEY = "c2c.fresh.v3.attemptMirror";
 let socket = null, bridge = null, connecting = false, mirrorReady = false, target = null;
 let reconnectTimer = null, heartbeat = null;
+let statusEpoch = 0;
 let targetDiagnostic = { readiness_code: "not_checked", candidate_count: 0, tab_id: null, url: "", content_version: "", content_generation: null };
 const LEGACY_SMOKE_URL = "https://chatgpt.com/c/6abcb6a6-a1b8-83e8-bc72-f85af94bb2f0";
 const attempts = new Map(), running = new Set();
@@ -50,7 +51,7 @@ async function selectTarget(preferredUrl = null, snapshot = false) {
   diagnostic.observed_targets = tabs.slice(0, 16).map((t) => ({ tab_id: t.id,
     url: C.isChatUrl(t.url) ? t.url : "", status: t.status === "complete" ? "complete" : "loading",
     pending_url: C.isChatUrl(t.pendingUrl) ? t.pendingUrl : "" }));
-  const finish = (tab) => { targetDiagnostic = diagnostic; target = tab; return snapshot ? { tab, diagnostic } : tab; };
+  const finish = (tab) => snapshot ? { tab, diagnostic } : tab;
   if (matches.length === 1 && matches[0].status !== "complete") diagnostic.readiness_code = "target_loading";
   if (matches.length !== 1 || matches[0].status !== "complete") return finish(null);
   const tab = matches[0];
@@ -64,6 +65,7 @@ async function selectTarget(preferredUrl = null, snapshot = false) {
   diagnostic.readiness_code = "ready"; return finish(tab);
 }
 async function status() {
+  const epoch = ++statusEpoch;
   const urls = new Set([...attempts.values()].map((r) => r.conversation_url).filter(C.isConversationUrl));
   const selection = mirrorReady && urls.size <= 1 ? await selectTarget([...urls][0] || null, true)
     : { tab: null, diagnostic: { readiness_code: "checkpoint_target_conflict", candidate_count: 0, tab_id: null, url: "", content_version: "", content_generation: null } };
@@ -86,6 +88,8 @@ async function status() {
     if (C.componentMatches(pong) && pong.url === tab.url) diagnostics = pong.attempt_diagnostics || [];
     if (JSON.stringify(diagnostics).length > 12000) diagnostics = [];
   }
+  if (epoch !== statusEpoch) return { ...selection, superseded: true };
+  target = tab; targetDiagnostic = diagnostic;
   send({ type: "fresh_status", connected: Boolean(tab && bridgeMatches(bridge)), candidate_count: diagnostic.candidate_count,
     tab_id: diagnostic.tab_id, url: diagnostic.url, readiness_code: diagnostic.readiness_code,
     attempt_diagnostics: diagnostics,
@@ -95,13 +99,15 @@ async function status() {
     bound_tab_diagnostics: boundTabDiagnostics,
     components: { protocol_version: 3, background_version: BACKGROUND_VERSION,
       content_version: diagnostic.content_version, manifest_version: chrome.runtime.getManifest().version, build_id: I.build_id } });
-  return selection;
+  return { ...selection, superseded: false };
 }
 async function maintenance(m) {
   if (!mirrorReady || !bridgeMatches(bridge) || !/^[a-f0-9-]{36}$/u.test(m.maintenance_id || "")) return;
   try {
+    let contentGenerationForAck = null;
     if (m.action === "sample_status") {
-      await status();
+      const sampled = await status();
+      if (!sampled.superseded) contentGenerationForAck = sampled.diagnostic.content_generation;
     } else if (m.action === "restore_thread") {
       const known = attempts.get(C.key(m.request || {}));
       if (!known || !C.sameAttempt(known, m.request) || m.tab_id !== known.target_tab_id
@@ -136,6 +142,7 @@ async function maintenance(m) {
       if (m.action === "reload_content") await chrome.scripting.executeScript({ target: { tabId: m.tab_id },
         files: ["fresh_component_identity.js", "fresh_contract.js", "fresh_locator.js", "fresh_content.js"] });
       const selection = await status();
+      contentGenerationForAck = selection.diagnostic.content_generation;
       if (!selection.tab || selection.tab.id !== m.tab_id || selection.tab.url !== m.url) throw Error("content_identity_mismatch");
       if (m.action === "clear_owned_draft") {
         const known = attempts.get(C.key(m.request || {}));
@@ -176,7 +183,7 @@ async function maintenance(m) {
       }
     } else if (m.action !== "reload_extension") throw Error("maintenance_action_invalid");
     send({ type: "fresh_maintenance_result", maintenance_id: m.maintenance_id, action: m.action, complete: true,
-      ...(Number.isSafeInteger(targetDiagnostic.content_generation) ? { content_generation: targetDiagnostic.content_generation } : {}) });
+      ...(Number.isSafeInteger(contentGenerationForAck) ? { content_generation: contentGenerationForAck } : {}) });
     if (m.action === "reload_extension") setTimeout(() => chrome.runtime.reload(), 100);
   } catch (error) {
     const code = /^[a-z0-9_]{1,64}$/u.test(error.message) ? error.message : "maintenance_failed";

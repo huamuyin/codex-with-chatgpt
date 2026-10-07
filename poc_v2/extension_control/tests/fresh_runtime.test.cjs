@@ -20,7 +20,7 @@ function worker(options = {}) {
     chrome: { runtime: { id: fixture.bridge_identity.extension_id, getManifest: () => ({ version: options.manifestVersion || I.version }),
       onMessage: event("message"), onStartup: event("startup"), onInstalled: event("installed"), reload: options.runtimeReload || forbid("extension_reload") },
       alarms: { create() {}, onAlarm: event("alarm") },
-      tabs: { query: async () => clone(tabs), get: async (id) => clone(tabs.find((t) => t.id === id)),
+      tabs: { query: async () => clone(tabs), get: options.tabGet || (async (id) => clone(tabs.find((t) => t.id === id))),
         create: forbid("create"), update: options.tabUpdate || forbid("navigate"), reload: options.tabReload || forbid("reload"), onUpdated: event("update"), onRemoved: event("remove"),
         async sendMessage(id, m) { contentCalls.push({ id, ...clone(m) });
           if (options.sendMessage) return options.sendMessage(id, m);
@@ -323,6 +323,32 @@ test("concurrent target queries cannot mix a healthy status with another query's
   await w.call("selectTarget", "https://chatgpt.com/c/missing"); release(); await sampling;
   const status = w.sent.at(-1); assert.equal(status.connected, true); assert.equal(status.readiness_code, "ready");
   assert.equal(status.components.content_version, I.version); assert.equal(status.tab_id, R.target_tab_id);
+});
+
+test("older ready status cannot publish or commit after newer loading status starts", async () => {
+  let release, pings = 0; const held = new Promise((resolve) => { release = resolve; });
+  const w = worker({ sendMessage: async () => { if (++pings === 1) await held;
+    return { type: "C2C_FRESH_READY", ...I, content_generation: 1, url: R.conversation_url }; } });
+  await w.call("restore", fixture.checkpoint); const before = clone(w.storage), older = w.call("status");
+  for (let i = 0; pings < 1 && i < 100; i++) await Promise.resolve(); assert.equal(pings, 1);
+  w.tabs[0].status = "loading"; await w.call("status"); release(); const old = await older;
+  assert.equal(old.superseded, true); const statuses = w.sent.filter((m) => m.type === "fresh_status");
+  assert.equal(statuses.length, 1); assert.equal(statuses[0].connected, false); assert.equal(statuses[0].readiness_code, "target_loading");
+  assert.equal(w.run("target"), null); assert.equal(w.run("targetDiagnostic.readiness_code"), "target_loading");
+  assert.deepEqual(w.storage, before); assert.equal(w.contentCalls.some((m) => m.type === "C2C_FRESH_REVIEW"), false);
+});
+
+test("older unavailable status cannot overwrite a newer ready status or shared target", async () => {
+  let release, reads = 0; const held = new Promise((resolve) => { release = resolve; });
+  const tabs = [{ id: R.target_tab_id, url: R.conversation_url, status: "loading" }];
+  const w = worker({ tabs, tabGet: async () => { const captured = clone(tabs[0]); if (++reads === 1) await held; return captured; } });
+  await w.call("restore", fixture.checkpoint); const before = clone(w.storage), older = w.call("status");
+  for (let i = 0; reads < 1 && i < 100; i++) await Promise.resolve(); assert.equal(reads, 1);
+  tabs[0].status = "complete"; await w.call("status"); release(); const old = await older;
+  assert.equal(old.superseded, true); const statuses = w.sent.filter((m) => m.type === "fresh_status");
+  assert.equal(statuses.length, 1); assert.equal(statuses[0].connected, true); assert.equal(statuses[0].readiness_code, "ready");
+  assert.equal(w.run("target.id"), R.target_tab_id); assert.equal(w.run("targetDiagnostic.readiness_code"), "ready");
+  assert.deepEqual(w.storage, before); assert.equal(w.contentCalls.some((m) => m.type === "C2C_FRESH_REVIEW"), false);
 });
 
 test("unanswered content ping is bounded and cannot prevent reporting the exact unavailable target", async () => {

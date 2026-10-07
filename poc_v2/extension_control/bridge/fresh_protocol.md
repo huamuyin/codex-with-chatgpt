@@ -279,3 +279,10 @@ A late `attempt_failed` or `delivery_uncertain` event remains in the sealed appe
 journal. It cannot overwrite the derived state of an already-completed attempt or the
 canonical logical result. Earlier failure history remains intact when a later valid reply
 transitions a failed attempt to complete. Restart replays the same rule without changing bytes.
+# Readiness sampling order
+
+Only the latest-started background status sample may publish `fresh_status` or commit
+shared target diagnostics. Target selection remains local across awaits. Superseded samples
+return diagnostic data without publishing or changing shared readiness. Content reinjection
+uses its own local selection and generation witness for its maintenance ACK; that ACK never
+establishes bridge readiness by itself. This does not dispatch reviews or mutate the attempt mirror.
