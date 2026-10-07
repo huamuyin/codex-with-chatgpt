@@ -354,7 +354,7 @@ test("loading target is distinct from ambiguity and diagnostics never select pen
 test("missing known tab diagnostic preserves identity without creating or rebinding a tab", async () => {
   const w = worker({ tabs: [] }); await w.call("restore", fixture.checkpoint); await w.call("status");
   const status = w.sent.at(-1); assert.equal(status.connected, false); assert.equal(status.readiness_code, "no_target");
-  assert.deepEqual(status.bound_tab_diagnostics, [{ tab_id: R.target_tab_id, exists: false, status: "missing", url: "", pending_url: "", other_origin: "" }]);
+  assert.deepEqual(status.bound_tab_diagnostics, [{ tab_id: R.target_tab_id, exists: false, status: "missing", url: "", pending_url: "", other_origin: "", active: null, frozen: null, discarded: null }]);
   assert.deepEqual(w.forbidden, []);
 });
 
@@ -364,6 +364,14 @@ test("explicit thread restoration navigates only the original native tab to its 
   await w.call("maintenance", { maintenance_id: R.request_id, action: "restore_thread", tab_id: R.target_tab_id, url: R.conversation_url, request: R });
   assert.deepEqual(clone(updates), [[R.target_tab_id, { url: R.conversation_url }]]); assert.equal(w.sent.at(-1).complete, true);
   assert.deepEqual(w.storage, before); assert.deepEqual(w.contentCalls, []);
+});
+
+test("activation can unfreeze only the exact known native tab without URL changes or sends", async () => {
+  const updates = []; const w = worker({ tabUpdate: async (...args) => updates.push(clone(args)) }); await w.call("restore", fixture.checkpoint);
+  await w.call("maintenance", { maintenance_id: R.request_id, action: "activate_tab", tab_id: R.target_tab_id, url: R.conversation_url, request: R });
+  assert.deepEqual(updates, [[R.target_tab_id, { active: true }]]); assert.equal(w.sent.at(-1).complete, true); assert.deepEqual(w.contentCalls, []);
+  await w.call("maintenance", { maintenance_id: R.request_id, action: "activate_tab", tab_id: R.target_tab_id, url: R.conversation_url, request: { ...R, control_id: "wrong" } });
+  assert.equal(w.sent.at(-1).complete, false); assert.equal(updates.length, 1);
 });
 
 test("thread restoration rejects wrong tab URL identity and duplicate targets without navigation", async () => {

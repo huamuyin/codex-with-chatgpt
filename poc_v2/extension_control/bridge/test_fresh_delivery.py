@@ -79,6 +79,16 @@ class FreshTests(unittest.TestCase):
         with self.assertRaises(b.RequestError): self.s.maintenance(value)
         self.assertEqual((self.path / "events.jsonl").read_bytes(), raw)
 
+    def test_activation_uses_known_frozen_attempt_without_requiring_a_running_content_event_loop(self):
+        r = self.send(); raw = (self.path / "events.jsonl").read_bytes()
+        self.s.status.update(connected=False, components={})
+        value = dict(action="activate_tab", request_id=r["request_id"], control_id=r["control_id"], attempt_id=1, tab_id=7, url=URL)
+        self.s.maintenance(value)
+        self.assertEqual(self.ws.messages[-1]["request"], self.s.requests.wire_request(r["request_id"], 1))
+        for change in (dict(tab_id=8), dict(url="https://chatgpt.com/"), dict(control_id=str(uuid.uuid4())), dict(attempt_id=999)):
+            with self.assertRaises(b.RequestError): self.s.maintenance({**value, **change})
+        self.assertEqual((self.path / "events.jsonl").read_bytes(), raw)
+
     def test_invalid_observation_and_send_locator_fault_reject_before_creation(self):
         for value in ({"reply_wait_ms": True}, {"reply_wait_ms": 0}, {"reply_wait_ms": 600001}, {"locator_miss": "yes"}, {"unknown": 1}):
             with self.assertRaises(b.RequestError): self.s.send(self.p, observation=value)

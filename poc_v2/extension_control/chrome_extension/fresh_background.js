@@ -74,7 +74,10 @@ async function status() {
     const bound = await chrome.tabs.get(id).catch(() => null);
     boundTabDiagnostics.push({ tab_id: id, exists: Boolean(bound), status: bound?.status || "missing",
       url: C.isChatUrl(bound?.url) ? bound.url : "", pending_url: C.isChatUrl(bound?.pendingUrl) ? bound.pendingUrl : "",
-      other_origin: (() => { try { return bound?.url ? new URL(bound.url).origin : ""; } catch { return ""; } })() });
+      other_origin: (() => { try { return bound?.url ? new URL(bound.url).origin : ""; } catch { return ""; } })(),
+      active: typeof bound?.active === "boolean" ? bound.active : null,
+      frozen: typeof bound?.frozen === "boolean" ? bound.frozen : null,
+      discarded: typeof bound?.discarded === "boolean" ? bound.discarded : null });
   }
   if (tab) {
     const requests = [...attempts.values()].filter((r) => r.target_tab_id === tab.id
@@ -110,13 +113,20 @@ async function maintenance(m) {
           || tabs.some((t) => t.url === m.url && t.id !== m.tab_id)) throw Error("maintenance_target_unconfirmed");
       await chrome.tabs.update(m.tab_id, { url: known.conversation_url });
       send({ type: "fresh_maintenance_result", maintenance_id: m.maintenance_id, action: m.action, complete: true }); return;
-    } else if (["reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"].includes(m.action)) {
+    } else if (["activate_tab", "reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"].includes(m.action)) {
       const allowed = m.url === "https://chatgpt.com/" && attempts.size === 0
         || [...attempts.values()].some((r) => r.target_tab_id === m.tab_id && (r.conversation_url === m.url
           || r.conversation_url === "https://chatgpt.com/" && C.isConversationUrl(m.url)));
       const tabs = await chrome.tabs.query({ url: "https://chatgpt.com/*" });
       const matches = tabs.filter((t) => t.url === m.url && t.url !== LEGACY_SMOKE_URL);
       if (!allowed || matches.length !== 1 || matches[0].id !== m.tab_id || matches[0].status !== "complete") throw Error("maintenance_target_unconfirmed");
+      if (m.action === "activate_tab") {
+        const known = attempts.get(C.key(m.request || {}));
+        if (!known || !C.sameAttempt(known, m.request) || known.target_tab_id !== m.tab_id
+            || known.conversation_url !== m.url) throw Error("maintenance_attempt_unconfirmed");
+        await chrome.tabs.update(m.tab_id, { active: true });
+        send({ type: "fresh_maintenance_result", maintenance_id: m.maintenance_id, action: m.action, complete: true }); return;
+      }
       if (m.action === "reload_tab") {
         await chrome.tabs.reload(m.tab_id);
         send({ type: "fresh_maintenance_result", maintenance_id: m.maintenance_id, action: m.action, complete: true }); return;

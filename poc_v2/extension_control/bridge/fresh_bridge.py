@@ -77,7 +77,7 @@ class FreshState:
             if self.requests.journal.poisoned:
                 raise transport.RequestError("extension_disconnected", 503)
             action = value.get("action")
-            if action not in ("reload_extension", "sample_status", "restore_thread", "reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"):
+            if action not in ("reload_extension", "sample_status", "restore_thread", "activate_tab", "reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"):
                 raise transport.RequestError("maintenance_action_invalid")
             if action != "reload_extension" and (self.session is None or self.session.closed):
                 raise transport.RequestError("extension_disconnected", 503)
@@ -99,7 +99,7 @@ class FreshState:
                     or time.monotonic() - self.seen_at >= 90):
                     raise transport.RequestError("maintenance_target_unconfirmed", 409)
                 message.update(tab_id=tid, url=url, request=wire)
-            if action in ("reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"):
+            if action in ("activate_tab", "reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"):
                 tid, url = value.get("tab_id"), value.get("url")
                 setup_root = not self.requests.records and url == "https://chatgpt.com/"
                 fresh_thread = transport.is_conversation_url(url) and any(r["conversation_url"] == url for r in self.requests.records.values())
@@ -118,14 +118,14 @@ class FreshState:
                                and (r["conversation_url"] == url or not r["conversation_url"] and r["attempts"][-1]["conversation_url"] == "https://chatgpt.com/")]
                     if len(matches) != 1 or not self.ready(): raise transport.RequestError("maintenance_attempt_unconfirmed", 409)
                     message["request"] = matches[0]
-                if action in ("observe_request", "probe_reply_rejection"):
+                if action in ("activate_tab", "observe_request", "probe_reply_rejection"):
                     rid, cid, aid = value.get("request_id"), value.get("control_id"), value.get("attempt_id")
                     if not isinstance(rid, str) or not isinstance(cid, str) or type(aid) is not int:
                         raise transport.RequestError("maintenance_identity_required", 409)
                     r = self.requests.lookup(rid, control_id=cid)
                     if not 1 <= aid <= len(r["attempts"]): raise transport.RequestError("attempt_unknown", 409)
                     wire = self.requests.wire_request(rid, aid)
-                    if wire["target_tab_id"] != tid or wire["conversation_url"] != url or not self.ready():
+                    if wire["target_tab_id"] != tid or wire["conversation_url"] != url or action != "activate_tab" and not self.ready():
                         raise transport.RequestError("maintenance_attempt_unconfirmed", 409)
                     message["request"] = wire
                     if action == "probe_reply_rejection":
