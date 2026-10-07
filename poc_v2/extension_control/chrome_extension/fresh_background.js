@@ -35,29 +35,33 @@ async function restore(checkpoint) {
   attempts.clear(); for (const [k, r] of checked) attempts.set(k, r);
   await saveMirror(); mirrorReady = true;
 }
-async function selectTarget(preferredUrl = null) {
+async function selectTarget(preferredUrl = null, snapshot = false) {
   const tabs = await chrome.tabs.query({ url: "https://chatgpt.com/*" });
   const matches = tabs.filter((t) => t.url !== LEGACY_SMOKE_URL && (preferredUrl ? t.url === preferredUrl : C.isChatUrl(t.url)));
-  targetDiagnostic = { readiness_code: matches.length === 0 ? "no_target" : "target_ambiguous",
+  const diagnostic = { readiness_code: matches.length === 0 ? "no_target" : "target_ambiguous",
     candidate_count: matches.length, tab_id: matches.length === 1 ? matches[0].id : null,
     url: matches.length === 1 ? matches[0].url : "", content_version: "", content_generation: null };
-  targetDiagnostic.observed_targets = tabs.slice(0, 16).map((t) => ({ tab_id: t.id,
+  diagnostic.observed_targets = tabs.slice(0, 16).map((t) => ({ tab_id: t.id,
     url: C.isChatUrl(t.url) ? t.url : "", status: t.status === "complete" ? "complete" : "loading",
     pending_url: C.isChatUrl(t.pendingUrl) ? t.pendingUrl : "" }));
-  if (matches.length === 1 && matches[0].status !== "complete") targetDiagnostic.readiness_code = "target_loading";
-  if (matches.length !== 1 || matches[0].status !== "complete") { target = null; return null; }
+  const finish = (tab) => { targetDiagnostic = diagnostic; target = tab; return snapshot ? { tab, diagnostic } : tab; };
+  if (matches.length === 1 && matches[0].status !== "complete") diagnostic.readiness_code = "target_loading";
+  if (matches.length !== 1 || matches[0].status !== "complete") return finish(null);
   const tab = matches[0];
   const pong = await chrome.tabs.sendMessage(tab.id, { type: "C2C_FRESH_PING", target_tab_id: tab.id }).catch(() => null);
-  targetDiagnostic.content_version = pong?.version || "";
-  targetDiagnostic.content_generation = Number.isSafeInteger(pong?.content_generation) ? pong.content_generation : null;
-  targetDiagnostic.readiness_code = pong ? "content_identity_mismatch" : "content_unavailable";
+  diagnostic.content_version = pong?.version || "";
+  diagnostic.content_generation = Number.isSafeInteger(pong?.content_generation) ? pong.content_generation : null;
+  diagnostic.readiness_code = pong ? "content_identity_mismatch" : "content_unavailable";
+  diagnostic.page_state = pong?.page_state || null;
   if (pong?.type !== "C2C_FRESH_READY" || pong.url !== tab.url || !C.componentMatches(pong)
-      || chrome.runtime.getManifest().version !== I.version) { target = null; return null; }
-  targetDiagnostic.readiness_code = "ready"; target = tab; return tab;
+      || chrome.runtime.getManifest().version !== I.version) return finish(null);
+  diagnostic.readiness_code = "ready"; return finish(tab);
 }
 async function status() {
   const urls = new Set([...attempts.values()].map((r) => r.conversation_url).filter(C.isConversationUrl));
-  const tab = mirrorReady && urls.size <= 1 ? await selectTarget([...urls][0] || null) : null;
+  const selection = mirrorReady && urls.size <= 1 ? await selectTarget([...urls][0] || null, true)
+    : { tab: null, diagnostic: { readiness_code: "checkpoint_target_conflict", candidate_count: 0, tab_id: null, url: "", content_version: "", content_generation: null } };
+  const { tab, diagnostic } = selection;
   let diagnostics = [];
   const boundTabDiagnostics = [];
   for (const id of [...new Set([...attempts.values()].map((r) => r.target_tab_id))].slice(-10)) {
@@ -73,14 +77,16 @@ async function status() {
     if (C.componentMatches(pong) && pong.url === tab.url) diagnostics = pong.attempt_diagnostics || [];
     if (JSON.stringify(diagnostics).length > 12000) diagnostics = [];
   }
-  send({ type: "fresh_status", connected: Boolean(tab && bridgeMatches(bridge)), candidate_count: targetDiagnostic.candidate_count,
-    tab_id: targetDiagnostic.tab_id, url: targetDiagnostic.url, readiness_code: targetDiagnostic.readiness_code,
+  send({ type: "fresh_status", connected: Boolean(tab && bridgeMatches(bridge)), candidate_count: diagnostic.candidate_count,
+    tab_id: diagnostic.tab_id, url: diagnostic.url, readiness_code: diagnostic.readiness_code,
     attempt_diagnostics: diagnostics,
-    content_generation: targetDiagnostic.content_generation,
-    observed_targets: targetDiagnostic.observed_targets || [],
+    content_generation: diagnostic.content_generation,
+    observed_targets: diagnostic.observed_targets || [],
+    page_state: diagnostic.page_state || null,
     bound_tab_diagnostics: boundTabDiagnostics,
     components: { protocol_version: 3, background_version: BACKGROUND_VERSION,
-      content_version: targetDiagnostic.content_version, manifest_version: chrome.runtime.getManifest().version, build_id: I.build_id } });
+      content_version: diagnostic.content_version, manifest_version: chrome.runtime.getManifest().version, build_id: I.build_id } });
+  return selection;
 }
 async function maintenance(m) {
   if (!mirrorReady || !bridgeMatches(bridge) || !/^[a-f0-9-]{36}$/u.test(m.maintenance_id || "")) return;
@@ -113,11 +119,11 @@ async function maintenance(m) {
         { type: "C2C_FRESH_PING", target_tab_id: m.tab_id }).catch(() => null) : null;
       if (m.action === "reload_content") await chrome.scripting.executeScript({ target: { tabId: m.tab_id },
         files: ["fresh_component_identity.js", "fresh_contract.js", "fresh_locator.js", "fresh_content.js"] });
-      await status();
-      if (!target || target.id !== m.tab_id || target.url !== m.url) throw Error("content_identity_mismatch");
-      if (m.action === "reload_content" && (!Number.isSafeInteger(targetDiagnostic.content_generation)
-          || targetDiagnostic.content_generation < 1 || Number.isSafeInteger(before?.content_generation)
-          && targetDiagnostic.content_generation <= before.content_generation)) throw Error("content_reinjection_unconfirmed");
+      const selection = await status();
+      if (!selection.tab || selection.tab.id !== m.tab_id || selection.tab.url !== m.url) throw Error("content_identity_mismatch");
+      if (m.action === "reload_content" && (!Number.isSafeInteger(selection.diagnostic.content_generation)
+          || selection.diagnostic.content_generation < 1 || Number.isSafeInteger(before?.content_generation)
+          && selection.diagnostic.content_generation <= before.content_generation)) throw Error("content_reinjection_unconfirmed");
       if (["observe_attempt", "observe_request"].includes(m.action)) {
         const known = attempts.get(C.key(m.request || {}));
         if (!known || !C.validRequest(m.request) || !C.sameAttempt(known, m.request) || known.target_tab_id !== m.tab_id) throw Error("maintenance_attempt_unconfirmed");

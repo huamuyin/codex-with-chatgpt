@@ -65,7 +65,7 @@ class FreshState:
                     "journal_ok": not self.requests.journal.poisoned, "delivery_semantics": "AT_LEAST_ONCE",
                     "boundaries": copy.deepcopy(self.boundaries),
                     "extension_status": {k: copy.deepcopy(self.status.get(k)) for k in
-                        ("connected", "candidate_count", "tab_id", "url", "components", "readiness_code", "attempt_diagnostics", "content_generation", "observed_targets", "bound_tab_diagnostics")}}
+                        ("connected", "candidate_count", "tab_id", "url", "components", "readiness_code", "attempt_diagnostics", "content_generation", "observed_targets", "bound_tab_diagnostics", "page_state")}}
 
     def boundary(self, name, **details):
         # Call sites supply only explicit non-secret fields, never headers, tokens or raw DOM.

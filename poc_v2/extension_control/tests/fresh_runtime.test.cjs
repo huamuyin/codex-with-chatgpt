@@ -23,6 +23,7 @@ function worker(options = {}) {
       tabs: { query: async () => clone(tabs), get: async (id) => clone(tabs.find((t) => t.id === id)),
         create: forbid("create"), update: options.tabUpdate || forbid("navigate"), reload: options.tabReload || forbid("reload"), onUpdated: event("update"), onRemoved: event("remove"),
         async sendMessage(id, m) { contentCalls.push({ id, ...clone(m) });
+          if (options.sendMessage) return options.sendMessage(id, m);
           if (m.type === "C2C_FRESH_PING") return { type: "C2C_FRESH_READY", ...I, url: tabs.find((t) => t.id === id)?.url,
             content_generation: contentGeneration, ...options.ping }; return { accepted: true }; } },
       scripting: { async executeScript(value) { const result = await (options.executeScript || forbid("inject"))(value); contentGeneration++; return result; } },
@@ -311,6 +312,17 @@ test("authenticated status sample only pings and never dispatches or creates aut
   await w.call("maintenance", { maintenance_id: R.request_id, action: "sample_status" });
   assert.equal(w.sent.at(-1).complete, true); assert.equal(w.sent.some((m) => m.type === "fresh_status"), true);
   assert.equal(w.contentCalls.some((m) => m.type !== "C2C_FRESH_PING"), false); assert.deepEqual(w.storage, before);
+});
+
+test("concurrent target queries cannot mix a healthy status with another query's missing identity", async () => {
+  let release, pings = 0; const held = new Promise((resolve) => { release = resolve; });
+  const w = worker({ sendMessage: async () => { if (++pings === 2) await held;
+    return { type: "C2C_FRESH_READY", ...I, content_generation: 1, url: R.conversation_url }; } });
+  await w.call("restore", fixture.checkpoint); const sampling = w.call("status");
+  for (let i = 0; pings < 2 && i < 100; i++) await Promise.resolve(); assert.equal(pings, 2);
+  await w.call("selectTarget", "https://chatgpt.com/c/missing"); release(); await sampling;
+  const status = w.sent.at(-1); assert.equal(status.connected, true); assert.equal(status.readiness_code, "ready");
+  assert.equal(status.components.content_version, I.version); assert.equal(status.tab_id, R.target_tab_id);
 });
 
 test("loading target is distinct from ambiguity and diagnostics never select pending URLs", async () => {

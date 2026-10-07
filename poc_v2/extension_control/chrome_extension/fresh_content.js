@@ -321,7 +321,11 @@
           main_present: Boolean(document.querySelector("main")) });
       }
       if (JSON.stringify(diagnostics).length > 12000) for (const d of diagnostics) d.structure = [];
-      respond({ type: "C2C_FRESH_READY", ...componentIdentity(), attempt_diagnostics: diagnostics }); return false;
+      const mainText = String(document.querySelector("main")?.innerText || "");
+      const pageState = { title: String(document.title || "").slice(0, 160), ready_state: document.readyState || "",
+        main_text_length: mainText.length, main_notice: mainText.length <= 256 ? mainText : "",
+        composer_present: Boolean(document.querySelectorAll('main textarea, main [contenteditable="true"]').length) };
+      respond({ type: "C2C_FRESH_READY", ...componentIdentity(), attempt_diagnostics: diagnostics, page_state: pageState }); return false;
     }
     if (m?.type === "C2C_FRESH_PROBE_REJECTION") {
       const r = m.request;
