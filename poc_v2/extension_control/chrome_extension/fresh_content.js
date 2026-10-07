@@ -322,6 +322,15 @@
           full_user_match: Boolean(u), assistant_after_match: Boolean(a),
           assistant_complete: Boolean(a && Locator.isAssistantComplete(document, a, u)), generating: isGenerating(),
           assistant_text_length: a ? String(a.node.innerText || a.node.textContent || "").length : 0,
+          assistant_text_preview: a && String(a.node.innerText || a.node.textContent || "").length <= 256
+            ? String(a.node.innerText || a.node.textContent || "") : "",
+          assistant_candidates: (() => { const result = []; if (!u) return result;
+            for (const item of messages.slice(messages.indexOf(u) + 1)) {
+              if (item.role !== "assistant" || result.length === 3) break;
+              const text = String(item.node.innerText || item.node.textContent || "");
+              result.push({ text_length: text.length, short_preview: text.length <= 256 ? text : "",
+                complete: Locator.isAssistantComplete(document, item, u) });
+            } return result; })(),
           roles: messages.slice(-20).map((item) => item.role),
           marker_matches: messages.filter((item) => isTurnIdentity(item.text, r)).length, structure, inspected,
           main_present: Boolean(document.querySelector("main")) });

@@ -342,6 +342,16 @@ test("routine content status finds complete exact turns without a full body stru
   assert.equal(d.assistant_complete, true); assert.deepEqual(clone(d.structure), []); assert.equal(d.inspected, 0);
 });
 
+test("pending reply diagnostics are short scoped previews and never publish or cross a user turn", () => {
+  const thinking = new F.FixtureNode("div", { "data-message-author-role": "assistant" }, "Thinking pending");
+  const completed = new F.FixtureNode("div", { "data-message-author-role": "assistant", "data-message-status": "complete" }, "x".repeat(500));
+  const anotherUser = new F.FixtureNode("div", { "data-message-author-role": "user" }, "Unrelated user");
+  const c = content([user(), thinking, completed, anotherUser, completed]);
+  const d = c.message({ type: "C2C_FRESH_PING", target_tab_id: R.target_tab_id, requests: [R] }).attempt_diagnostics[0];
+  assert.equal(d.assistant_text_preview, "Thinking pending"); assert.equal(d.assistant_candidates.length, 2);
+  assert.equal(d.assistant_candidates[1].short_preview, ""); assert.deepEqual(c.sent, []); assert.equal(c.clicks(), 0);
+});
+
 test("structural locator skips layout reads for unrelated decoration while retaining full wire and assistant checks", () => {
   const w = worker(), L = w.sandbox.C2CV2FreshLocator;
   const noise = Array.from({ length: 1000 }, () => { const n = new F.FixtureNode("div");
