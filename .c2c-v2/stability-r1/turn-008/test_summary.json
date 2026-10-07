@@ -1,0 +1,10 @@
+{
+  "source_commit": "7d7d217cae8a3ed234de6df8d5ba0564027bb3d5",
+  "python_passed": 126,
+  "node_passed": 173,
+  "syntax_files": 21,
+  "manifest": "PASS",
+  "diff": "PASS",
+  "legacy_unchanged": 14,
+  "evidence": "repairs/turn07-auth-boundaries-final/checks"
+}

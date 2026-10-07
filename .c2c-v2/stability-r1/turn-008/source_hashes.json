@@ -1,0 +1,23 @@
+{
+  "implementation_commit": "7d7d217cae8a3ed234de6df8d5ba0564027bb3d5",
+  "files": [
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_delivery.py",
+      "ref_commit": "7d7d217cae8a3ed234de6df8d5ba0564027bb3d5",
+      "sha256": "2c126056b366e17b5bde1f3b4acdb62a2307e7b8b5cc0b289da037dd37f3310a",
+      "git_blob_oid": "e7f756872f2fb949184e93db4894bd1a0d93341c"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/test_fresh_delivery.py",
+      "ref_commit": "7d7d217cae8a3ed234de6df8d5ba0564027bb3d5",
+      "sha256": "932cfce81e29b4ee693a980f4931aa11d14fca0d20898217ac0bf7e8b485fb73",
+      "git_blob_oid": "671d86e9e2c12db380b20c564dcf432903a091da"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_background.js",
+      "ref_commit": "7d7d217cae8a3ed234de6df8d5ba0564027bb3d5",
+      "sha256": "f99982153ed6de27227e49802030d6a6e5474242af6d12f063b2419616cec038",
+      "git_blob_oid": "503df0b4ed7190a902769854fa5f34f78a76b64a"
+    }
+  ]
+}
