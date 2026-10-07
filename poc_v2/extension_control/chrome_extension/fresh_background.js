@@ -41,6 +41,10 @@ async function selectTarget(preferredUrl = null) {
   targetDiagnostic = { readiness_code: matches.length === 0 ? "no_target" : "target_ambiguous",
     candidate_count: matches.length, tab_id: matches.length === 1 ? matches[0].id : null,
     url: matches.length === 1 ? matches[0].url : "", content_version: "", content_generation: null };
+  targetDiagnostic.observed_targets = tabs.slice(0, 16).map((t) => ({ tab_id: t.id,
+    url: C.isChatUrl(t.url) ? t.url : "", status: t.status === "complete" ? "complete" : "loading",
+    pending_url: C.isChatUrl(t.pendingUrl) ? t.pendingUrl : "" }));
+  if (matches.length === 1 && matches[0].status !== "complete") targetDiagnostic.readiness_code = "target_loading";
   if (matches.length !== 1 || matches[0].status !== "complete") { target = null; return null; }
   const tab = matches[0];
   const pong = await chrome.tabs.sendMessage(tab.id, { type: "C2C_FRESH_PING", target_tab_id: tab.id }).catch(() => null);
@@ -55,6 +59,13 @@ async function status() {
   const urls = new Set([...attempts.values()].map((r) => r.conversation_url).filter(C.isConversationUrl));
   const tab = mirrorReady && urls.size <= 1 ? await selectTarget([...urls][0] || null) : null;
   let diagnostics = [];
+  const boundTabDiagnostics = [];
+  for (const id of [...new Set([...attempts.values()].map((r) => r.target_tab_id))].slice(-10)) {
+    const bound = await chrome.tabs.get(id).catch(() => null);
+    boundTabDiagnostics.push({ tab_id: id, exists: Boolean(bound), status: bound?.status || "missing",
+      url: C.isChatUrl(bound?.url) ? bound.url : "", pending_url: C.isChatUrl(bound?.pendingUrl) ? bound.pendingUrl : "",
+      other_origin: (() => { try { return bound?.url ? new URL(bound.url).origin : ""; } catch { return ""; } })() });
+  }
   if (tab) {
     const requests = [...attempts.values()].filter((r) => r.target_tab_id === tab.id
       && (r.conversation_url === tab.url || r.conversation_url === "https://chatgpt.com/")).slice(-10);
@@ -66,6 +77,8 @@ async function status() {
     tab_id: targetDiagnostic.tab_id, url: targetDiagnostic.url, readiness_code: targetDiagnostic.readiness_code,
     attempt_diagnostics: diagnostics,
     content_generation: targetDiagnostic.content_generation,
+    observed_targets: targetDiagnostic.observed_targets || [],
+    bound_tab_diagnostics: boundTabDiagnostics,
     components: { protocol_version: 3, background_version: BACKGROUND_VERSION,
       content_version: targetDiagnostic.content_version, manifest_version: chrome.runtime.getManifest().version, build_id: I.build_id } });
 }

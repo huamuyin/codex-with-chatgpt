@@ -313,6 +313,22 @@ test("authenticated status sample only pings and never dispatches or creates aut
   assert.equal(w.contentCalls.some((m) => m.type !== "C2C_FRESH_PING"), false); assert.deepEqual(w.storage, before);
 });
 
+test("loading target is distinct from ambiguity and diagnostics never select pending URLs", async () => {
+  const w = worker({ tabs: [{ id: R.target_tab_id, url: R.conversation_url, status: "loading", pendingUrl: "https://other.example/private" }] });
+  await w.call("restore", fixture.checkpoint); await w.call("status");
+  const status = w.sent.at(-1); assert.equal(status.readiness_code, "target_loading");
+  assert.equal(status.connected, false); assert.equal(status.candidate_count, 1);
+  assert.deepEqual(status.observed_targets, [{ tab_id: R.target_tab_id, url: R.conversation_url, status: "loading", pending_url: "" }]);
+  assert.deepEqual(w.contentCalls, []); assert.deepEqual(w.forbidden, []);
+});
+
+test("missing known tab diagnostic preserves identity without creating or rebinding a tab", async () => {
+  const w = worker({ tabs: [] }); await w.call("restore", fixture.checkpoint); await w.call("status");
+  const status = w.sent.at(-1); assert.equal(status.connected, false); assert.equal(status.readiness_code, "no_target");
+  assert.deepEqual(status.bound_tab_diagnostics, [{ tab_id: R.target_tab_id, exists: false, status: "missing", url: "", pending_url: "", other_origin: "" }]);
+  assert.deepEqual(w.forbidden, []);
+});
+
 test("completed known request observation does not dispatch a send or mint identity", async () => {
   const w = worker(); await w.call("restore", fixture.checkpoint);
   await w.call("maintenance", { maintenance_id: R.request_id, action: "observe_request", tab_id: R.target_tab_id, url: R.conversation_url,
