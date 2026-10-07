@@ -22,7 +22,7 @@ function send(m) { if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.s
 async function pingTab(id, message) {
   let timer;
   try { return await Promise.race([chrome.tabs.sendMessage(id, message).catch(() => null),
-    new Promise((resolve) => { timer = setTimeout(() => resolve(null), 2000); })]); }
+    new Promise((resolve) => { timer = setTimeout(() => resolve(null), 15000); })]); }
   finally { if (timer !== undefined) clearTimeout(timer); }
 }
 async function saveMirror() { await chrome.storage.session.set({ [CACHE_KEY]: [...attempts.values()] }); }
