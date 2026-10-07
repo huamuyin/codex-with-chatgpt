@@ -6,7 +6,9 @@ from fresh_response import ResponseError, parse_response, validate_response
 class ResponseTests(unittest.TestCase):
     def setUp(self):
         self.reply = {"STATE": "REVIEW_RESULT", "ROUND": 1, "REQUEST_ID": "request", "CONTROL_ID": "control",
-                      "ATTEMPT_ID": 2, "REVIEWED_COMMIT": "a" * 40, "VERDICT": "PASS_CONTINUE", "FINDINGS": []}
+                      "ATTEMPT_ID": 2, "REVIEWED_COMMIT": "a" * 40, "VERDICT": "PASS_CONTINUE", "FINDINGS": [],
+                      "REVIEW_SUMMARY": "Inspected the exact evidence.", "GITHUB_RESOURCES_READ": [],
+                      "NEXT_CODEX_INSTRUCTION": "Run one bounded Fresh evidence check."}
         self.context = dict(round_no=1, request_id="request", control_id="control", attempt_id=2, commit="a" * 40)
 
     def test_fence_and_recognized_renderer_label_preserve_json_strings(self):
@@ -38,3 +40,23 @@ class ResponseTests(unittest.TestCase):
     def test_verdict_and_findings_must_be_explicit(self):
         for change in ({"VERDICT": "PASS"}, {"FINDINGS": "none"}):
             with self.assertRaises(ResponseError): validate_response({**self.reply, **change}, **self.context)
+
+    def test_missing_required_control_fields_rejected_in_an_otherwise_valid_frame(self):
+        for key in ("REVIEW_SUMMARY", "GITHUB_RESOURCES_READ", "NEXT_CODEX_INSTRUCTION"):
+            value = {k:v for k,v in self.reply.items() if k != key}
+            with self.subTest(key=key), self.assertRaises(ResponseError):
+                validate_response(parse_response("```json\n" + json.dumps(value) + "\n```"), **self.context)
+
+    def test_mistyped_empty_and_unbounded_required_control_fields_rejected(self):
+        cases = [("REVIEW_SUMMARY", value) for value in (None, False, 1, [], "", " \n")]
+        cases += [("GITHUB_RESOURCES_READ", value) for value in (None, False, 1, {}, "files")]
+        cases += [("NEXT_CODEX_INSTRUCTION", value) for value in (None, False, 1, [], "", " \n", "x" * 4097)]
+        for key, wrong in cases:
+            with self.subTest(key=key, value=wrong), self.assertRaises(ResponseError):
+                validate_response({**self.reply, key: wrong}, **self.context)
+
+    def test_complete_contract_and_bounded_instruction_preserve_original_values(self):
+        value = {**self.reply, "NEXT_CODEX_INSTRUCTION": "x" * 4096, "REVIEW_SUMMARY": "  exact summary\n"}
+        decoded = parse_response("```json\n" + json.dumps(value) + "\n```")
+        self.assertIs(validate_response(decoded, **self.context), decoded)
+        self.assertEqual(decoded, value)

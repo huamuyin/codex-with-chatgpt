@@ -40,4 +40,10 @@ def validate_response(value, *, round_no, request_id, control_id, attempt_id, co
     if value.get("VERDICT") not in ("PASS_CONTINUE", "CHANGES_REQUIRED", "BLOCKED_AUTHORITY"):
         raise ResponseError("response_verdict_invalid")
     if not isinstance(value.get("FINDINGS"), list): raise ResponseError("response_findings_invalid")
+    summary = value.get("REVIEW_SUMMARY")
+    if not isinstance(summary, str) or not summary.strip(): raise ResponseError("response_summary_invalid")
+    if not isinstance(value.get("GITHUB_RESOURCES_READ"), list): raise ResponseError("response_resources_invalid")
+    instruction = value.get("NEXT_CODEX_INSTRUCTION")
+    if not isinstance(instruction, str) or not instruction.strip() or len(instruction) > 4096:
+        raise ResponseError("response_instruction_invalid")
     return value

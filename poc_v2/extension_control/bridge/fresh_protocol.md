@@ -258,3 +258,10 @@ request/control/attempt/tab/URL. It synchronously proves full normalized wire eq
 clearing that owned draft. Unknown or modified text is preserved. It does not send, allocate
 identity, change history, or call the review/dispatch logic. A later resend requires an explicit
 retry and a newly persisted attempt. Original request payload and failures remain unchanged.
+# Complete reviewer contract
+
+Beyond the exact STATE/ROUND/request/control/attempt/commit envelope, verdict and findings,
+the response validator requires `REVIEW_SUMMARY` as a non-empty string,
+`GITHUB_RESOURCES_READ` as an array, and `NEXT_CODEX_INSTRUCTION` as one non-empty string
+of at most 4096 characters. Validation preserves the supplied values and performs no repair
+or instruction execution. Missing, mistyped, blank or oversized controls fail closed.
