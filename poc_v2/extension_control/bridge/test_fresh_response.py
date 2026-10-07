@@ -84,4 +84,31 @@ class ResponseTests(unittest.TestCase):
                       "https://github.com@evil.example/file", "https://user@github.com/file", "https://github.com:443/file", "https://github.com")]
         for key, wrong in cases:
             with self.subTest(key=key, wrong=wrong), self.assertRaises(ResponseError):
-                validate_response({**self.reply, "GITHUB_RESOURCES_READ": [{**base, key: wrong}]}, **self.context)
+                    validate_response({**self.reply, "GITHUB_RESOURCES_READ": [{**base, key: wrong}]}, **self.context)
+
+    def test_unicode_scalars_and_valid_escaped_pair_preserve_decoded_values(self):
+        value = {**self.reply, "REVIEW_SUMMARY": '中文 🚀 "quoted"\nnext \\ literal e' + chr(0x301),
+                 "NEXT_CODEX_INSTRUCTION": "验证中文与 emoji 🚀", "额外": "原样"}
+        for ascii_mode in (False, True):
+            raw = json.dumps(value, ensure_ascii=ascii_mode)
+            if ascii_mode: self.assertIn("\\ud83d\\ude80", raw)
+            actual = validate_response(parse_response("```json\n" + raw + "\n```"), **self.context)
+            self.assertEqual(actual, value)
+            self.assertTrue(actual["REVIEW_SUMMARY"].endswith("e" + chr(0x301)), "no normalization")
+
+    def test_lone_surrogates_in_controls_resource_text_and_keys_fail_closed(self):
+        for lone in (chr(0xD800), chr(0xDC00)):
+            variants = [{**self.reply, "NEXT_CODEX_INSTRUCTION": lone}, {**self.reply, "REVIEW_SUMMARY": lone},
+                        {**self.reply, lone: "value"},
+                        {**self.reply, "GITHUB_RESOURCES_READ": [{**self.reply["GITHUB_RESOURCES_READ"][0], "source_excerpt": lone}]}]
+            for value in variants:
+                with self.subTest(value=value), self.assertRaisesRegex(ResponseError, "response_unicode_invalid"):
+                    parse_response("```json\n" + json.dumps(value) + "\n```")
+
+    def test_decoded_nonbmp_instruction_boundary_is_scalar_count(self):
+        for count in (4096, 4097):
+            value = {**self.reply, "NEXT_CODEX_INSTRUCTION": "🚀" * count}
+            decoded = parse_response("```json\n" + json.dumps(value) + "\n```")
+            if count == 4096: self.assertEqual(validate_response(decoded, **self.context), value)
+            else:
+                with self.assertRaisesRegex(ResponseError, "response_instruction_invalid"): validate_response(decoded, **self.context)

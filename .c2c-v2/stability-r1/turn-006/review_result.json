@@ -1,0 +1,95 @@
+{
+  "STATE": "REVIEW_RESULT",
+  "ROUND": 6,
+  "REQUEST_ID": "4c962f10-7fec-4679-840f-37345455e12b",
+  "CONTROL_ID": "23a2938d-7f11-44e7-b603-1646ad19741b",
+  "ATTEMPT_ID": 1,
+  "REVIEWED_COMMIT": "20cb385d2ff002c984bbb0189c2ae419bf0d423a",
+  "VERDICT": "CHANGES_REQUIRED",
+  "FINDINGS": [
+    {
+      "severity": "MAJOR",
+      "path": "poc_v2/extension_control/bridge/fresh_response.py",
+      "finding": "Strict JSON framing does not reject isolated UTF-16 surrogate code points. Python json.loads accepts escaped lone high/low surrogates such as \\ud800 or \\udc00 and produces non-scalar Python strings; validate_response then accepts them in NEXT_CODEX_INSTRUCTION, REVIEW_SUMMARY or resource text because it only checks type, strip() and length. That leaves machine instructions capable of containing non-Unicode-scalar text with downstream UTF-8/renderer-dependent behavior, contrary to fail-closed Unicode framing."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Ordinary JSON escaping is otherwise handled correctly: quoted strings, escaped newlines and backslashes are decoded semantically; naked JSON, unknown wrappers, duplicate keys, NaN/nonfinite values, malformed JSON and multiple objects are rejected."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The 4096-character NEXT_CODEX_INSTRUCTION boundary is enforced after JSON decoding, with exact 4096 acceptance and 4097 rejection already covered. Valid non-ASCII Unicode itself is not prohibited by the implementation."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The preceding Round5 correction is correctly bounded. Commit b13ba6f8f48688e869c6b7d9b40fce5cb5ee035a adds a latest-started status epoch, keeps target selection local across awaits, prevents superseded status publication/shared readiness commits, and adds deterministic reverse-order ready/unavailable tests. Reported full regression is 120 Python and 173 Node passes."
+    }
+  ],
+  "REVIEW_SUMMARY": "The exact incoming authority 20cb385d2ff002c984bbb0189c2ae419bf0d423a was independently reviewed without substituting branch HEAD; PR #1 head matched the incoming commit at review start. review_request.json binds implementation and previous action to b13ba6f8f48688e869c6b7d9b40fce5cb5ee035a. All required turn-006 evidence and all three required response source/test/doc files were reread at their immutable refs, and their Git blob IDs match source_hashes.json. GitHub compare shows the implementation-to-evidence delta is one evidence-only commit, and the preceding readiness-race action satisfies the Round5 instruction. JSON envelope/framing, escaping, duplicate-key rejection and instruction length bounds are generally sound, but isolated surrogate escapes remain accepted as machine text. Because this turn explicitly focuses on Unicode framing and bounded machine instructions, that is a real fail-closed parser defect and requires CHANGES_REQUIRED.",
+  "GITHUB_RESOURCES_READ": [
+    {
+      "path": ".c2c-v2/stability-r1/turn-006/review_request.json",
+      "ref_commit": "20cb385d2ff002c984bbb0189c2ae419bf0d423a",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/20cb385d2ff002c984bbb0189c2ae419bf0d423a/.c2c-v2/stability-r1/turn-006/review_request.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"focus\": \"JSON escaping, Unicode framing and bounded machine instructions\""
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-006/test_summary.json",
+      "ref_commit": "20cb385d2ff002c984bbb0189c2ae419bf0d423a",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/20cb385d2ff002c984bbb0189c2ae419bf0d423a/.c2c-v2/stability-r1/turn-006/test_summary.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"python_passed\": 120, \"node_passed\": 173"
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-006/source_hashes.json",
+      "ref_commit": "20cb385d2ff002c984bbb0189c2ae419bf0d423a",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/20cb385d2ff002c984bbb0189c2ae419bf0d423a/.c2c-v2/stability-r1/turn-006/source_hashes.json",
+      "read_method": "GitHub fetch_file plus blob verification",
+      "source_excerpt": "\"implementation_commit\": \"b13ba6f8f48688e869c6b7d9b40fce5cb5ee035a\""
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-006/previous_action.json",
+      "ref_commit": "20cb385d2ff002c984bbb0189c2ae419bf0d423a",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/20cb385d2ff002c984bbb0189c2ae419bf0d423a/.c2c-v2/stability-r1/turn-006/previous_action.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"codex_action\": \"Added latest-started status epoch, made target selection fully local across awaits\""
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_response.py",
+      "ref_commit": "b13ba6f8f48688e869c6b7d9b40fce5cb5ee035a",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b13ba6f8f48688e869c6b7d9b40fce5cb5ee035a/poc_v2/extension_control/bridge/fresh_response.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "try: value = json.loads(text, object_pairs_hook=pairs, parse_constant=constant)"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/test_fresh_response.py",
+      "ref_commit": "b13ba6f8f48688e869c6b7d9b40fce5cb5ee035a",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b13ba6f8f48688e869c6b7d9b40fce5cb5ee035a/poc_v2/extension_control/bridge/test_fresh_response.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "value = {**self.reply, \"NEXT_CODEX_INSTRUCTION\": \"x\" * 4096, \"REVIEW_SUMMARY\": \"  exact summary\\n\"}"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_protocol.md",
+      "ref_commit": "b13ba6f8f48688e869c6b7d9b40fce5cb5ee035a",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b13ba6f8f48688e869c6b7d9b40fce5cb5ee035a/poc_v2/extension_control/bridge/fresh_protocol.md",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "All machine reviewer replies must use one fenced json object."
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_background.js",
+      "ref_commit": "b13ba6f8f48688e869c6b7d9b40fce5cb5ee035a",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b13ba6f8f48688e869c6b7d9b40fce5cb5ee035a/poc_v2/extension_control/chrome_extension/fresh_background.js",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "if (epoch !== statusEpoch) return { ...selection, superseded: true };"
+    },
+    {
+      "path": "poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+      "ref_commit": "b13ba6f8f48688e869c6b7d9b40fce5cb5ee035a",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b13ba6f8f48688e869c6b7d9b40fce5cb5ee035a/poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "test(\"older ready status cannot publish or commit after newer loading status starts\""
+    }
+  ],
+  "NEXT_CODEX_INSTRUCTION": "Patch only Fresh structured-response Unicode validation, focused tests/docs and turn-007 evidence: after JSON decoding, fail closed on any isolated UTF-16 surrogate code point U+D800 through U+DFFF in object keys or string values before the response can be consumed. Preserve valid Unicode scalar text without normalization or repair. Add conformance tests proving direct Chinese text, emoji, escaped quotes/backslashes/newlines and a valid escaped surrogate pair such as \\ud83d\\ude80 round-trip semantically unchanged; reject lone high and lone low surrogate escapes in NEXT_CODEX_INSTRUCTION, REVIEW_SUMMARY, GITHUB resource text and object keys. Also prove decoded NEXT_CODEX_INSTRUCTION boundaries with 4096 valid non-BMP Unicode scalar characters accepted and 4097 rejected, while existing duplicate-key, framing and nonfinite checks remain unchanged. Run full Python/Node/syntax/manifest/diff gates and publish immutable turn-007 evidence only; do not change version/protocol/build, readiness behavior, legacy paths or unrelated runtime authority."
+}

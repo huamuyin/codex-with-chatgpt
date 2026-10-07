@@ -8,6 +8,16 @@ class ResponseError(ValueError):
     pass
 
 
+def _require_unicode_scalars(value):
+    pending = [value]
+    while pending:
+        item = pending.pop()
+        if isinstance(item, str) and any(0xD800 <= ord(c) <= 0xDFFF for c in item):
+            raise ResponseError("response_unicode_invalid")
+        if isinstance(item, dict): pending.extend(item.keys()); pending.extend(item.values())
+        elif isinstance(item, list): pending.extend(item)
+
+
 def parse_response(raw):
     if not isinstance(raw, str): raise ResponseError("response_not_text")
     text = raw.strip()
@@ -28,6 +38,7 @@ def parse_response(raw):
     try: value = json.loads(text, object_pairs_hook=pairs, parse_constant=constant)
     except json.JSONDecodeError as error: raise ResponseError("response_json_invalid") from error
     if not isinstance(value, dict): raise ResponseError("response_object_required")
+    _require_unicode_scalars(value)
     return value
 
 

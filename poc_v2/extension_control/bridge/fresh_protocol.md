@@ -286,3 +286,9 @@ shared target diagnostics. Target selection remains local across awaits. Superse
 return diagnostic data without publishing or changing shared readiness. Content reinjection
 uses its own local selection and generation witness for its maintenance ACK; that ACK never
 establishes bridge readiness by itself. This does not dispatch reviews or mutate the attempt mirror.
+# Unicode response text
+
+After JSON decoding, every object key and string value must contain Unicode scalar values.
+Isolated UTF-16 surrogate code points are rejected, never repaired or normalized. Valid
+escaped surrogate pairs decode to their non-BMP scalar value and remain unchanged. The
+instruction limit counts decoded scalar characters: 4096 accepted, 4097 rejected.
