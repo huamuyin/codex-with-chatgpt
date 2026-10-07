@@ -1,0 +1,37 @@
+{
+  "mission": "C2C_V2_FAILURE_RECOVERY_AND_10_TURN_STABILITY_R1",
+  "round": 4,
+  "safe_task": "Ten consecutive substantive Fresh protocol conformance decisions; reviewer chooses the finite executed check/test/doc/evidence action.",
+  "implementation_commit": "aba581ac123b31cde660fd86908626cf5452ea97",
+  "previous_action_commit": "aba581ac123b31cde660fd86908626cf5452ea97",
+  "focus": "Canonical result, genuine duplicate replies and at-least-once attempts",
+  "required_source_paths": [
+    "poc_v2/extension_control/bridge/fresh_delivery.py",
+    "poc_v2/extension_control/chrome_extension/fresh_contract.js",
+    "poc_v2/extension_control/bridge/test_fresh_delivery.py"
+  ],
+  "required_evidence_paths": [
+    ".c2c-v2/stability-r1/turn-004/test_summary.json",
+    ".c2c-v2/stability-r1/turn-004/source_hashes.json",
+    ".c2c-v2/stability-r1/turn-004/previous_action.json"
+  ],
+  "mandatory_campaign_gate": null,
+  "response_contract": {
+    "format": "one fenced json block; one valid object; no prose",
+    "fields": [
+      "STATE",
+      "ROUND",
+      "REQUEST_ID",
+      "CONTROL_ID",
+      "ATTEMPT_ID",
+      "REVIEWED_COMMIT",
+      "VERDICT",
+      "FINDINGS",
+      "REVIEW_SUMMARY",
+      "GITHUB_RESOURCES_READ",
+      "NEXT_CODEX_INSTRUCTION"
+    ],
+    "instruction": "one finite Fresh-only non-empty string <=4096 characters"
+  },
+  "stop_boundary": "After turn10 action/evidence is committed, STOP; no turn11, installer, productionization or other-product integration."
+}
