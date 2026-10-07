@@ -325,6 +325,16 @@ test("concurrent target queries cannot mix a healthy status with another query's
   assert.equal(status.components.content_version, I.version); assert.equal(status.tab_id, R.target_tab_id);
 });
 
+test("unanswered content ping is bounded and cannot prevent reporting the exact unavailable target", async () => {
+  const timers = []; const w = worker({ timers, sendMessage: async () => new Promise(() => {}) });
+  await w.call("restore", fixture.checkpoint); const sampling = w.call("status");
+  for (let i = 0; !timers.length && i < 100; i++) await Promise.resolve();
+  assert.equal(timers[0].ms, 2000); timers[0].fn(); await sampling;
+  const status = w.sent.at(-1); assert.equal(status.connected, false); assert.equal(status.readiness_code, "content_unavailable");
+  assert.equal(status.tab_id, R.target_tab_id); assert.equal(status.url, R.conversation_url);
+  assert.equal(status.components.content_version, ""); assert.deepEqual(w.forbidden, []);
+});
+
 test("loading target is distinct from ambiguity and diagnostics never select pending URLs", async () => {
   const w = worker({ tabs: [{ id: R.target_tab_id, url: R.conversation_url, status: "loading", pendingUrl: "https://other.example/private" }] });
   await w.call("restore", fixture.checkpoint); await w.call("status");

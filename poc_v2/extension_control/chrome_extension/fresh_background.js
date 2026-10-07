@@ -19,6 +19,12 @@ function bridgeMatches(b) { return I.version === BACKGROUND_VERSION && I.build_i
   && typeof b?.bridge_session_id === "string" && Boolean(b.bridge_session_id)
   && Number.isInteger(b?.pid) && b.pid > 0 && /^[a-f0-9]{64}$/u.test(b?.source_sha256 || ""); }
 function send(m) { if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(m)); }
+async function pingTab(id, message) {
+  let timer;
+  try { return await Promise.race([chrome.tabs.sendMessage(id, message).catch(() => null),
+    new Promise((resolve) => { timer = setTimeout(() => resolve(null), 2000); })]); }
+  finally { if (timer !== undefined) clearTimeout(timer); }
+}
 async function saveMirror() { await chrome.storage.session.set({ [CACHE_KEY]: [...attempts.values()] }); }
 async function restore(checkpoint) {
   mirrorReady = false;
@@ -48,7 +54,7 @@ async function selectTarget(preferredUrl = null, snapshot = false) {
   if (matches.length === 1 && matches[0].status !== "complete") diagnostic.readiness_code = "target_loading";
   if (matches.length !== 1 || matches[0].status !== "complete") return finish(null);
   const tab = matches[0];
-  const pong = await chrome.tabs.sendMessage(tab.id, { type: "C2C_FRESH_PING", target_tab_id: tab.id }).catch(() => null);
+  const pong = await pingTab(tab.id, { type: "C2C_FRESH_PING", target_tab_id: tab.id });
   diagnostic.content_version = pong?.version || "";
   diagnostic.content_generation = Number.isSafeInteger(pong?.content_generation) ? pong.content_generation : null;
   diagnostic.readiness_code = pong ? "content_identity_mismatch" : "content_unavailable";
@@ -73,7 +79,7 @@ async function status() {
   if (tab) {
     const requests = [...attempts.values()].filter((r) => r.target_tab_id === tab.id
       && (r.conversation_url === tab.url || r.conversation_url === "https://chatgpt.com/")).slice(-10);
-    const pong = await chrome.tabs.sendMessage(tab.id, { type: "C2C_FRESH_PING", target_tab_id: tab.id, requests }).catch(() => null);
+    const pong = await pingTab(tab.id, { type: "C2C_FRESH_PING", target_tab_id: tab.id, requests });
     if (C.componentMatches(pong) && pong.url === tab.url) diagnostics = pong.attempt_diagnostics || [];
     if (JSON.stringify(diagnostics).length > 12000) diagnostics = [];
   }
@@ -115,8 +121,8 @@ async function maintenance(m) {
         await chrome.tabs.reload(m.tab_id);
         send({ type: "fresh_maintenance_result", maintenance_id: m.maintenance_id, action: m.action, complete: true }); return;
       }
-      const before = m.action === "reload_content" ? await chrome.tabs.sendMessage(m.tab_id,
-        { type: "C2C_FRESH_PING", target_tab_id: m.tab_id }).catch(() => null) : null;
+      const before = m.action === "reload_content" ? await pingTab(m.tab_id,
+        { type: "C2C_FRESH_PING", target_tab_id: m.tab_id }) : null;
       if (m.action === "reload_content") await chrome.scripting.executeScript({ target: { tabId: m.tab_id },
         files: ["fresh_component_identity.js", "fresh_contract.js", "fresh_locator.js", "fresh_content.js"] });
       const selection = await status();
