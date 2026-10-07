@@ -113,6 +113,28 @@ class FreshTests(unittest.TestCase):
             with self.assertRaises(b.RequestError): self.s.maintenance({**value, **change})
         self.assertEqual((self.path / "events.jsonl").read_bytes(), raw)
 
+    def test_restore_rejects_stale_duplicate_and_unrelated_current_urls_without_writes_or_dispatch(self):
+        r = self.send(); value = dict(action="restore_thread", request_id=r["request_id"], control_id=r["control_id"], attempt_id=1, tab_id=7, url=URL)
+        status = {**self.s.status, "connected": False, "candidate_count": 0, "tab_id": None, "url": "",
+                  "bound_tab_diagnostics": [dict(tab_id=7, exists=True, status="complete", url="https://chatgpt.com/")],
+                  "observed_targets": [dict(tab_id=7, url="https://chatgpt.com/", status="complete")]}
+        before = (self.path / "events.jsonl").read_bytes(); count = len(self.ws.messages)
+        for variant in ("stale", "duplicate_root", "duplicate_target", "unrelated"):
+            self.s.status = copy.deepcopy(status); self.s.seen_at = f.time.monotonic()
+            if variant == "stale": self.s.seen_at -= 91
+            if variant == "duplicate_root": self.s.status["observed_targets"].append(dict(tab_id=8, url="https://chatgpt.com/"))
+            if variant == "duplicate_target": self.s.status["observed_targets"].append(dict(tab_id=8, url=URL))
+            if variant == "unrelated": self.s.status["bound_tab_diagnostics"][0]["url"] = "https://chatgpt.com/c/other"
+            with self.subTest(variant=variant), self.assertRaises(b.RequestError): self.s.maintenance(value)
+            self.assertEqual(len(self.ws.messages), count); self.assertEqual((self.path / "events.jsonl").read_bytes(), before)
+            self.assertEqual(len(self.s.requests.records), 1)
+        self.s.status = copy.deepcopy(status); self.s.seen_at = f.time.monotonic()
+        mid, _ = self.s.maintenance(value)
+        self.s.message(self.ws, dict(type="fresh_maintenance_result", maintenance_id=mid, action="restore_thread", complete=True))
+        self.assertEqual(self.s.maintenance_commands[mid]["result"]["status"], "complete")
+        self.assertFalse(self.s.ready(), "navigation ACK is not post-navigation readiness")
+        self.assertEqual((self.path / "events.jsonl").read_bytes(), before)
+
     def test_invalid_observation_and_send_locator_fault_reject_before_creation(self):
         for value in ({"reply_wait_ms": True}, {"reply_wait_ms": 0}, {"reply_wait_ms": 600001}, {"locator_miss": "yes"}, {"unknown": 1}):
             with self.assertRaises(b.RequestError): self.s.send(self.p, observation=value)

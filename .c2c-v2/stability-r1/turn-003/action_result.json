@@ -1,0 +1,99 @@
+{
+  "round": 3,
+  "request_id": "53682e9f-2cf7-4cf1-85f5-8e0a9ffb7c7c",
+  "control_id": "25d50cf0-bd25-462a-96a9-c6a3bbda5d04",
+  "attempt_id": 1,
+  "reviewed_commit": "05ec307c394546734b6749a971193c4fefa23986",
+  "verdict": "PASS_CONTINUE",
+  "raw_response_sha256": "77f94fb71a473af90ec2609ebfc15b8c5bf8f20f11ce0911a912fdf854d98c89",
+  "instruction": "Add one bounded cross-layer Fresh restoration conformance action for turn-004: in fresh_runtime.test.cjs extend restore_thread negative coverage to prove chrome.tabs.update is never called when the frozen native tab currently sits on an unrelated ChatGPT conversation, when two tabs share the current root URL, or when another tab already owns the frozen target URL; in the bridge Python tests add the corresponding stale-status and duplicate-current-URL cases and prove no maintenance dispatch, journal mutation, logical creation or send occurs. Keep the existing successful exact-tab/root-to-frozen-thread case unchanged and explicitly assert restoration ACK does not itself establish post-navigation readiness. Run full Python/Node/syntax/manifest/diff gates and publish immutable turn-004 evidence only; do not change version/protocol/build, legacy behavior or unrelated runtime authority.",
+  "codex_action": "Added cross-layer stale and duplicate current URL restoration negatives with no dispatch navigation journal or mirror changes; navigation ACK remains distinct from readiness.",
+  "checks": [
+    {
+      "name": "reviewer-directed-conformance",
+      "args": [
+        "C:\\Users\\Lenovo\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_fresh_delivery.FreshTests.test_restore_rejects_stale_duplicate_and_unrelated_current_urls_without_writes_or_dispatch"
+      ],
+      "cwd": "D:\\Worktrees\\codex-with-chatgpt\\c2c-v2-github-evidence-r1\\poc_v2\\extension_control\\bridge",
+      "exit_code": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "904521591351d19e6a69d3dde05bc0ef3a0646535c83ac5ac764d7e76a993759"
+    },
+    {
+      "name": "scoped-diff-check",
+      "args": [
+        "git",
+        "diff",
+        "--check",
+        "--",
+        "poc_v2/extension_control"
+      ],
+      "cwd": "D:\\Worktrees\\codex-with-chatgpt\\c2c-v2-github-evidence-r1",
+      "exit_code": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "916ea11513a562aed298a46edc2c1bef37c33ea1d736c3fc53d6b8173bf742d9"
+    }
+  ],
+  "required_GitHub_reads_cross_checked": [
+    {
+      "path": ".c2c-v2/stability-r1/turn-003/review_request.json",
+      "ref_commit": "05ec307c394546734b6749a971193c4fefa23986",
+      "sha256": "a73936926aee5ea78d55219d3ac60a8bd41dca9d7876c06462daa8a8bd5dd2e4",
+      "read_method": "GitHub fetch_file"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_bridge.py",
+      "ref_commit": "1e41136b2d5cef8c85ead54fd2a76559154e68cf",
+      "sha256": "912784e35f8f64ea1decc436604c7cb7d86415fdd20c7da7ff2b163b0f2e7771",
+      "read_method": "GitHub fetch_file"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_background.js",
+      "ref_commit": "1e41136b2d5cef8c85ead54fd2a76559154e68cf",
+      "sha256": "83a74637470be08aea416e1944531677a7e697c1cc4338f605620e7675a4c9c4",
+      "read_method": "GitHub fetch_file"
+    },
+    {
+      "path": "poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+      "ref_commit": "1e41136b2d5cef8c85ead54fd2a76559154e68cf",
+      "sha256": "d4e120b9373ff0a1cd606b636a91d7f0882d22cc1cde4a32d7f5657d1acdb82a",
+      "read_method": "GitHub fetch_file"
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-003/test_summary.json",
+      "ref_commit": "05ec307c394546734b6749a971193c4fefa23986",
+      "sha256": "a7967af4cc5c209cc65088550959f99ee0bbc45bf161de9fd23d2d47fc2dab78",
+      "read_method": "GitHub fetch_file"
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-003/source_hashes.json",
+      "ref_commit": "05ec307c394546734b6749a971193c4fefa23986",
+      "sha256": "243a7cc365d17b098b36c896ebb1bf2cf9c67544684597178ba0981d40b38696",
+      "read_method": "GitHub fetch_file plus blob verification"
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-003/previous_action.json",
+      "ref_commit": "05ec307c394546734b6749a971193c4fefa23986",
+      "sha256": "8a54306befeb310588a69d1ddde896de8dbc1f3268b78eae15a9fe81b3671905",
+      "read_method": "GitHub fetch_file"
+    }
+  ],
+  "source_change": true,
+  "USER_INTERMEDIATE_RELAY": 0,
+  "USER_ACTIONS_DURING_CONTROL_LOOP": 0,
+  "interpretation": "Finite instruction was interpreted within owner scope; no arbitrary reviewer shell text was executed.",
+  "full_regression": {
+    "python_passed": 117,
+    "node_passed": 171,
+    "syntax_files": 21,
+    "manifest": "PASS",
+    "diff": "PASS",
+    "legacy_unchanged": 14
+  },
+  "full_regression_evidence": "repairs/turn03-restoration-negative/checks"
+}

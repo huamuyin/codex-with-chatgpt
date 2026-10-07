@@ -1,0 +1,83 @@
+{
+  "STATE": "REVIEW_RESULT",
+  "ROUND": 3,
+  "REQUEST_ID": "53682e9f-2cf7-4cf1-85f5-8e0a9ffb7c7c",
+  "CONTROL_ID": "25d50cf0-bd25-462a-96a9-c6a3bbda5d04",
+  "ATTEMPT_ID": 1,
+  "REVIEWED_COMMIT": "05ec307c394546734b6749a971193c4fefa23986",
+  "VERDICT": "PASS_CONTINUE",
+  "FINDINGS": [
+    {
+      "severity": "INFO",
+      "finding": "The preceding Round2 action is correctly implemented. Exact commit 1e41136b2d5cef8c85ead54fd2a76559154e68cf adds the requested failed-journal byte-prefix regression and preserves retry identity/history; full evidence reports 116 Python and 170 Node passes."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Original-thread restoration is authority-bound at both layers. fresh_bridge reconstructs the frozen journal attempt and requires exact target_tab_id, frozen conversation_url, a unique complete bound tab, no duplicate target URL and a fresh status snapshot. fresh_background independently rechecks the saved attempt against its mirror, exact native tab, current root-or-frozen URL and live tab uniqueness before calling chrome.tabs.update on that same tab."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Existing runtime tests prove successful restoration navigates only the original native tab with no send or mirror mutation, and reject wrong tab, wrong requested URL, wrong control identity and a duplicate saved target. No blocking defect was found. Useful negative coverage is still missing for an unrelated current ChatGPT thread, duplicate current-root tabs, and stale bridge restoration diagnostics."
+    }
+  ],
+  "REVIEW_SUMMARY": "The exact incoming authority 05ec307c394546734b6749a971193c4fefa23986 was independently reviewed without substituting branch HEAD; PR #1 head matched that commit at review start. review_request.json binds implementation and previous action to 1e41136b2d5cef8c85ead54fd2a76559154e68cf. All required turn-003 evidence and source files were reread at their immutable refs, and their Git blobs match source_hashes.json. GitHub compare shows the evidence commit is one evidence-only commit after the implementation. The preceding Codex action satisfies the Round2 instruction. For this turn's focus, restoration derives authority from the frozen request/control/attempt/native-tab/thread tuple and is independently live-revalidated in the extension before navigation; existing success and rejection tests support that design. No real defect requiring source correction was found, so PASS_CONTINUE is justified with a focused negative restoration conformance action.",
+  "GITHUB_RESOURCES_READ": [
+    {
+      "path": ".c2c-v2/stability-r1/turn-003/review_request.json",
+      "ref_commit": "05ec307c394546734b6749a971193c4fefa23986",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/05ec307c394546734b6749a971193c4fefa23986/.c2c-v2/stability-r1/turn-003/review_request.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"focus\": \"Exact native tab/URL authority and original-thread restoration\""
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-003/test_summary.json",
+      "ref_commit": "05ec307c394546734b6749a971193c4fefa23986",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/05ec307c394546734b6749a971193c4fefa23986/.c2c-v2/stability-r1/turn-003/test_summary.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"python_passed\": 116, \"node_passed\": 170"
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-003/source_hashes.json",
+      "ref_commit": "05ec307c394546734b6749a971193c4fefa23986",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/05ec307c394546734b6749a971193c4fefa23986/.c2c-v2/stability-r1/turn-003/source_hashes.json",
+      "read_method": "GitHub fetch_file plus blob verification",
+      "source_excerpt": "\"implementation_commit\": \"1e41136b2d5cef8c85ead54fd2a76559154e68cf\""
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-003/previous_action.json",
+      "ref_commit": "05ec307c394546734b6749a971193c4fefa23986",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/05ec307c394546734b6749a971193c4fefa23986/.c2c-v2/stability-r1/turn-003/previous_action.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"codex_action\": \"Added failed-journal exact byte and decoded-event prefix proof across explicit retry"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_bridge.py",
+      "ref_commit": "1e41136b2d5cef8c85ead54fd2a76559154e68cf",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/1e41136b2d5cef8c85ead54fd2a76559154e68cf/poc_v2/extension_control/bridge/fresh_bridge.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "or tid != wire[\"target_tab_id\"] or url != wire[\"conversation_url\"]"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_background.js",
+      "ref_commit": "1e41136b2d5cef8c85ead54fd2a76559154e68cf",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/1e41136b2d5cef8c85ead54fd2a76559154e68cf/poc_v2/extension_control/chrome_extension/fresh_background.js",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "await chrome.tabs.update(m.tab_id, { url: known.conversation_url });"
+    },
+    {
+      "path": "poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+      "ref_commit": "1e41136b2d5cef8c85ead54fd2a76559154e68cf",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/1e41136b2d5cef8c85ead54fd2a76559154e68cf/poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "test(\"explicit thread restoration navigates only the original native tab to its journal URL and never sends\""
+    },
+    {
+      "path": "commit 1e41136b2d5cef8c85ead54fd2a76559154e68cf",
+      "ref_commit": "1e41136b2d5cef8c85ead54fd2a76559154e68cf",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/commit/1e41136b2d5cef8c85ead54fd2a76559154e68cf",
+      "read_method": "GitHub fetch_commit with actual patch",
+      "source_excerpt": "poc: execute reviewer-directed stability turn 02 action"
+    }
+  ],
+  "NEXT_CODEX_INSTRUCTION": "Add one bounded cross-layer Fresh restoration conformance action for turn-004: in fresh_runtime.test.cjs extend restore_thread negative coverage to prove chrome.tabs.update is never called when the frozen native tab currently sits on an unrelated ChatGPT conversation, when two tabs share the current root URL, or when another tab already owns the frozen target URL; in the bridge Python tests add the corresponding stale-status and duplicate-current-URL cases and prove no maintenance dispatch, journal mutation, logical creation or send occurs. Keep the existing successful exact-tab/root-to-frozen-thread case unchanged and explicitly assert restoration ACK does not itself establish post-navigation readiness. Run full Python/Node/syntax/manifest/diff gates and publish immutable turn-004 evidence only; do not change version/protocol/build, legacy behavior or unrelated runtime authority."
+}

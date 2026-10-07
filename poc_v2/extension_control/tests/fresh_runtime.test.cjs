@@ -440,6 +440,18 @@ test("thread restoration rejects wrong tab URL identity and duplicate targets wi
   }
 });
 
+test("restoration refuses unrelated current conversation or duplicate current root with zero updates", async () => {
+  for (const tabs of [
+    [{ id: R.target_tab_id, url: "https://chatgpt.com/c/unrelated", status: "complete" }],
+    [{ id: R.target_tab_id, url: "https://chatgpt.com/", status: "complete" }, { id: 99, url: "https://chatgpt.com/", status: "complete" }],
+    [{ id: R.target_tab_id, url: "https://chatgpt.com/", status: "complete" }, { id: 99, url: R.conversation_url, status: "complete" }],
+  ]) {
+    const updates = [], w = worker({ tabs, tabUpdate: async (...args) => updates.push(args) }); await w.call("restore", fixture.checkpoint);
+    const before = clone(w.storage); await w.call("maintenance", { maintenance_id: R.request_id, action: "restore_thread", tab_id: R.target_tab_id, url: R.conversation_url, request: R });
+    assert.equal(w.sent.at(-1).complete, false); assert.deepEqual(updates, []); assert.deepEqual(w.storage, before); assert.deepEqual(w.contentCalls, []);
+  }
+});
+
 test("completed known request observation does not dispatch a send or mint identity", async () => {
   const w = worker(); await w.call("restore", fixture.checkpoint);
   await w.call("maintenance", { maintenance_id: R.request_id, action: "observe_request", tab_id: R.target_tab_id, url: R.conversation_url,
