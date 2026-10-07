@@ -159,7 +159,14 @@ globalThis.C2CV2FreshLocator = (() => {
       const current = pending.shift();
       inspected += 1;
       const { node, depth } = current;
-      if (isVisible(node)) {
+      // Cheap necessary conditions before layout-dependent innerText/visibility reads.
+      // Every roleOf branch is represented here; the final role and wire checks are unchanged.
+      const cheap = String(node.textContent || "");
+      const explicit = attribute(node, "data-message-author-role").toLowerCase();
+      const relevant = explicit === "user" || explicit === "assistant" || labelRole(node)
+        || cheap.includes("TASK_ID") && (cheap.includes("NONCE") && cheap.includes("COMMIT") || cheap.includes("STATE"))
+        || expectedReply && normalizeText(cheap).includes(normalizeText(expectedReply));
+      if (relevant && isVisible(node)) {
         const text = textOf(node);
         const role = roleOf(node, text, expectedReply);
         if (role) candidates.push({ node, role, text, strategy: "bounded-structural-fallback" });

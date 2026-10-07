@@ -342,6 +342,19 @@ test("routine content status finds complete exact turns without a full body stru
   assert.equal(d.assistant_complete, true); assert.deepEqual(clone(d.structure), []); assert.equal(d.inspected, 0);
 });
 
+test("structural locator skips layout reads for unrelated decoration while retaining full wire and assistant checks", () => {
+  const w = worker(), L = w.sandbox.C2CV2FreshLocator;
+  const noise = Array.from({ length: 1000 }, () => { const n = new F.FixtureNode("div");
+    Object.defineProperty(n, "textContent", { value: "unrelated decoration" });
+    Object.defineProperty(n, "innerText", { get() { throw Error("unnecessary layout read"); } }); return n; });
+  const u = user(), a = new F.FixtureNode("div", { "data-message-author-role": "assistant", "data-message-status": "complete" }, "actual reply");
+  const main = new F.FixtureNode("main", {}, "", [...noise, u, a]);
+  const doc = { querySelector: (s) => s === "main" ? main : null, querySelectorAll: () => [] };
+  const found = L.findOriginalUserTurn(doc, { task_id: R.task_id, iteration: R.iteration, request_id: R.request_id,
+    control_id: R.control_id, attempt_id: R.attempt_id, nonce: R.nonce, commit: R.expected_commit, original_message: R.message });
+  assert.equal(found.node, u); assert.equal(L.findAssistantAfter(doc, found).node, a); assert.equal(L.isAssistantComplete(doc, { node: a }, found), true);
+});
+
 test("loading target is distinct from ambiguity and diagnostics never select pending URLs", async () => {
   const w = worker({ tabs: [{ id: R.target_tab_id, url: R.conversation_url, status: "loading", pendingUrl: "https://other.example/private" }] });
   await w.call("restore", fixture.checkpoint); await w.call("status");
