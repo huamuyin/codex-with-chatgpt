@@ -98,6 +98,17 @@ test("Python checkpoint restores after cache loss without sending, recovery, nav
   assert.deepEqual(w.storage["c2c.originalRequests.v2"], { legacy: "untrusted" });
   assert.deepEqual(w.forbidden, []);
 });
+
+test("sealed Python failure canonical duplicate checkpoint welcome restores only mirror and pings", async () => {
+  const roundtrip = JSON.parse(fs.readFileSync(path.join(process.env.C2C_V2_TEST_DATA_ROOT, "fresh-roundtrip-cross-language.json"), "utf8"));
+  assert.equal(roundtrip.checkpoint.requests.length, 2); const record = Object.values(roundtrip.records)[0];
+  assert.equal(record.status, "complete"); assert.equal(record.duplicate_count, 1); assert.equal(record.result.attempt_id, 2);
+  const w = worker(); await w.call("wire", JSON.stringify({ type: "fresh_welcome", bridge_identity: roundtrip.bridge_identity, checkpoint: roundtrip.checkpoint }));
+  assert.deepEqual(w.storage["c2c.fresh.v3.attemptMirror"], roundtrip.checkpoint.requests);
+  assert.equal(w.contentCalls.every((m) => m.type === "C2C_FRESH_PING"), true);
+  assert.equal(w.sent.every((m) => m.type === "fresh_status"), true); assert.deepEqual(w.forbidden, []);
+  assert.equal(JSON.stringify(w.storage).includes('"control_token"'), false);
+});
 test("new attempt for same logical request may send; same attempt is an expendable resume", async () => {
   const w = worker(); await w.call("restore", { ...fixture.checkpoint, requests: [] });
   await w.call("dispatch", R); await w.call("dispatch", retry());

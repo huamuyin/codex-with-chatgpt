@@ -181,6 +181,49 @@ class FreshTests(unittest.TestCase):
         for file in self.path.iterdir():
             if file.is_file(): self.assertTrue(self.s.control_token.encode() not in file.read_bytes()); self.assertNotIn(b'"control_token"', file.read_bytes())
 
+    def test_sealed_checkpoint_roundtrip_exports_background_fixture_without_sending(self):
+        r = self.send(); self.s.timeout(r["request_id"], 1); self.retry(r)
+        self.s.message(self.ws, self.msg(r, 2, raw_reply="canonical2")); self.s.message(self.ws, self.msg(r, 1, raw_reply="duplicate1"))
+        before = {name:(self.path/name).read_bytes() for name in ("events.jsonl", "head.json")}
+        records = copy.deepcopy(self.s.requests.records); checkpoint = self.s.requests.checkpoint(); self.j.close()
+        reopened = self.open(); state = f.FreshState(reopened, EXTENSION); session = CapturingSession(); welcome = state.register(session)
+        self.assertEqual(welcome["type"], "fresh_welcome"); self.assertEqual(welcome["checkpoint"], checkpoint)
+        self.assertEqual(state.requests.records, records); self.assertEqual(state.requests.checkpoint(), checkpoint)
+        self.assertEqual(session.messages, []); self.assertIsNone(state.active); self.assertEqual(state.maintenance_commands, {})
+        for name, raw in before.items(): self.assertEqual((self.path/name).read_bytes(), raw)
+        fixture = {"bridge_identity": state.identity, "checkpoint": checkpoint, "records": records}
+        self.assertTrue(state.control_token.encode() not in d.encoded(fixture)); self.assertNotIn(b'"control_token"', d.encoded(fixture))
+        (self.root/"fresh-roundtrip-cross-language.json").write_bytes(d.encoded(fixture) + b"\n")
+
+    def test_corrupt_seals_deleted_tail_and_recomputed_invalid_attempt_never_replace_journal(self):
+        r = self.send(); self.s.timeout(r["request_id"], 1); self.retry(r)
+        original = {name:(self.path/name).read_bytes() for name in ("owner.json", "events.jsonl", "head.json")}
+        for variant in ("head_sequence", "head_hash", "deleted_tail", "invalid_attempt", "invalid_wire"):
+            path = self.root / ("corrupt-roundtrip-" + variant + "-" + uuid.uuid4().hex[:8]); path.mkdir()
+            corrupted = dict(original)
+            if variant.startswith("head_"):
+                head = json.loads(corrupted["head.json"])
+                if variant == "head_sequence": head["sequence"] += 1
+                else: head["hash"] = "0" * 64
+                corrupted["head.json"] = d.encoded(head) + b"\n"
+            elif variant == "deleted_tail": corrupted["events.jsonl"] = b"\n".join(corrupted["events.jsonl"].splitlines()[:-1]) + b"\n"
+            else:
+                rows = [json.loads(line)["event"] for line in corrupted["events.jsonl"].splitlines()]
+                if variant == "invalid_attempt": rows[-1]["data"]["attempt_id"] = 999
+                else: rows[-1]["data"]["wire_message"] += " altered"
+                previous = "0" * 64; encoded = []
+                for event in rows:
+                    event["previous_hash"] = previous; digest = hashlib.sha256(d.encoded(event)).hexdigest()
+                    encoded.append(d.encoded({"event": event, "hash": digest}) + b"\n"); previous = digest
+                corrupted["events.jsonl"] = b"".join(encoded); corrupted["head.json"] = d.encoded({"sequence": len(rows), "hash": previous}) + b"\n"
+            for name, raw in corrupted.items(): (path/name).write_bytes(raw)
+            (path/"writer.lock").write_bytes(b""); names = sorted(x.name for x in path.iterdir())
+            with self.subTest(variant=variant), self.assertRaises(ValueError):
+                candidate = d.FreshJournal(path, "synthetic-fresh-only"); candidate_state = f.FreshState(candidate, EXTENSION)
+                candidate_state.requests.checkpoint()
+            self.assertEqual(sorted(x.name for x in path.iterdir()), names)
+            for name, raw in corrupted.items(): self.assertEqual((path/name).read_bytes(), raw)
+
     def test_restore_original_thread_from_root_is_navigation_only_and_uses_frozen_attempt(self):
         r = self.send(); raw = (self.path / "events.jsonl").read_bytes()
         self.s.status.update(connected=False, candidate_count=0, tab_id=None, url="",

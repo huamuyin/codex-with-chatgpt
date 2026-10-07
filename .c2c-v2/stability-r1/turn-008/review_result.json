@@ -1,0 +1,98 @@
+{
+  "STATE": "REVIEW_RESULT",
+  "ROUND": 8,
+  "REQUEST_ID": "b6d32365-a114-4bad-9762-7dd3e88e6c5a",
+  "CONTROL_ID": "6169dc54-5f83-4172-8103-872eb4dfeedc",
+  "ATTEMPT_ID": 1,
+  "REVIEWED_COMMIT": "8a36de6e04926e0314650accb7e7c24adbc5359a",
+  "VERDICT": "PASS_CONTINUE",
+  "FINDINGS": [
+    {
+      "severity": "INFO",
+      "finding": "The preceding Round7 authentication action is correctly bounded. GitHub compare from 96aabde3abbccc049588d12526ca5f20da80dc97 to 7d7d217cae8a3ed234de6df8d5ba0564027bb3d5 is one commit adding the requested authentication/credential-exclusion tests and action evidence without production behavior changes; reported full regression is 126 Python and 173 Node passes."
+    },
+    {
+      "severity": "INFO",
+      "finding": "FreshJournal is sealed and fail-closed: verification rejects indirect journal files, owner mismatch, non-newline-terminated event tails, malformed envelopes, sequence/previous-hash/hash-chain violations, replay-invalid event semantics and head sequence/hash mismatch. append() verifies existing authority first, validates the prospective event before writing, fsyncs the event stream, atomically replaces the sealed head, then re-verifies; an interrupted or inconsistent transaction poisons or fails reopening rather than resetting history."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Existing tests exercise truncation, complete-tail deletion, schema/content tampering, missing head, owner mismatch, recomputed semantic-invalid attempts, disk-write failure, byte-exact restart replay and single-writer behavior. No journal integrity defect was found under the documented fail-closed rather than guaranteed power-loss-recovery model."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Checkpoint creation first invokes journal.verify() under the FreshRequests lock and derives only immutable wire requests from the replayed records. Python restart reconstructs records without dispatch, leaves active unset, preserves journal bytes, and requires explicit retry to append a new attempt."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Background restart is also non-sending: fresh_welcome calls restore(checkpoint) and status() only; restore validates checkpoint schema/protocol/delivery semantics, individual request contracts, duplicate attempt keys and logical identity conflicts, replaces only the expendable session mirror and never calls dispatch. The cross-language restart test confirms cache loss restores the Python checkpoint while emitting no C2C_FRESH_REVIEW, navigation, injection or recovery action."
+    }
+  ],
+  "REVIEW_SUMMARY": "The exact incoming authority 8a36de6e04926e0314650accb7e7c24adbc5359a was independently reviewed without substituting branch HEAD; PR #1 head matched the incoming commit at review start. review_request.json binds implementation and previous action to 7d7d217cae8a3ed234de6df8d5ba0564027bb3d5. All required turn-008 evidence and all three required source/test files were independently reread at their immutable refs, and their Git blob IDs match source_hashes.json. The implementation-to-evidence delta is one evidence-only commit. The preceding authentication action satisfies the Round7 instruction. The journal hash/seal/replay chain, derived checkpoint boundary and both Python/background restart paths are materially fail-closed, and restart does not implicitly send or retry. I found no real source defect requiring correction, so PASS_CONTINUE is justified with one additional cross-layer sealed-journal/checkpoint round-trip conformance action.",
+  "GITHUB_RESOURCES_READ": [
+    {
+      "path": ".c2c-v2/stability-r1/turn-008/review_request.json",
+      "ref_commit": "8a36de6e04926e0314650accb7e7c24adbc5359a",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/8a36de6e04926e0314650accb7e7c24adbc5359a/.c2c-v2/stability-r1/turn-008/review_request.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"focus\": \"Sealed journal/checkpoint integrity and restart without implicit send\""
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-008/test_summary.json",
+      "ref_commit": "8a36de6e04926e0314650accb7e7c24adbc5359a",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/8a36de6e04926e0314650accb7e7c24adbc5359a/.c2c-v2/stability-r1/turn-008/test_summary.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"python_passed\": 126, \"node_passed\": 173"
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-008/source_hashes.json",
+      "ref_commit": "8a36de6e04926e0314650accb7e7c24adbc5359a",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/8a36de6e04926e0314650accb7e7c24adbc5359a/.c2c-v2/stability-r1/turn-008/source_hashes.json",
+      "read_method": "GitHub fetch_file plus blob verification",
+      "source_excerpt": "\"implementation_commit\": \"7d7d217cae8a3ed234de6df8d5ba0564027bb3d5\""
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-008/previous_action.json",
+      "ref_commit": "8a36de6e04926e0314650accb7e7c24adbc5359a",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/8a36de6e04926e0314650accb7e7c24adbc5359a/.c2c-v2/stability-r1/turn-008/previous_action.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"codex_action\": \"Added five-case WebSocket origin and first-frame authentication coverage\""
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_delivery.py",
+      "ref_commit": "7d7d217cae8a3ed234de6df8d5ba0564027bb3d5",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/7d7d217cae8a3ed234de6df8d5ba0564027bb3d5/poc_v2/extension_control/bridge/fresh_delivery.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "if seal != {\"sequence\": len(events), \"hash\": previous} or type(seal.get(\"sequence\")) is not int:"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/test_fresh_delivery.py",
+      "ref_commit": "7d7d217cae8a3ed234de6df8d5ba0564027bb3d5",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/7d7d217cae8a3ed234de6df8d5ba0564027bb3d5/poc_v2/extension_control/bridge/test_fresh_delivery.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "def test_restart_loads_pending_identity_without_send_or_write_then_allows_explicit_retry(self):"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_background.js",
+      "ref_commit": "7d7d217cae8a3ed234de6df8d5ba0564027bb3d5",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/7d7d217cae8a3ed234de6df8d5ba0564027bb3d5/poc_v2/extension_control/chrome_extension/fresh_background.js",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "attempts.clear(); for (const [k, r] of checked) attempts.set(k, r); await saveMirror(); mirrorReady = true;"
+    },
+    {
+      "path": "poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+      "ref_commit": "7d7d217cae8a3ed234de6df8d5ba0564027bb3d5",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/7d7d217cae8a3ed234de6df8d5ba0564027bb3d5/poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "test(\"Python checkpoint restores after cache loss without sending, recovery, navigation or injection\""
+    },
+    {
+      "path": "commit 7d7d217cae8a3ed234de6df8d5ba0564027bb3d5",
+      "ref_commit": "7d7d217cae8a3ed234de6df8d5ba0564027bb3d5",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/commit/7d7d217cae8a3ed234de6df8d5ba0564027bb3d5",
+      "read_method": "GitHub fetch_commit and immutable compare",
+      "source_excerpt": "poc: execute reviewer-directed stability turn 07 action"
+    }
+  ],
+  "NEXT_CODEX_INSTRUCTION": "Add one test-focused Fresh sealed-journal/checkpoint round-trip conformance action for turn-009, changing production code only if a test exposes a real defect. Build a journal with one logical request, at least two attempts, a failure or delivery_uncertain event, a canonical result and a duplicate; snapshot events.jsonl, head.json, replayed records and checkpoint, close/reopen the journal and assert all bytes, derived records and checkpoint wires are identical and no send/maintenance/navigation occurs. Register a fresh bridge session from that reopened journal and prove the only initial authority transfer is fresh_welcome/checkpoint; feed that checkpoint to the background restore path and prove it only replaces the expendable mirror plus status pings and emits no C2C_FRESH_REVIEW. Separately corrupt head sequence/hash, delete a complete event tail, and construct a fully recomputed event hash/head around an invalid attempt sequence or wire; assert reopening fails closed, preserves the corrupted bytes, creates no replacement journal and cannot produce a checkpoint. Run full Python/Node/syntax/manifest/diff gates and publish immutable turn-009 evidence only; do not change version/protocol/build, retry policy, legacy paths or unrelated runtime authority."
+}
