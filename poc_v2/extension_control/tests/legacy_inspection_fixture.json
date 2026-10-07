@@ -1,0 +1,12 @@
+{
+  "fixture": true,
+  "request_id": "4754374f-14dd-4004-bf87-3b87972e17fa",
+  "task_id": "C2C_V2_CHROME_EXTENSION_CONTROL_PLANE_POC_R1",
+  "iteration": 3,
+  "expected_commit": "4229d59da343b0acb60cdc32e954346650f91e1d",
+  "conversation_url": "https://chatgpt.com/c/offline-fixture",
+  "target_tab_id": 7,
+  "expected_reply": "[C2C_V2_EXTENSION_SMOKE_OK]",
+  "inspection": 1,
+  "original_message_template": "[C2C_V2]\nSTATE: REVIEW_REQUEST\nTASK_ID: C2C_V2_CHROME_EXTENSION_CONTROL_PLANE_POC_R1\nITERATION: 3\nNONCE: __OBSERVED_NONCE__\n\nREPO:\nhuamuyin/codex-with-chatgpt\n\nPR:\n1\n\nBRANCH:\npoc/c2c-v2-github-bus-r1\n\nCOMMIT:\n4229d59da343b0acb60cdc32e954346650f91e1d\n\nEVIDENCE_PATH:\n.c2c-v2/iteration-003/review_request.json\n\nINSTRUCTION:\n[C2C_V2_EXTENSION_SMOKE]\nReply exactly:\n[C2C_V2_EXTENSION_SMOKE_OK]"
+}
