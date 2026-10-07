@@ -273,3 +273,9 @@ The ref is exactly 40 hexadecimal characters and the URL uses HTTPS with the exa
 host. This shape check does not prove a read happened. The controller independently checks
 required source/evidence paths, immutable refs and exact repository URLs against its control
 request before executing the bounded instruction. Extra contextual reads may be reported.
+# Late failure audit after completion
+
+A late `attempt_failed` or `delivery_uncertain` event remains in the sealed append-only
+journal. It cannot overwrite the derived state of an already-completed attempt or the
+canonical logical result. Earlier failure history remains intact when a later valid reply
+transitions a failed attempt to complete. Restart replays the same rule without changing bytes.

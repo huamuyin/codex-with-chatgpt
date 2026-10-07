@@ -1,0 +1,84 @@
+{
+  "STATE": "REVIEW_RESULT",
+  "ROUND": 4,
+  "REQUEST_ID": "54595524-9d3d-40d3-8bc5-f5bd9f37df39",
+  "CONTROL_ID": "c94f3e9b-6455-4736-b2e2-22c7f49627f4",
+  "ATTEMPT_ID": 1,
+  "REVIEWED_COMMIT": "dde4b200d2b2d23e4a6885f55aa6447cb8edd46c",
+  "VERDICT": "CHANGES_REQUIRED",
+  "FINDINGS": [
+    {
+      "severity": "MAJOR",
+      "path": "poc_v2/extension_control/bridge/fresh_delivery.py",
+      "finding": "A late attempt_failed or delivery_uncertain event can overwrite an already-complete attempt's derived status to failed. replay() unconditionally assigns attempt[\"status\"]=\"failed\" for failure events even after a canonical result or duplicate_reply previously marked that attempt complete. The logical request and canonical result remain complete, but the derived attempt state becomes internally contradictory. Existing test_late_failure_never_uncompletes_request_or_erases_audit checks only logical status and journal prefix, so it does not catch this attempt-level regression."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Canonical logical-result selection itself is first-valid-result stable: accept() emits result while the logical request is incomplete and duplicate_reply after completion; replay preserves the first result and increments duplicate_count for later valid replies."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The preceding Round3 Codex action is correctly bounded. Commit aba581ac123b31cde660fd86908626cf5452ea97 adds only the requested restoration negative tests plus turn-003 evidence, and the turn-004 evidence commit is one evidence-only commit after it. Reported regression totals are 117 Python and 171 Node passes."
+    }
+  ],
+  "REVIEW_SUMMARY": "The exact incoming authority dde4b200d2b2d23e4a6885f55aa6447cb8edd46c was independently reviewed without substituting branch HEAD. review_request.json binds implementation and previous action to aba581ac123b31cde660fd86908626cf5452ea97. All required turn-004 evidence and all three required source/test files were read at their immutable refs, and their Git blob IDs match source_hashes.json. At-least-once retry and canonical/duplicate classification are generally coherent, including earlier-attempt late completion and later valid logical duplicates. However, the replay state machine contains a real canonical-attempt consistency defect: a failure event arriving after a valid result can change that completed attempt's derived status back to failed. Because this turn specifically reviews canonical results and genuine duplicates, that inconsistency requires correction rather than PASS_CONTINUE.",
+  "GITHUB_RESOURCES_READ": [
+    {
+      "path": ".c2c-v2/stability-r1/turn-004/review_request.json",
+      "ref_commit": "dde4b200d2b2d23e4a6885f55aa6447cb8edd46c",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/dde4b200d2b2d23e4a6885f55aa6447cb8edd46c/.c2c-v2/stability-r1/turn-004/review_request.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"focus\": \"Canonical result, genuine duplicate replies and at-least-once attempts\""
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-004/test_summary.json",
+      "ref_commit": "dde4b200d2b2d23e4a6885f55aa6447cb8edd46c",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/dde4b200d2b2d23e4a6885f55aa6447cb8edd46c/.c2c-v2/stability-r1/turn-004/test_summary.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"python_passed\": 117, \"node_passed\": 171"
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-004/source_hashes.json",
+      "ref_commit": "dde4b200d2b2d23e4a6885f55aa6447cb8edd46c",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/dde4b200d2b2d23e4a6885f55aa6447cb8edd46c/.c2c-v2/stability-r1/turn-004/source_hashes.json",
+      "read_method": "GitHub fetch_file plus blob verification",
+      "source_excerpt": "\"implementation_commit\": \"aba581ac123b31cde660fd86908626cf5452ea97\""
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-004/previous_action.json",
+      "ref_commit": "dde4b200d2b2d23e4a6885f55aa6447cb8edd46c",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/dde4b200d2b2d23e4a6885f55aa6447cb8edd46c/.c2c-v2/stability-r1/turn-004/previous_action.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"codex_action\": \"Added cross-layer stale and duplicate current URL restoration negatives"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_delivery.py",
+      "ref_commit": "aba581ac123b31cde660fd86908626cf5452ea97",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/aba581ac123b31cde660fd86908626cf5452ea97/poc_v2/extension_control/bridge/fresh_delivery.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "if kind in (\"attempt_failed\", \"delivery_uncertain\"): ... attempt[\"status\"] = \"failed\""
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_contract.js",
+      "ref_commit": "aba581ac123b31cde660fd86908626cf5452ea97",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/aba581ac123b31cde660fd86908626cf5452ea97/poc_v2/extension_control/chrome_extension/fresh_contract.js",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "return \"send-once\"; // One click per attempt; another attempt is explicitly allowed."
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/test_fresh_delivery.py",
+      "ref_commit": "aba581ac123b31cde660fd86908626cf5452ea97",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/aba581ac123b31cde660fd86908626cf5452ea97/poc_v2/extension_control/bridge/test_fresh_delivery.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "def test_late_failure_never_uncompletes_request_or_erases_audit(self):"
+    },
+    {
+      "path": "commit aba581ac123b31cde660fd86908626cf5452ea97",
+      "ref_commit": "aba581ac123b31cde660fd86908626cf5452ea97",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/commit/aba581ac123b31cde660fd86908626cf5452ea97",
+      "read_method": "GitHub fetch_commit and immutable compare",
+      "source_excerpt": "poc: execute reviewer-directed stability turn 03 action"
+    }
+  ],
+  "NEXT_CODEX_INSTRUCTION": "Patch only Fresh delivery replay semantics, focused tests/docs if needed, and turn-005 evidence: when replay processes attempt_failed or delivery_uncertain for an attempt whose status is already complete because a valid result or duplicate_reply was accepted, preserve that attempt's completed derived state and canonical logical result while retaining the late failure event in the append-only journal; do not let a late error overwrite completed attempt state. Add targeted tests for (1) canonical result then same-attempt late error, (2) retry attempt2 canonical then late attempt1 duplicate followed by late errors on either completed attempt, and (3) failure-before-result still transitioning failed->complete when the later valid reply arrives. Assert canonical result bytes/value and duplicate_count remain unchanged, restart replay yields the same derived state, and journal history remains append-only. Run full Python/Node/syntax/manifest/diff gates and publish immutable turn-005 evidence only; do not change version/protocol/build, retry authority, legacy behavior or unrelated runtime paths."
+}

@@ -88,6 +88,45 @@ class FreshTests(unittest.TestCase):
                 self.s.send({**self.p, "request_id": rid, key: bad}, retry=True, control_id=cid)
             self.assertEqual((self.path / "events.jsonl").read_bytes(), after)
 
+    def test_canonical_attempt_survives_same_attempt_late_error_and_restart(self):
+        r = self.send(); self.s.message(self.ws, self.msg(r, raw_reply="canonical exact"))
+        before = (self.path / "events.jsonl").read_bytes(); derived = self.s.requests.lookup(r["request_id"])
+        canonical = d.encoded(derived["result"])
+        self.s.requests.failed(r["request_id"], 1, "late_error")
+        after = (self.path / "events.jsonl").read_bytes(); current = self.s.requests.lookup(r["request_id"])
+        self.assertTrue(after.startswith(before)); self.assertEqual(current, derived)
+        self.assertEqual(d.encoded(current["result"]), canonical)
+        self.assertEqual(self.s.requests.journal.events[-1]["kind"], "attempt_failed")
+        self.j.close(); self.s, self.ws = self.state(self.open())
+        self.assertEqual(self.s.requests.lookup(r["request_id"]), current); self.assertEqual(self.ws.messages, [])
+        self.assertEqual((self.path / "events.jsonl").read_bytes(), after)
+
+    def test_both_completed_attempts_preserved_after_duplicate_and_late_errors(self):
+        r = self.send(); self.s.timeout(r["request_id"], 1); self.retry(r)
+        self.s.message(self.ws, self.msg(r, 2, raw_reply="canonical attempt2"))
+        self.s.message(self.ws, self.msg(r, 1, raw_reply="late duplicate attempt1"))
+        derived = self.s.requests.lookup(r["request_id"]); before = (self.path / "events.jsonl").read_bytes()
+        canonical = d.encoded(derived["result"]); self.assertEqual(derived["duplicate_count"], 1)
+        self.s.requests.failed(r["request_id"], 1, "late_error1")
+        self.s.requests.failed(r["request_id"], 2, "late_uncertain2", uncertain=True)
+        current = self.s.requests.lookup(r["request_id"]); after = (self.path / "events.jsonl").read_bytes()
+        self.assertEqual(current, derived); self.assertTrue(after.startswith(before)); self.assertEqual(d.encoded(current["result"]), canonical)
+        self.assertEqual([x["status"] for x in current["attempts"]], ["complete", "complete"])
+        self.assertEqual([x["kind"] for x in self.s.requests.journal.events[-2:]], ["attempt_failed", "delivery_uncertain"])
+        self.j.close(); self.s, self.ws = self.state(self.open())
+        self.assertEqual(self.s.requests.lookup(r["request_id"]), current); self.assertEqual((self.path / "events.jsonl").read_bytes(), after)
+
+    def test_failure_before_valid_reply_still_completes_without_erasing_failure_history(self):
+        r = self.send(); self.s.timeout(r["request_id"], 1)
+        before = (self.path / "events.jsonl").read_bytes(); self.s.message(self.ws, self.msg(r, raw_reply="valid after failure"))
+        current = self.s.requests.lookup(r["request_id"]); after = (self.path / "events.jsonl").read_bytes()
+        self.assertTrue(after.startswith(before)); self.assertEqual(current["status"], "complete")
+        self.assertEqual(current["attempts"][0]["status"], "complete"); self.assertEqual(current["attempts"][0]["error_code"], "caller_wait_timeout")
+        self.assertEqual(current["duplicate_count"], 0); canonical = d.encoded(current["result"])
+        self.j.close(); self.s, self.ws = self.state(self.open())
+        restored = self.s.requests.lookup(r["request_id"]); self.assertEqual(restored, current)
+        self.assertEqual(d.encoded(restored["result"]), canonical); self.assertEqual((self.path / "events.jsonl").read_bytes(), after)
+
     def test_restore_original_thread_from_root_is_navigation_only_and_uses_frozen_attempt(self):
         r = self.send(); raw = (self.path / "events.jsonl").read_bytes()
         self.s.status.update(connected=False, candidate_count=0, tab_id=None, url="",

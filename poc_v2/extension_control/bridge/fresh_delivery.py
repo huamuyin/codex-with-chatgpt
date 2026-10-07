@@ -205,7 +205,8 @@ class FreshRequests:
             if kind in ("attempt_failed", "delivery_uncertain"):
                 require(set(d) == {"attempt_id", "error_code"} and isinstance(d["error_code"], str)
                         and re.fullmatch(r"[a-z0-9_]{1,64}", d["error_code"]))
-                attempt["status"] = "failed"; attempt["error_code"] = d["error_code"]
+                if attempt["status"] != "complete":
+                    attempt["status"] = "failed"; attempt["error_code"] = d["error_code"]
                 if r["status"] != "complete": r["status"] = "failed"
             elif kind == "thread_bound":
                 require(set(d) == {"attempt_id", "conversation_url", "tab_id"} and type(d["tab_id"]) is int
