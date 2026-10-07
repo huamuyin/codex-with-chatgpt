@@ -1,0 +1,338 @@
+{
+  "task_id": "B2_REPOSITORY_CLOSURE_AND_REAL_ROUND4_ROUND5_AUTONOMOUS_LOOP_R1",
+  "iteration": 5,
+  "repo": "huamuyin/codex-with-chatgpt",
+  "branch": "poc/c2c-v2-github-bus-r1",
+  "pr": 1,
+  "implementation_commit": "8b7797ed5936c2027fcff815cd71ffc16eef215a",
+  "previous_evidence_commit": "86c40d36a20bc42b6256bbf959a13319d9dd1beb",
+  "b2_closure_commit": "ee9e74650a35b2fa0e3491c1a96544b0068ff3ed",
+  "commit_binding": "Incoming COMMIT is the immutable evidence commit containing this request. REVIEWED_COMMIT must equal it exactly. Independently fetch implementation_commit and its actual two-file patch; never substitute another head.",
+  "round4_actual_response": {
+    "STATE": "REVIEW_RESULT",
+    "ROUND": 4,
+    "REQUEST_ID": "7c52c15e-1638-4075-b9a9-b9e98bdb81cb",
+    "CONTROL_ID": "6725eaf5-59a0-44ea-89b3-10b6d2a04488",
+    "REVIEWED_COMMIT": "86c40d36a20bc42b6256bbf959a13319d9dd1beb",
+    "REVIEWED_IMPLEMENTATION_COMMIT": "ee9e74650a35b2fa0e3491c1a96544b0068ff3ed",
+    "VERDICT": "CHANGES_REQUIRED",
+    "FINDINGS": [
+      {
+        "severity": "MAJOR",
+        "path": "poc_v2/extension_control/chrome_extension/fresh_content.js",
+        "location": "CONTENT_STATE_KEY initialization and same-version reinjection guard",
+        "defect": "The authenticated reload_content maintenance path can report successful reinjection without actually replacing the currently active same-version content listener. fresh_background.js executes fresh_component_identity.js, fresh_contract.js, fresh_locator.js and fresh_content.js, but fresh_content.js returns immediately when priorContent.version equals CONTENT_VERSION. The accepted maintenance model intentionally keeps version/build at 0.9.8 and c2c-v2-fresh-paired-turn-completion-1, so a same-version repair leaves the old listener installed. That listener captured the old Locator and Contract objects in const bindings. Meanwhile componentIdentity() reads globalThis dynamically, so newly reinjected globals can make the status identity appear current even though the operational listener still uses stale logic. The existing maintenance tests verify executeScript invocation and a success result, but do not prove listener replacement or activation of the new Locator/Contract implementation.",
+        "source_evidence": [
+          {
+            "path": "poc_v2/extension_control/chrome_extension/fresh_content.js",
+            "excerpt": "if (priorContent?.version === CONTENT_VERSION) { return; }"
+          },
+          {
+            "path": "poc_v2/extension_control/chrome_extension/fresh_content.js",
+            "excerpt": "const Locator = globalThis.C2CV2FreshLocator; const Contract = globalThis.C2CV2FreshContract;"
+          },
+          {
+            "path": "poc_v2/extension_control/chrome_extension/fresh_background.js",
+            "excerpt": "files: [\"fresh_component_identity.js\", \"fresh_contract.js\", \"fresh_locator.js\", \"fresh_content.js\"]"
+          },
+          {
+            "path": "poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+            "excerpt": "assert.equal(injections.length, 1); assert.equal(w.sent.at(-1).complete, true);"
+          },
+          {
+            "path": "poc_v2/extension_control/bridge/fresh_protocol.md",
+            "excerpt": "content maintenance still requires an exact live target. The one-off bridge repair preserves 0.9.8 protocol/build compatibility"
+          }
+        ],
+        "impact": "This does not invalidate the already-recorded B2 transport result or the core at-least-once journal/retry design. It blocks Round 4 closure because authenticated bounded maintenance is explicitly part of the reviewed Fresh scope, and reload_content currently has a false-success mode in which repaired same-version source is injected but the stale listener remains authoritative.",
+        "smallest_correction": "Change fresh_content.js so explicit reinjection replaces an existing Fresh content listener even when version/build are unchanged: remove the version-only early return, unregister the prior listener when present, and install the currently injected listener. Add a same-version reinjection regression proving the second/current listener and current Locator/Contract are active, exactly one listener remains, and reinjection itself creates no review dispatch, logical request, retry or composer click."
+      }
+    ],
+    "NEXT_CODEX_INSTRUCTION": {
+      "scope_paths": [
+        "poc_v2/extension_control/chrome_extension/fresh_content.js",
+        "poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+        ".c2c-v2/iteration-005/review_request.json",
+        ".c2c-v2/iteration-005/test_summary.json",
+        ".c2c-v2/iteration-005/source_hashes.json"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "instruction": "Repair fresh_content.js so a same-version explicit reload_content reinjection unregisters the prior content listener and installs the listener from the newly injected source instead of returning solely because priorContent.version equals CONTENT_VERSION."
+        },
+        {
+          "step": 2,
+          "instruction": "Preserve the existing 0.9.8 protocol/build identity and all Host, Origin, token, exact-tab, exact-URL, full-wire, paired-turn completion, at-least-once and legacy-smoke isolation gates. Do not change old runtimes or legacy sources."
+        },
+        {
+          "step": 3,
+          "instruction": "Add a focused runtime regression that executes the Fresh content script twice in one page context at the same version/build, changes the effective Locator or Contract implementation between executions, and proves that the second execution replaces the prior listener and that subsequent handling uses the current implementation."
+        },
+        {
+          "step": 4,
+          "instruction": "In that regression also prove same-version reinjection leaves exactly one active content listener and causes zero C2C_FRESH_REVIEW dispatches, zero composer clicks, zero new logical requests and zero retry attempts."
+        },
+        {
+          "step": 5,
+          "instruction": "Run the complete Python and Node offline suites, syntax checks, manifest checks and git diff --check. Record the actual resulting counts rather than copying the prior 96/143 counts."
+        },
+        {
+          "step": 6,
+          "instruction": "Commit the bounded implementation/test repair as a distinct implementation commit, then publish Round 5 evidence only under .c2c-v2/iteration-005/, binding review_request.json, test_summary.json and source_hashes.json to that exact implementation commit and its exact GitHub blob IDs."
+        }
+      ],
+      "required_checks": [
+        "python -B -m unittest -v test_bridge_server test_fresh_delivery from poc_v2/extension_control/bridge",
+        "node --test poc_v2/extension_control/tests/*.test.cjs",
+        "same-version content reinjection regression proves prior listener replacement",
+        "same-version content reinjection regression proves current Locator/Contract logic is used",
+        "reinjection causes no C2C_FRESH_REVIEW dispatch and no composer click",
+        "reinjection creates no new logical request or retry attempt",
+        "Host, Origin and ephemeral control-token tests remain passing",
+        "restart/checkpoint restoration remains no-auto-send",
+        "at-least-once retry, late canonical result and duplicate classification tests remain passing",
+        "full-wire identity, unknown/user turn barriers and paired-heading completion tests remain passing",
+        "fresh_manifest permissions, host_permissions and CSP remain unchanged",
+        "git diff --check passes",
+        "Round 5 source_hashes Git blob IDs exactly match files at the new implementation commit"
+      ],
+      "expected_result": "A narrowly corrected Fresh 0.9.8 implementation in which authenticated reload_content genuinely activates the newly injected same-version content runtime without creating any automatic send/retry authority, followed by immutable Round 5 GitHub evidence ready for independent review."
+    },
+    "REVIEW_SUMMARY": "This review independently re-read GitHub for the new REQUEST_ID/CONTROL_ID and did not rely on the prior rendered response. At review start PR #1 was open and draft on poc/c2c-v2-github-bus-r1 with head exactly 86c40d36a20bc42b6256bbf959a13319d9dd1beb. The requested evidence commit was fetched directly. review_request.json identifies implementation_commit ee9e74650a35b2fa0e3491c1a96544b0068ff3ed. GitHub compare shows the evidence commit is exactly one commit ahead of that implementation commit and adds only review_request.json, test_summary.json and source_hashes.json for iteration 004. The actual implementation commit and patch were fetched, every required source/test/protocol path was independently fetched at the exact implementation commit, and every required Git blob ID matched source_hashes.json. Source review confirms the intended core protections are present: strict Fresh version/build/component readiness, ephemeral control token, exact extension origin and loopback authority, append-only at-least-once attempts, persisted send intent before dispatch, replay validation, restart without automatic resend, explicit retries, canonical first valid result with later valid replies classified as duplicates, exact request/control/attempt/tab/URL/component reply binding, full-wire user matching, user/unknown turn barriers, positive paired-turn completion evidence, and observe_attempt separated from composer/send creation. The substantive defect is confined to same-version content maintenance: background reinjects the four Fresh files, but fresh_content.js exits before replacing an existing 0.9.8 listener, while that listener retains captured old Locator/Contract references. Because current tests only establish that executeScript was called and maintenance returned complete, they do not close this false-success condition. Therefore PASS_CONTINUE is not justified until the bounded repair and regression are committed and represented by new Round 5 evidence.",
+    "GITHUB_RESOURCES_READ": [
+      {
+        "path": "PR #1 metadata",
+        "ref_commit": "86c40d36a20bc42b6256bbf959a13319d9dd1beb",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/pull/1",
+        "read_method": "GitHub get_pr_info",
+        "source_excerpt": "\"head\":\"poc/c2c-v2-github-bus-r1\",\"head_sha\":\"86c40d36a20bc42b6256bbf959a13319d9dd1beb\""
+      },
+      {
+        "path": "commit 86c40d36a20bc42b6256bbf959a13319d9dd1beb",
+        "ref_commit": "86c40d36a20bc42b6256bbf959a13319d9dd1beb",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/commit/86c40d36a20bc42b6256bbf959a13319d9dd1beb",
+        "read_method": "GitHub fetch_commit with commit diff",
+        "source_excerpt": "poc: publish exact Round 4 Fresh closure review evidence"
+      },
+      {
+        "path": "commit ee9e74650a35b2fa0e3491c1a96544b0068ff3ed",
+        "ref_commit": "ee9e74650a35b2fa0e3491c1a96544b0068ff3ed",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/commit/ee9e74650a35b2fa0e3491c1a96544b0068ff3ed",
+        "read_method": "GitHub fetch_commit with actual implementation patch",
+        "source_excerpt": "poc: close accepted B2 Fresh 0.9.8 implementation"
+      },
+      {
+        "path": "compare ee9e74650a35b2fa0e3491c1a96544b0068ff3ed...86c40d36a20bc42b6256bbf959a13319d9dd1beb",
+        "ref_commit": "86c40d36a20bc42b6256bbf959a13319d9dd1beb",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/compare/ee9e74650a35b2fa0e3491c1a96544b0068ff3ed...86c40d36a20bc42b6256bbf959a13319d9dd1beb",
+        "read_method": "GitHub compare_commits",
+        "source_excerpt": "\"ahead_by\":1,\"behind_by\":0,\"total_commits\":1"
+      },
+      {
+        "path": ".c2c-v2/iteration-004/review_request.json",
+        "ref_commit": "86c40d36a20bc42b6256bbf959a13319d9dd1beb",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/86c40d36a20bc42b6256bbf959a13319d9dd1beb/.c2c-v2/iteration-004/review_request.json",
+        "read_method": "GitHub fetch_file exact commit",
+        "source_excerpt": "\"implementation_commit\": \"ee9e74650a35b2fa0e3491c1a96544b0068ff3ed\""
+      },
+      {
+        "path": ".c2c-v2/iteration-004/test_summary.json",
+        "ref_commit": "86c40d36a20bc42b6256bbf959a13319d9dd1beb",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/86c40d36a20bc42b6256bbf959a13319d9dd1beb/.c2c-v2/iteration-004/test_summary.json",
+        "read_method": "GitHub fetch_file exact commit",
+        "source_excerpt": "\"tested_implementation_commit\": \"ee9e74650a35b2fa0e3491c1a96544b0068ff3ed\""
+      },
+      {
+        "path": ".c2c-v2/iteration-004/source_hashes.json",
+        "ref_commit": "86c40d36a20bc42b6256bbf959a13319d9dd1beb",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/86c40d36a20bc42b6256bbf959a13319d9dd1beb/.c2c-v2/iteration-004/source_hashes.json",
+        "read_method": "GitHub fetch_file exact commit and Git blob cross-check",
+        "source_excerpt": "\"accepted_version\": \"0.9.8\", \"protocol\": 3, \"build\": \"c2c-v2-fresh-paired-turn-completion-1\""
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/fresh_bridge.py",
+        "ref_commit": "ee9e74650a35b2fa0e3491c1a96544b0068ff3ed",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/ee9e74650a35b2fa0e3491c1a96544b0068ff3ed/poc_v2/extension_control/bridge/fresh_bridge.py",
+        "read_method": "GitHub fetch_file exact implementation commit",
+        "source_excerpt": "self.extension_origin = \"chrome-extension://\" + extension_id"
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/fresh_delivery.py",
+        "ref_commit": "ee9e74650a35b2fa0e3491c1a96544b0068ff3ed",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/ee9e74650a35b2fa0e3491c1a96544b0068ff3ed/poc_v2/extension_control/bridge/fresh_delivery.py",
+        "read_method": "GitHub fetch_file exact implementation commit",
+        "source_excerpt": "KINDS = {\"logical_created\", \"send_attempt\", \"delivery_uncertain\", \"attempt_failed\", \"thread_bound\", \"result\", \"duplicate_reply\"}"
+      },
+      {
+        "path": "poc_v2/extension_control/chrome_extension/fresh_background.js",
+        "ref_commit": "ee9e74650a35b2fa0e3491c1a96544b0068ff3ed",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/ee9e74650a35b2fa0e3491c1a96544b0068ff3ed/poc_v2/extension_control/chrome_extension/fresh_background.js",
+        "read_method": "GitHub fetch_file exact implementation commit",
+        "source_excerpt": "b?.delivery_semantics === \"AT_LEAST_ONCE\""
+      },
+      {
+        "path": "poc_v2/extension_control/chrome_extension/fresh_content.js",
+        "ref_commit": "ee9e74650a35b2fa0e3491c1a96544b0068ff3ed",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/ee9e74650a35b2fa0e3491c1a96544b0068ff3ed/poc_v2/extension_control/chrome_extension/fresh_content.js",
+        "read_method": "GitHub fetch_file exact implementation commit",
+        "source_excerpt": "if (priorContent?.version === CONTENT_VERSION) { return; }"
+      },
+      {
+        "path": "poc_v2/extension_control/chrome_extension/fresh_locator.js",
+        "ref_commit": "ee9e74650a35b2fa0e3491c1a96544b0068ff3ed",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/ee9e74650a35b2fa0e3491c1a96544b0068ff3ed/poc_v2/extension_control/chrome_extension/fresh_locator.js",
+        "read_method": "GitHub fetch_file exact implementation commit",
+        "source_excerpt": "return matches.length === 1 ? { ...matches[0], nonce: identity.nonce } : null;"
+      },
+      {
+        "path": "poc_v2/extension_control/chrome_extension/fresh_contract.js",
+        "ref_commit": "ee9e74650a35b2fa0e3491c1a96544b0068ff3ed",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/ee9e74650a35b2fa0e3491c1a96544b0068ff3ed/poc_v2/extension_control/chrome_extension/fresh_contract.js",
+        "read_method": "GitHub fetch_file exact implementation commit",
+        "source_excerpt": "r.nonce !== r.control_id || !Number.isInteger(r.attempt_id) || r.attempt_id < 1"
+      },
+      {
+        "path": "poc_v2/extension_control/chrome_extension/fresh_component_identity.js",
+        "ref_commit": "ee9e74650a35b2fa0e3491c1a96544b0068ff3ed",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/ee9e74650a35b2fa0e3491c1a96544b0068ff3ed/poc_v2/extension_control/chrome_extension/fresh_component_identity.js",
+        "read_method": "GitHub fetch_file exact implementation commit",
+        "source_excerpt": "build_id: \"c2c-v2-fresh-paired-turn-completion-1\", host: \"127.0.0.1\", port: 18797"
+      },
+      {
+        "path": "poc_v2/extension_control/chrome_extension/fresh_manifest.json",
+        "ref_commit": "ee9e74650a35b2fa0e3491c1a96544b0068ff3ed",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/ee9e74650a35b2fa0e3491c1a96544b0068ff3ed/poc_v2/extension_control/chrome_extension/fresh_manifest.json",
+        "read_method": "GitHub fetch_file exact implementation commit",
+        "source_excerpt": "\"service_worker\": \"fresh_background.js\""
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/test_fresh_delivery.py",
+        "ref_commit": "ee9e74650a35b2fa0e3491c1a96544b0068ff3ed",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/ee9e74650a35b2fa0e3491c1a96544b0068ff3ed/poc_v2/extension_control/bridge/test_fresh_delivery.py",
+        "read_method": "GitHub fetch_file exact implementation commit",
+        "source_excerpt": "self.assertEqual(saved[\"duplicate_count\"], 1); self.assertEqual(len(self.s.requests.records), 1)"
+      },
+      {
+        "path": "poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+        "ref_commit": "ee9e74650a35b2fa0e3491c1a96544b0068ff3ed",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/ee9e74650a35b2fa0e3491c1a96544b0068ff3ed/poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+        "read_method": "GitHub fetch_file exact implementation commit",
+        "source_excerpt": "assert.equal(L.isAssistantComplete(c.sandbox.document, assistant, userTurn), kind === \"valid\", kind);"
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/fresh_protocol.md",
+        "ref_commit": "ee9e74650a35b2fa0e3491c1a96544b0068ff3ed",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/ee9e74650a35b2fa0e3491c1a96544b0068ff3ed/poc_v2/extension_control/bridge/fresh_protocol.md",
+        "read_method": "GitHub fetch_file exact implementation commit",
+        "source_excerpt": "Each actual retry increments attempt_id and retains request_id/control_id."
+      }
+    ]
+  },
+  "round4_reply_identity": {
+    "request_id": "7c52c15e-1638-4075-b9a9-b9e98bdb81cb",
+    "control_id": "6725eaf5-59a0-44ea-89b3-10b6d2a04488",
+    "reviewed_commit": "86c40d36a20bc42b6256bbf959a13319d9dd1beb",
+    "reviewed_implementation_commit": "ee9e74650a35b2fa0e3491c1a96544b0068ff3ed",
+    "verdict": "CHANGES_REQUIRED",
+    "actual_rendered_reply_sha256": "eaa86c760b53591e0ab374a91f1dd4943f6756d25a566664c8e4634811add54c",
+    "renderer_language_label": "JSON",
+    "raw_reply_retained_unchanged_outside_Git": true,
+    "verified_file_reads": 14,
+    "verified_metadata_reads": 4
+  },
+  "codex_action": {
+    "causing_control_id": "6725eaf5-59a0-44ea-89b3-10b6d2a04488",
+    "implementation_commit": "8b7797ed5936c2027fcff815cd71ffc16eef215a",
+    "implementation_parent": "86c40d36a20bc42b6256bbf959a13319d9dd1beb",
+    "changed_paths": [
+      "poc_v2/extension_control/chrome_extension/fresh_content.js",
+      "poc_v2/extension_control/tests/fresh_runtime.test.cjs"
+    ],
+    "production_fix": "Removed only the version-only early return; existing prior-listener removal and new listener installation now execute for same-version reinjection.",
+    "regression_fix": "Mock active listener set plus two same-version reexecution regressions changing current Locator or Contract logic.",
+    "source_version_protocol_build_unchanged": true,
+    "legacy_sources_unchanged": true,
+    "unrelated_gitignore_preserved": true
+  },
+  "presentation_repair_history": [
+    {
+      "request_id": "76dae804-2de7-4416-8ea1-7b33f7dee2ec",
+      "control_id": "c7073557-5e9f-4c0d-8a51-8a5290f903a7",
+      "classification": "Completed transport reply not parseable after rich-text rendering; original preserved; its instruction was not executed.",
+      "actual_send_attempts": 1
+    },
+    {
+      "request_id": "7c52c15e-1638-4075-b9a9-b9e98bdb81cb",
+      "control_id": "6725eaf5-59a0-44ea-89b3-10b6d2a04488",
+      "classification": "New logical Round 4 GitHub review using fenced JSON; rendered language label handled separately; valid reply automatically consumed.",
+      "actual_send_attempts": 1,
+      "failure_history": [
+        "caller_wait_timeout",
+        "outgoing_turn_not_confirmed"
+      ],
+      "explicit_readonly_observation": true
+    }
+  ],
+  "evidence_paths": [
+    ".c2c-v2/iteration-005/review_request.json",
+    ".c2c-v2/iteration-005/test_summary.json",
+    ".c2c-v2/iteration-005/source_hashes.json"
+  ],
+  "required_source_paths": [
+    "poc_v2/extension_control/chrome_extension/fresh_content.js",
+    "poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+    "poc_v2/extension_control/chrome_extension/fresh_background.js",
+    "poc_v2/extension_control/bridge/fresh_bridge.py",
+    "poc_v2/extension_control/bridge/fresh_delivery.py",
+    "poc_v2/extension_control/chrome_extension/fresh_manifest.json",
+    ".c2c-v2/iteration-004/review_request.json",
+    ".c2c-v2/iteration-004/test_summary.json",
+    ".c2c-v2/iteration-004/source_hashes.json"
+  ],
+  "review_questions": [
+    "Independently verify the actual Round 4 response identity embedded here, its exact earlier evidence/source commits and its finite correction instruction.",
+    "Inspect the exact new implementation commit and two-file diff. Verify the prior listener is removed and the newly injected same-version listener becomes operational.",
+    "Inspect both regressions: same page/context, same version/build, changed Locator or Contract implementation, exactly one listener, current logic, no automatic sends/logical creation/retry/composer click.",
+    "Verify the new exact blob IDs/source hashes, full actual test counts and unchanged source version/build/manifest and auth/delivery/legacy gates.",
+    "Check whether the original instruction was satisfied and whether a regression or authority violation occurred. Do not merely repeat Codex conclusions."
+  ],
+  "allowed_verdicts": [
+    "PASS_CONTINUE",
+    "CHANGES_REQUIRED",
+    "BLOCKED_AUTHORITY"
+  ],
+  "required_reply_fields": [
+    "STATE",
+    "ROUND",
+    "REQUEST_ID",
+    "CONTROL_ID",
+    "REVIEWED_COMMIT",
+    "REVIEWED_IMPLEMENTATION_COMMIT",
+    "ROUND4_INSTRUCTION_SATISFIED",
+    "VERDICT",
+    "FINDINGS",
+    "NEXT_STEP",
+    "GITHUB_RESOURCES_READ",
+    "REVIEW_SUMMARY"
+  ],
+  "reply_rules": {
+    "format": "Exactly one fenced json code block, valid JSON string escaping, no surrounding prose",
+    "STATE": "REVIEW_RESULT",
+    "ROUND": 5,
+    "REQUEST_ID": "Exact incoming REQUEST_ID",
+    "CONTROL_ID": "Exact incoming CONTROL_ID",
+    "REVIEWED_COMMIT": "Exact incoming COMMIT",
+    "REVIEWED_IMPLEMENTATION_COMMIT": "8b7797ed5936c2027fcff815cd71ffc16eef215a",
+    "ROUND4_INSTRUCTION_SATISFIED": "Boolean based on independent review; no predetermined value",
+    "GITHUB_RESOURCES_READ": "Actual immutable GitHub reads with path/ref_commit/github_url/read_method/short exact source_excerpt. Include all required evidence/source resources.",
+    "NEXT_STEP": "If satisfied and no blocking defect, stop and return the external-review package to Main Chat. Otherwise give the smallest evidence-based in-scope correction or actual authority blocker."
+  },
+  "frozen_boundaries": [
+    "GitHub only evidence; ordinary high-reasoning subscription Chat; stable current Fresh 0.9.8",
+    "No Work/IAB/old C2C MCP/Cloudflare/OpenAI API/new services/other products/private credentials",
+    "No Host/Origin/token weakening, ephemeral token persistence, legacy smoke mutation or 18795/18796 operation",
+    "USER_INTERMEDIATE_RELAY=0 and USER_ACTIONS_DURING_CONTROL_LOOP=0",
+    "Stop after successful Round 5; no failure campaign, ten-turn loop, productionization or installer"
+  ]
+}
