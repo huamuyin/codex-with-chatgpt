@@ -1,0 +1,108 @@
+{
+  "commit": "63e09c929ba1728c42d01d2345101f16ec9e3137",
+  "action": {
+    "round": 1,
+    "request_id": "f83239a2-cb22-4b02-b9c1-ba1d210eff2b",
+    "control_id": "6f13b89b-41ac-41d1-9421-3642175ae779",
+    "attempt_id": 1,
+    "reviewed_commit": "cbf5f0058bf2d96ac098daa6d6f6c2f4ae566343",
+    "verdict": "CHANGES_REQUIRED",
+    "raw_response_sha256": "709276938b3ac8000f8fea7ec4cc04e94c9738a1b15879692d7d65d771cf62f9",
+    "instruction": "Patch only Fresh response-contract validation/tests/docs and turn-002 evidence: require GITHUB_RESOURCES_READ to be a non-empty list whose every item is an object containing non-empty string fields path, ref_commit, github_url, read_method and source_excerpt; require ref_commit to be exactly 40 hexadecimal characters and github_url to be an https://github.com/ URL. Add a positive valid-resource case plus fail-closed tests for an empty list, non-object entry, each missing field, blank/wrong-typed fields, malformed ref_commit and non-GitHub URL. Preserve existing framing, envelope, REVIEW_SUMMARY and <=4096 NEXT_CODEX_INSTRUCTION checks. Run full Python/Node/syntax/manifest/diff gates and publish only the bounded source/test/doc plus turn-002 evidence needed for the next stability review.",
+    "codex_action": "Enforced non-empty GitHub resource array, five non-empty string fields, 40-hex ref and exact HTTPS GitHub host; added complete fixture and missing/blank/type/ref/URL rejection coverage, preserving all prior frame/envelope/instruction checks.",
+    "checks": [
+      {
+        "name": "focused-response-contract",
+        "args": [
+          "C:\\Users\\Lenovo\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+          "-B",
+          "-m",
+          "unittest",
+          "-v",
+          "test_fresh_response"
+        ],
+        "cwd": "D:\\Worktrees\\codex-with-chatgpt\\c2c-v2-github-evidence-r1\\poc_v2\\extension_control\\bridge",
+        "exit_code": 0,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "ff64353e7ebd89571db83354c9188a821bb6a8ec7984ae1257e3e29af8c853a4"
+      },
+      {
+        "name": "scoped-diff-check",
+        "args": [
+          "git",
+          "diff",
+          "--check",
+          "--",
+          "poc_v2/extension_control"
+        ],
+        "cwd": "D:\\Worktrees\\codex-with-chatgpt\\c2c-v2-github-evidence-r1",
+        "exit_code": 0,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "bb91d09706430b992a5ce373eaa4292e8099b875254aac41df2b9de2b3ba6809"
+      }
+    ],
+    "required_GitHub_reads_cross_checked": [
+      {
+        "path": ".c2c-v2/stability-r1/turn-001/review_request.json",
+        "ref_commit": "cbf5f0058bf2d96ac098daa6d6f6c2f4ae566343",
+        "sha256": "c80fa3bcdb1d1f033eb9b35c42c7e5f648503ec928fca52fb597b9a572de7146",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/fresh_response.py",
+        "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+        "sha256": "4c57a01d287bef0140a51a8aefa48e4d029a76a82f39d076187a88db72d68833",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/test_fresh_response.py",
+        "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+        "sha256": "714c24739c663471bc33285b0f893c23fbc5d5142dfc08c6342554099d7f6884",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/fresh_protocol.md",
+        "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+        "sha256": "5d0e8ca4fe9d7b916cda9f01fef5f852759b28cbac8329be1f9ca43cf144c747",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": ".c2c-v2/stability-r1/turn-001/test_summary.json",
+        "ref_commit": "cbf5f0058bf2d96ac098daa6d6f6c2f4ae566343",
+        "sha256": "e02e1f5676ab8e6baead7cdbfd227e9986bdbbd7bfb9285e198d2a0de4ecd4f7",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": ".c2c-v2/stability-r1/turn-001/source_hashes.json",
+        "ref_commit": "cbf5f0058bf2d96ac098daa6d6f6c2f4ae566343",
+        "sha256": "f9168389cd95c3f78c05ef65dfa6d43199063ac3ec073663d7e1022d8f9e782c",
+        "read_method": "GitHub fetch_file plus blob verification"
+      },
+      {
+        "path": ".c2c-v2/stability-r1/turn-001/previous_action.json",
+        "ref_commit": "cbf5f0058bf2d96ac098daa6d6f6c2f4ae566343",
+        "sha256": "f451067fe81ba2e368a12dfeef31efe264736bd838dfdc161ca3431843b70786",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": ".c2c-v2/failure-recovery-r1/campaign-complete/failure_campaign_ledger.json",
+        "ref_commit": "cbf5f0058bf2d96ac098daa6d6f6c2f4ae566343",
+        "sha256": "372fd2557c6bde083aaba712c925896c98430a2c3f36231c6ab786c6ca486ab9",
+        "read_method": "GitHub fetch_file"
+      }
+    ],
+    "source_change": true,
+    "USER_INTERMEDIATE_RELAY": 0,
+    "USER_ACTIONS_DURING_CONTROL_LOOP": 0,
+    "interpretation": "Finite instruction was interpreted within owner scope; no arbitrary reviewer shell text was executed.",
+    "full_regression": {
+      "python_passed": 115,
+      "node_passed": 169,
+      "syntax_files": 21,
+      "manifest": "PASS",
+      "diff": "PASS",
+      "legacy_unchanged": 14
+    },
+    "full_regression_evidence": "repairs/turn01-provenance-contract/checks"
+  }
+}
