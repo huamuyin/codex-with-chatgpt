@@ -335,6 +335,13 @@ test("unanswered content ping is bounded and cannot prevent reporting the exact 
   assert.equal(status.components.content_version, ""); assert.deepEqual(w.forbidden, []);
 });
 
+test("routine content status finds complete exact turns without a full body structural diagnostic scan", async () => {
+  const c = content([user(), new F.FixtureNode("div", { "data-message-author-role": "assistant", "data-message-status": "complete" }, "actual reply")]);
+  const result = c.message({ type: "C2C_FRESH_PING", target_tab_id: R.target_tab_id, requests: [R] });
+  const d = result.attempt_diagnostics[0]; assert.equal(d.full_user_match, true); assert.equal(d.assistant_after_match, true);
+  assert.equal(d.assistant_complete, true); assert.deepEqual(clone(d.structure), []); assert.equal(d.inspected, 0);
+});
+
 test("loading target is distinct from ambiguity and diagnostics never select pending URLs", async () => {
   const w = worker({ tabs: [{ id: R.target_tab_id, url: R.conversation_url, status: "loading", pendingUrl: "https://other.example/private" }] });
   await w.call("restore", fixture.checkpoint); await w.call("status");

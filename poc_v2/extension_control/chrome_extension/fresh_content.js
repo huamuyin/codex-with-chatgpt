@@ -266,17 +266,23 @@
       if (Number.isInteger(m.target_tab_id)) boundContentTabId = m.target_tab_id;
       wake();
       const diagnostics = [];
-      for (const r of (Array.isArray(m.requests) ? m.requests.slice(-10) : [])) {
+      const requests = Array.isArray(m.requests) ? m.requests.slice(-10) : [];
+      const messages = requests.length ? Locator.collectMessages(document) : [];
+      const indexed = messages.map((message) => ({ message, fields: Locator.extractMarkers(message.text), normalized: Locator.normalizeText(message.text) }));
+      for (const r of requests) {
         if (!Contract.validRequest(r) || r.target_tab_id !== boundContentTabId
             || (r.conversation_url !== location.href && !(r.conversation_url === "https://chatgpt.com/"
               && Contract.isConversationUrl(location.href)))) continue;
-        const messages = Locator.collectMessages(document);
-        const u = Locator.findOriginalUserTurn(document, { task_id: r.task_id, iteration: r.iteration,
-          request_id: r.request_id, nonce: r.nonce, commit: r.expected_commit, original_message: r.message,
-          control_id: r.control_id, attempt_id: r.attempt_id });
-        const a = u && Locator.findAssistantAfter(document, u);
-        const rawNodes = [...document.querySelectorAll('article, [data-message-author-role], [data-testid^="conversation-turn"]')].slice(-40);
-        const queue = [...((document.body || document.querySelector("main"))?.children || [])];
+        const matches = indexed.filter(({ message, fields: f, normalized }) => message.role === "user"
+          && f.task_id === r.task_id && f.iteration === r.iteration && f.request_id === r.request_id
+          && f.control_id === r.control_id && f.attempt_id === r.attempt_id && f.nonce === r.nonce
+          && f.commit === r.expected_commit && normalized === Locator.normalizeText(r.message));
+        const u = matches.length === 1 ? matches[0].message : null;
+        const following = u && messages[messages.indexOf(u) + 1];
+        const a = following?.role === "assistant" ? following : null;
+        const rawNodes = m.include_structure === true
+          ? [...document.querySelectorAll('article, [data-message-author-role], [data-testid^="conversation-turn"]')].slice(-40) : [];
+        const queue = m.include_structure === true ? [...((document.body || document.querySelector("main"))?.children || [])] : [];
         let inspected = 0;
         while (queue.length && inspected < 4000) {
           const node = queue.shift(); inspected++;
