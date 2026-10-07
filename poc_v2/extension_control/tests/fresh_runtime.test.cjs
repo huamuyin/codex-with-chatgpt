@@ -41,7 +41,7 @@ function worker(options = {}) {
 }
 function content(nodes, options = {}) {
   let clock = 0, listener, clicks = 0;
-  const sent = [], forbidden = [];
+  const sent = [], forbidden = [], activeListeners = new Set();
   class Input { constructor() { this.value = ""; this.isConnected = true; this.disabled = false; }
     focus() {} dispatchEvent() {} getBoundingClientRect() { return { width: 20, height: 20 }; } getAttribute() { return null; } }
   // The native setter shape is used by the production composer code.
@@ -69,14 +69,16 @@ function content(nodes, options = {}) {
     HTMLTextAreaElement: TextArea, HTMLInputElement: Input, Event: class {}, InputEvent: class {},
     Date: { now: () => clock }, setTimeout(fn, ms) { clock += ms; if (options.onSleep) options.onSleep(sandbox, clock); queueMicrotask(fn); },
     getComputedStyle: () => ({ visibility: "visible", display: "block" }),
-    chrome: { runtime: { onMessage: { addListener(fn) { listener = fn; }, removeListener() {} },
+    chrome: { runtime: { onMessage: { addListener(fn) { listener = fn; activeListeners.add(fn); },
+      removeListener(fn) { activeListeners.delete(fn); if (listener === fn) listener = null; } },
       async sendMessage(m) { sent.push(clone(m)); } } } };
   const ctx = vm.createContext(sandbox);
   for (const file of ["fresh_component_identity.js", "fresh_contract.js", "fresh_locator.js"]) vm.runInContext(fs.readFileSync(path.join(ROOT, file), "utf8"), ctx);
   if (options.oldLocator) sandbox.C2CV2FreshLocator = { ...sandbox.C2CV2FreshLocator, version: "0.8.1" };
   vm.runInContext(fs.readFileSync(path.join(ROOT, "fresh_content.js"), "utf8"), ctx);
   listener({ type: "C2C_FRESH_PING", target_tab_id: R.target_tab_id }, {}, () => {});
-  return { sent, forbidden, clicks: () => clicks, sandbox,
+  return { sent, forbidden, clicks: () => clicks, sandbox, activeListeners,
+    reinject() { vm.runInContext(fs.readFileSync(path.join(ROOT, "fresh_content.js"), "utf8"), ctx); },
     message(m) { let response; listener(m, {}, (r) => { response = r; }); return response; },
     async settle(n = 14000) { for (let i = 0; i < n; i++) await Promise.resolve(); } };
 }
@@ -192,6 +194,32 @@ test("content with an old helper cannot claim completion or a matching component
   c.message({ type: "C2C_FRESH_REVIEW", request: R, may_send: false }); await c.settle();
   assert.equal(c.sent.find((m) => m.type === "C2C_FRESH_RESULT").raw_reply, undefined);
 });
+
+for (const helper of ["Locator", "Contract"]) {
+  test(`same-version reinjection replaces the listener and uses current ${helper} without sending`, async () => {
+    const c = content([user(), F.assistantMessage("old helper would accept this")]);
+    const key = "__c2cV2FreshContentControl", prior = c.sandbox[key], original = c.sandbox[`C2CV2Fresh${helper}`];
+    assert.equal(prior.version, I.version); assert.equal(c.activeListeners.size, 1);
+    let currentCalls = 0;
+    c.sandbox[`C2CV2Fresh${helper}`] = { ...original,
+      ...(helper === "Locator" ? { findOriginalUserTurn() { currentCalls++; return null; } }
+        : { validRequest() { currentCalls++; return false; } }) };
+    c.reinject();
+    const current = c.sandbox[key];
+    assert.equal(current.version, prior.version); assert.notEqual(current.listener, prior.listener);
+    assert.equal(c.activeListeners.has(prior.listener), false); assert.equal(c.activeListeners.has(current.listener), true);
+    assert.equal(c.activeListeners.size, 1); assert.deepEqual(c.sent, []); assert.equal(c.clicks(), 0); assert.deepEqual(c.forbidden, []);
+    const pong = c.message({ type: "C2C_FRESH_PING", target_tab_id: R.target_tab_id });
+    assert.equal(pong.version, I.version); assert.equal(pong.build_id, I.build_id);
+    const response = c.message({ type: "C2C_FRESH_OBSERVE", request: R, may_send: false });
+    await c.settle();
+    assert.ok(currentCalls > 0);
+    if (helper === "Locator") assert.equal(c.sent.at(-1).error_code, "outgoing_turn_not_confirmed");
+    else { assert.equal(response.accepted, false); assert.deepEqual(c.sent, []); }
+    assert.equal(c.sent.some((m) => ["C2C_FRESH_REVIEW", "fresh_review", "review", "retry", "logical_created", "send_attempt"].includes(m.type)), false);
+    assert.equal(c.sent.some((m) => m.raw_reply), false); assert.equal(c.clicks(), 0); assert.deepEqual(c.forbidden, []);
+  });
+}
 
 test("bootstrap uses real connect path: POST without forged Origin, auth, welcome, ready; no credential mirror", async () => {
   const calls = [], sockets = [], token = "offline-bootstrap-only-" + "x".repeat(30);

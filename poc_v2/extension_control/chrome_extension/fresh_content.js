@@ -16,9 +16,6 @@
   let boundContentTabId = null;
   const CONTENT_STATE_KEY = "__c2cV2FreshContentControl";
   const priorContent = globalThis[CONTENT_STATE_KEY];
-  if (priorContent?.version === CONTENT_VERSION) {
-    return;
-  }
   if (priorContent?.listener) chrome.runtime.onMessage.removeListener(priorContent.listener);
 
   const Locator = globalThis.C2CV2FreshLocator;
