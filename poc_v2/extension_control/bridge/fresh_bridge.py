@@ -77,7 +77,7 @@ class FreshState:
             if self.requests.journal.poisoned:
                 raise transport.RequestError("extension_disconnected", 503)
             action = value.get("action")
-            if action not in ("reload_extension", "sample_status", "restore_thread", "activate_tab", "inspect_draft", "reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"):
+            if action not in ("reload_extension", "sample_status", "restore_thread", "activate_tab", "inspect_draft", "clear_owned_draft", "reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"):
                 raise transport.RequestError("maintenance_action_invalid")
             if action != "reload_extension" and (self.session is None or self.session.closed):
                 raise transport.RequestError("extension_disconnected", 503)
@@ -99,7 +99,7 @@ class FreshState:
                     or time.monotonic() - self.seen_at >= 90):
                     raise transport.RequestError("maintenance_target_unconfirmed", 409)
                 message.update(tab_id=tid, url=url, request=wire)
-            if action in ("activate_tab", "inspect_draft", "reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"):
+            if action in ("activate_tab", "inspect_draft", "clear_owned_draft", "reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"):
                 tid, url = value.get("tab_id"), value.get("url")
                 setup_root = not self.requests.records and url == "https://chatgpt.com/"
                 fresh_thread = transport.is_conversation_url(url) and any(r["conversation_url"] == url for r in self.requests.records.values())
@@ -118,7 +118,7 @@ class FreshState:
                                and (r["conversation_url"] == url or not r["conversation_url"] and r["attempts"][-1]["conversation_url"] == "https://chatgpt.com/")]
                     if len(matches) != 1 or not self.ready(): raise transport.RequestError("maintenance_attempt_unconfirmed", 409)
                     message["request"] = matches[0]
-                if action in ("activate_tab", "inspect_draft", "observe_request", "probe_reply_rejection"):
+                if action in ("activate_tab", "inspect_draft", "clear_owned_draft", "observe_request", "probe_reply_rejection"):
                     rid, cid, aid = value.get("request_id"), value.get("control_id"), value.get("attempt_id")
                     if not isinstance(rid, str) or not isinstance(cid, str) or type(aid) is not int:
                         raise transport.RequestError("maintenance_identity_required", 409)
@@ -245,6 +245,10 @@ class FreshState:
                 if isinstance(code, str) and re.fullmatch(r"[a-z0-9_]{1,64}", code): result["error_code"] = code
                 generation = m.get("content_generation")
                 if type(generation) is int and generation > 0: result["content_generation"] = generation
+                if pending["message"]["action"] == "clear_owned_draft":
+                    if m.get("cleared_attempt_id") == pending["message"]["request"]["attempt_id"]:
+                        result["cleared_attempt_id"] = m["cleared_attempt_id"]
+                        result["draft_cleared"] = m.get("draft_cleared") is True
                 if pending["message"]["action"] == "inspect_draft" and isinstance(m.get("draft_summary"), dict):
                     d = m["draft_summary"]
                     if (set(d) == {"composer_present", "composer_tag", "contenteditable", "length", "empty", "format_only", "owned_attempt_id", "normalized_owned_attempt_id"}

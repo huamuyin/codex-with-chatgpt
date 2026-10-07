@@ -333,6 +333,20 @@
         composer_present: Boolean(document.querySelectorAll('main textarea, main [contenteditable="true"]').length) };
       respond({ type: "C2C_FRESH_READY", ...componentIdentity(), attempt_diagnostics: diagnostics, page_state: pageState }); return false;
     }
+    if (m?.type === "C2C_FRESH_CLEAR_OWNED_DRAFT") {
+      const r = m.request;
+      try {
+        ensureCurrent();
+        if (!Contract.validRequest(r) || r.target_tab_id !== boundContentTabId || r.conversation_url !== location.href
+            || !Contract.componentMatches(componentIdentity())) throw Error("draft_binding_unconfirmed");
+        const found = firstVisible(COMPOSER_RULES);
+        if (!found || Locator.normalizeText(readText(found.element)) !== Locator.normalizeText(r.message)) throw Error("draft_ownership_unconfirmed");
+        // Synchronous recheck and editor-only clear: no runReview, send button, identity allocation or result publication.
+        ensureCurrent(); setComposer(found.element, "");
+        respond({ cleared: !readText(found.element).trim(), attempt_id: r.attempt_id });
+      } catch (e) { respond({ cleared: false, error_code: e.message }); }
+      return false;
+    }
     if (m?.type === "C2C_FRESH_INSPECT_DRAFT") {
       const r = m.request;
       try {

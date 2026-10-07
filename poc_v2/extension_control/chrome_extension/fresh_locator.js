@@ -83,6 +83,25 @@ globalThis.C2CV2FreshLocator = (() => {
     return rect.width > 0 && rect.height > 0 && (!style || (style.visibility !== "hidden" && style.display !== "none"));
   }
 
+  function isEditable(node) {
+    return /^(INPUT|TEXTAREA)$/u.test(node?.tagName || "") || attribute(node, "contenteditable") === "true"
+      || attribute(node, "role") === "textbox";
+  }
+
+  function isTranscriptSurface(node) {
+    for (let parent = node, depth = 0; parent && depth < MAX_STRUCTURAL_DEPTH; parent = parent.parentElement, depth++) {
+      if (isEditable(parent)) return false;
+    }
+    if (typeof node?.querySelector === "function") {
+      return !node.querySelector('input, textarea, [contenteditable="true"], [role="textbox"]');
+    }
+    const queue = [...(node?.children || [])]; let scanned = 0;
+    while (queue.length && scanned++ < MAX_STRUCTURAL_NODES) {
+      const child = queue.shift(); if (isEditable(child)) return false; queue.push(...(child.children || []));
+    }
+    return queue.length === 0;
+  }
+
   function contains(outer, inner) {
     if (outer === inner) return false;
     if (typeof outer?.contains === "function") return outer.contains(inner);
@@ -115,7 +134,7 @@ globalThis.C2CV2FreshLocator = (() => {
       const node = queue.shift(); const children = [...(node.children || [])];
       const heads = children.filter((child) => /^(H[4-6])$/u.test(child?.tagName || "") || attribute(child, "role") === "heading");
       const payload = children.filter((child) => !heads.includes(child));
-      if (heads.length === 1 && payload.length === 1 && isVisible(payload[0])) {
+      if (heads.length === 1 && payload.length === 1 && isTranscriptSurface(payload[0]) && isVisible(payload[0])) {
         found.push({ node: payload[0], role: headingRole(heads[0]) || "unknown", text: textOf(payload[0]), strategy: "accessible-heading-turn" });
       }
       queue.push(...children);
@@ -134,7 +153,7 @@ globalThis.C2CV2FreshLocator = (() => {
     const seen = new Set();
     const messages = [];
     for (const node of candidates) {
-      if (seen.has(node) || !isVisible(node)) continue;
+      if (seen.has(node) || !isTranscriptSurface(node) || !isVisible(node)) continue;
       seen.add(node);
       const text = textOf(node);
       const role = roleOf(node, text, expectedReply);
@@ -166,7 +185,7 @@ globalThis.C2CV2FreshLocator = (() => {
       const relevant = explicit === "user" || explicit === "assistant" || labelRole(node)
         || cheap.includes("TASK_ID") && (cheap.includes("NONCE") && cheap.includes("COMMIT") || cheap.includes("STATE"))
         || expectedReply && normalizeText(cheap).includes(normalizeText(expectedReply));
-      if (relevant && isVisible(node)) {
+      if (relevant && isTranscriptSurface(node) && isVisible(node)) {
         const text = textOf(node);
         const role = roleOf(node, text, expectedReply);
         if (role) candidates.push({ node, role, text, strategy: "bounded-structural-fallback" });

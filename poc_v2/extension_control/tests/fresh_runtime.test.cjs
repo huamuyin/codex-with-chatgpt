@@ -370,6 +370,25 @@ test("draft inspection is read only and returns no raw draft while proving exact
   assert.equal(unknown.draft_summary.owned_attempt_id, null); assert.equal(unknown.draft_summary.normalized_owned_attempt_id, null); assert.equal(composer.value, "unknown private draft");
 });
 
+test("wire inside an editable draft and its ancestors cannot prove an outgoing transcript turn", () => {
+  const w = worker(), L = w.sandbox.C2CV2FreshLocator;
+  const draft = new F.FixtureNode("div", { contenteditable: "true", role: "textbox" }, R.message);
+  const wrapper = new F.FixtureNode("div", {}, "", [draft]); const doc = F.semanticDocument([wrapper]);
+  const identity = { task_id: R.task_id, iteration: R.iteration, request_id: R.request_id,
+    control_id: R.control_id, attempt_id: R.attempt_id, nonce: R.nonce, commit: R.expected_commit, original_message: R.message };
+  assert.equal(L.findOriginalUserTurn(doc, identity), null);
+  const real = user(); const actual = F.semanticDocument([real, wrapper]); assert.equal(L.findOriginalUserTurn(actual, identity).node, real);
+});
+
+test("explicit owned draft clear keeps unknown input and never clicks or emits a review result", () => {
+  const c = content([user()], { allowSend: true }), composer = c.sandbox.document.querySelectorAll("main textarea")[0];
+  composer.value = "unknown private draft";
+  assert.equal(c.message({ type: "C2C_FRESH_CLEAR_OWNED_DRAFT", request: R }).cleared, false); assert.equal(composer.value, "unknown private draft");
+  composer.value = R.message.replace("\n", " ");
+  assert.equal(c.message({ type: "C2C_FRESH_CLEAR_OWNED_DRAFT", request: R }).cleared, true); assert.equal(composer.value, "");
+  assert.equal(c.clicks(), 0); assert.deepEqual(c.sent, []);
+});
+
 test("loading target is distinct from ambiguity and diagnostics never select pending URLs", async () => {
   const w = worker({ tabs: [{ id: R.target_tab_id, url: R.conversation_url, status: "loading", pendingUrl: "https://other.example/private" }] });
   await w.call("restore", fixture.checkpoint); await w.call("status");

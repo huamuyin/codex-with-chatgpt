@@ -247,3 +247,14 @@ unrelated current URLs. A unique completed original tab may currently be at the 
 or its saved URL. The operation navigates that same tab to the saved URL, then ordinary
 readiness and observation gates must pass again. It never creates a logical request, changes
 an attempt's authority, sends a message or automatically retries. Legacy recovery remains closed.
+# Composer surfaces and owned drafts
+
+Editable elements, their descendants, and containers holding editors are never transcript
+turns. A filled draft cannot confirm a real send or provide an assistant binding.
+`inspect_draft` reports only bounded metadata, exact or existing NFC/whitespace-equivalent
+ownership against the same request's journal wires; no raw unknown draft is returned.
+`clear_owned_draft` is an explicit authenticated editor maintenance action on an exact known
+request/control/attempt/tab/URL. It synchronously proves full normalized wire equality before
+clearing that owned draft. Unknown or modified text is preserved. It does not send, allocate
+identity, change history, or call the review/dispatch logic. A later resend requires an explicit
+retry and a newly persisted attempt. Original request payload and failures remain unchanged.

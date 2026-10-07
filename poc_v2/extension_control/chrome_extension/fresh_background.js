@@ -113,7 +113,7 @@ async function maintenance(m) {
           || tabs.some((t) => t.url === m.url && t.id !== m.tab_id)) throw Error("maintenance_target_unconfirmed");
       await chrome.tabs.update(m.tab_id, { url: known.conversation_url });
       send({ type: "fresh_maintenance_result", maintenance_id: m.maintenance_id, action: m.action, complete: true }); return;
-    } else if (["activate_tab", "inspect_draft", "reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"].includes(m.action)) {
+    } else if (["activate_tab", "inspect_draft", "clear_owned_draft", "reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"].includes(m.action)) {
       const allowed = m.url === "https://chatgpt.com/" && attempts.size === 0
         || [...attempts.values()].some((r) => r.target_tab_id === m.tab_id && (r.conversation_url === m.url
           || r.conversation_url === "https://chatgpt.com/" && C.isConversationUrl(m.url)));
@@ -137,6 +137,13 @@ async function maintenance(m) {
         files: ["fresh_component_identity.js", "fresh_contract.js", "fresh_locator.js", "fresh_content.js"] });
       const selection = await status();
       if (!selection.tab || selection.tab.id !== m.tab_id || selection.tab.url !== m.url) throw Error("content_identity_mismatch");
+      if (m.action === "clear_owned_draft") {
+        const known = attempts.get(C.key(m.request || {}));
+        if (!known || !C.sameAttempt(known, m.request) || known.target_tab_id !== m.tab_id || known.conversation_url !== m.url) throw Error("maintenance_attempt_unconfirmed");
+        const answer = await chrome.tabs.sendMessage(m.tab_id, { type: "C2C_FRESH_CLEAR_OWNED_DRAFT", request: known });
+        if (answer?.cleared !== true || answer.attempt_id !== known.attempt_id) throw Error("draft_clear_unconfirmed");
+        send({ type: "fresh_maintenance_result", maintenance_id: m.maintenance_id, action: m.action, complete: true, draft_cleared: true, cleared_attempt_id: known.attempt_id }); return;
+      }
       if (m.action === "inspect_draft") {
         const known = attempts.get(C.key(m.request || {}));
         if (!known || !C.sameAttempt(known, m.request) || known.target_tab_id !== m.tab_id || known.conversation_url !== m.url) throw Error("maintenance_attempt_unconfirmed");
