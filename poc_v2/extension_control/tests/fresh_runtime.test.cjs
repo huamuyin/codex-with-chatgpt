@@ -21,7 +21,7 @@ function worker(options = {}) {
       onMessage: event("message"), onStartup: event("startup"), onInstalled: event("installed"), reload: options.runtimeReload || forbid("extension_reload") },
       alarms: { create() {}, onAlarm: event("alarm") },
       tabs: { query: async () => clone(tabs), get: async (id) => clone(tabs.find((t) => t.id === id)),
-        create: forbid("create"), update: forbid("navigate"), reload: options.tabReload || forbid("reload"), onUpdated: event("update"), onRemoved: event("remove"),
+        create: forbid("create"), update: options.tabUpdate || forbid("navigate"), reload: options.tabReload || forbid("reload"), onUpdated: event("update"), onRemoved: event("remove"),
         async sendMessage(id, m) { contentCalls.push({ id, ...clone(m) });
           if (m.type === "C2C_FRESH_PING") return { type: "C2C_FRESH_READY", ...I, url: tabs.find((t) => t.id === id)?.url,
             content_generation: contentGeneration, ...options.ping }; return { accepted: true }; } },
@@ -327,6 +327,23 @@ test("missing known tab diagnostic preserves identity without creating or rebind
   const status = w.sent.at(-1); assert.equal(status.connected, false); assert.equal(status.readiness_code, "no_target");
   assert.deepEqual(status.bound_tab_diagnostics, [{ tab_id: R.target_tab_id, exists: false, status: "missing", url: "", pending_url: "", other_origin: "" }]);
   assert.deepEqual(w.forbidden, []);
+});
+
+test("explicit thread restoration navigates only the original native tab to its journal URL and never sends", async () => {
+  const updates = []; const w = worker({ tabs: [{ id: R.target_tab_id, url: "https://chatgpt.com/", status: "complete" }], tabUpdate: async (...args) => updates.push(args) });
+  await w.call("restore", fixture.checkpoint); const before = clone(w.storage);
+  await w.call("maintenance", { maintenance_id: R.request_id, action: "restore_thread", tab_id: R.target_tab_id, url: R.conversation_url, request: R });
+  assert.deepEqual(clone(updates), [[R.target_tab_id, { url: R.conversation_url }]]); assert.equal(w.sent.at(-1).complete, true);
+  assert.deepEqual(w.storage, before); assert.deepEqual(w.contentCalls, []);
+});
+
+test("thread restoration rejects wrong tab URL identity and duplicate targets without navigation", async () => {
+  for (const change of [{ tab_id: R.target_tab_id + 1 }, { url: "https://chatgpt.com/c/other" }, { request: { ...R, control_id: "x" } },
+      { tabs: [{ id: R.target_tab_id, url: "https://chatgpt.com/", status: "complete" }, { id: R.target_tab_id + 1, url: R.conversation_url, status: "complete" }] }]) {
+    const w = worker({ tabs: change.tabs || [{ id: R.target_tab_id, url: "https://chatgpt.com/", status: "complete" }] }); await w.call("restore", fixture.checkpoint);
+    await w.call("maintenance", { maintenance_id: R.request_id, action: "restore_thread", tab_id: R.target_tab_id, url: R.conversation_url, request: R, ...change });
+    assert.equal(w.sent.at(-1).complete, false); assert.deepEqual(w.forbidden, []);
+  }
 });
 
 test("completed known request observation does not dispatch a send or mint identity", async () => {

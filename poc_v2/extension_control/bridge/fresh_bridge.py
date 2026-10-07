@@ -77,11 +77,28 @@ class FreshState:
             if self.requests.journal.poisoned:
                 raise transport.RequestError("extension_disconnected", 503)
             action = value.get("action")
-            if action not in ("reload_extension", "sample_status", "reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"):
+            if action not in ("reload_extension", "sample_status", "restore_thread", "reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"):
                 raise transport.RequestError("maintenance_action_invalid")
             if action != "reload_extension" and (self.session is None or self.session.closed):
                 raise transport.RequestError("extension_disconnected", 503)
             message = {"type": "fresh_maintenance", "maintenance_id": str(uuid.uuid4()), "action": action}
+            if action == "restore_thread":
+                rid, cid, aid = value.get("request_id"), value.get("control_id"), value.get("attempt_id")
+                if not isinstance(rid, str) or not isinstance(cid, str) or type(aid) is not int:
+                    raise transport.RequestError("maintenance_identity_required", 409)
+                r = self.requests.lookup(rid, control_id=cid)
+                if not 1 <= aid <= len(r["attempts"]): raise transport.RequestError("attempt_unknown", 409)
+                wire = self.requests.wire_request(rid, aid); tid, url = value.get("tab_id"), value.get("url")
+                bound = [d for d in self.status.get("bound_tab_diagnostics", []) if d.get("tab_id") == tid]
+                observed = self.status.get("observed_targets", [])
+                if (type(tid) is not int or tid != wire["target_tab_id"] or url != wire["conversation_url"]
+                    or not transport.is_conversation_url(url) or len(bound) != 1 or bound[0].get("exists") is not True
+                    or bound[0].get("status") != "complete" or bound[0].get("url") not in ("https://chatgpt.com/", url)
+                    or sum(d.get("url") == bound[0].get("url") for d in observed) != 1
+                    or any(d.get("url") == url and d.get("tab_id") != tid for d in observed)
+                    or time.monotonic() - self.seen_at >= 90):
+                    raise transport.RequestError("maintenance_target_unconfirmed", 409)
+                message.update(tab_id=tid, url=url, request=wire)
             if action in ("reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"):
                 tid, url = value.get("tab_id"), value.get("url")
                 setup_root = not self.requests.records and url == "https://chatgpt.com/"

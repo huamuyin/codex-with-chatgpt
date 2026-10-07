@@ -238,3 +238,12 @@ Round 4 eligibility, or deployment readiness.
    result and duplicate classification if a late reply appears; evidence must show actual behavior.
 6. Stop at the Fresh Smoke review gate. No legacy resend/recovery, Round 4, family-fund change,
    commit or push is included in this proposal.
+# Explicit restoration after a refresh returns to the root
+
+`restore_thread` is a controller-authenticated navigation maintenance action. It uses a known
+request/control/attempt's frozen conversation URL and original native tab. Both bridge and
+background reject unknown identities, changed targets, duplicate pages, missing tabs and
+unrelated current URLs. A unique completed original tab may currently be at the ChatGPT root
+or its saved URL. The operation navigates that same tab to the saved URL, then ordinary
+readiness and observation gates must pass again. It never creates a logical request, changes
+an attempt's authority, sends a message or automatically retries. Legacy recovery remains closed.

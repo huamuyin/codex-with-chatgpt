@@ -64,6 +64,21 @@ class FreshTests(unittest.TestCase):
         self.assertEqual(r["payload"], {k:self.p[k] for k in d.PAYLOAD_KEYS})
         self.assertNotIn(b"reply_wait_ms", (self.path / "events.jsonl").read_bytes())
 
+    def test_restore_original_thread_from_root_is_navigation_only_and_uses_frozen_attempt(self):
+        r = self.send(); raw = (self.path / "events.jsonl").read_bytes()
+        self.s.status.update(connected=False, candidate_count=0, tab_id=None, url="",
+            bound_tab_diagnostics=[dict(tab_id=7, exists=True, status="complete", url="https://chatgpt.com/")],
+            observed_targets=[dict(tab_id=7, url="https://chatgpt.com/", status="complete")])
+        value = dict(action="restore_thread", request_id=r["request_id"], control_id=r["control_id"], attempt_id=1, tab_id=7, url=URL)
+        self.s.maintenance(value)
+        self.assertEqual(self.ws.messages[-1]["request"], self.s.requests.wire_request(r["request_id"], 1))
+        self.assertEqual((self.path / "events.jsonl").read_bytes(), raw)
+        for change in (dict(tab_id=8), dict(url="https://chatgpt.com/"), dict(control_id=str(uuid.uuid4())), dict(attempt_id=999), dict(request_id=str(uuid.uuid4()))):
+            with self.assertRaises(b.RequestError): self.s.maintenance({**value, **change})
+        self.s.status["observed_targets"].append(dict(tab_id=8, url=URL))
+        with self.assertRaises(b.RequestError): self.s.maintenance(value)
+        self.assertEqual((self.path / "events.jsonl").read_bytes(), raw)
+
     def test_invalid_observation_and_send_locator_fault_reject_before_creation(self):
         for value in ({"reply_wait_ms": True}, {"reply_wait_ms": 0}, {"reply_wait_ms": 600001}, {"locator_miss": "yes"}, {"unknown": 1}):
             with self.assertRaises(b.RequestError): self.s.send(self.p, observation=value)

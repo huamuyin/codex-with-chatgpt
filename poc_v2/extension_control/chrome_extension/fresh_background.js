@@ -87,6 +87,17 @@ async function maintenance(m) {
   try {
     if (m.action === "sample_status") {
       await status();
+    } else if (m.action === "restore_thread") {
+      const known = attempts.get(C.key(m.request || {}));
+      if (!known || !C.sameAttempt(known, m.request) || m.tab_id !== known.target_tab_id
+          || m.url !== known.conversation_url || !C.isConversationUrl(m.url)) throw Error("maintenance_attempt_unconfirmed");
+      const tabs = await chrome.tabs.query({ url: "https://chatgpt.com/*" });
+      const bound = tabs.find((t) => t.id === m.tab_id);
+      if (!bound || bound.status !== "complete" || !["https://chatgpt.com/", m.url].includes(bound.url)
+          || tabs.filter((t) => t.url === bound.url).length !== 1
+          || tabs.some((t) => t.url === m.url && t.id !== m.tab_id)) throw Error("maintenance_target_unconfirmed");
+      await chrome.tabs.update(m.tab_id, { url: known.conversation_url });
+      send({ type: "fresh_maintenance_result", maintenance_id: m.maintenance_id, action: m.action, complete: true }); return;
     } else if (["reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"].includes(m.action)) {
       const allowed = m.url === "https://chatgpt.com/" && attempts.size === 0
         || [...attempts.values()].some((r) => r.target_tab_id === m.tab_id && (r.conversation_url === m.url
