@@ -1,0 +1,54 @@
+{
+  "mission": "C2C_V2_FAILURE_RECOVERY_AND_10_TURN_STABILITY_R1",
+  "implementation_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+  "accepted_parent": "893a85c98ba3998eea590623e35bfd35ef263890",
+  "version": "0.9.8",
+  "protocol": 3,
+  "build": "c2c-v2-fresh-paired-turn-completion-1",
+  "required_source_paths": [
+    "poc_v2/extension_control/bridge/fresh_response.py",
+    "poc_v2/extension_control/bridge/test_fresh_response.py",
+    "poc_v2/extension_control/bridge/fresh_protocol.md",
+    "poc_v2/extension_control/bridge/fresh_bridge.py",
+    "poc_v2/extension_control/bridge/test_fresh_delivery.py",
+    "poc_v2/extension_control/chrome_extension/fresh_background.js",
+    "poc_v2/extension_control/chrome_extension/fresh_content.js",
+    "poc_v2/extension_control/chrome_extension/fresh_locator.js",
+    "poc_v2/extension_control/chrome_extension/fresh_contract.js",
+    "poc_v2/extension_control/tests/fresh_runtime.test.cjs"
+  ],
+  "required_evidence_paths": [
+    ".c2c-v2/failure-recovery-r1/review-002/test_summary.json",
+    ".c2c-v2/failure-recovery-r1/review-002/source_hashes.json",
+    ".c2c-v2/failure-recovery-r1/review-002/prior_review_and_action.json",
+    ".c2c-v2/failure-recovery-r1/review-002/campaign_progress.json"
+  ],
+  "review_focus": [
+    "Independently verify all three required response controls and their complete-contract/missing/mistyped/bounded tests.",
+    "Assess final compatible lifecycle/identity changes: coherent samples, finite real Chrome ping budget, editor exclusion, exact owned draft clear and original-thread restoration.",
+    "Verify audit independence and honest separation of physical observations, controlled parser truncation, and pending recovery/review gates. No predetermined PASS. Give one finite Fresh-only next action."
+  ],
+  "response_contract": {
+    "format": "exactly one fenced json object; no prose",
+    "fields": [
+      "STATE",
+      "ROUND",
+      "REQUEST_ID",
+      "CONTROL_ID",
+      "ATTEMPT_ID",
+      "REVIEWED_COMMIT",
+      "VERDICT",
+      "FINDINGS",
+      "REVIEW_SUMMARY",
+      "GITHUB_RESOURCES_READ",
+      "NEXT_CODEX_INSTRUCTION"
+    ],
+    "instruction": "non-empty string of <=4096 characters; finite scoped action",
+    "verdicts": [
+      "PASS_CONTINUE",
+      "CHANGES_REQUIRED",
+      "BLOCKED_AUTHORITY"
+    ]
+  },
+  "architecture": "Codex -> localhost18797 Fresh -> ordinary subscription high-reasoning Chat -> official GitHub evidence -> framed JSON -> Fresh -> Codex; no Work/IAB/MCP/Cloudflare/API/other products/legacy recovery"
+}

@@ -1,0 +1,112 @@
+{
+  "request_id": "6120b488-f48e-4852-a5ed-4e9b72ff8cba",
+  "control_id": "7932bcc2-efda-44e0-b67d-8a4dce2f9439",
+  "iteration": 101,
+  "expected_commit": "2ee18abe2fdbeca62ecf44fa32edf43d0797f660",
+  "attempts": 4,
+  "actual_completed_reply_attempts": [
+    1,
+    4
+  ],
+  "canonical_attempt": 4,
+  "late_duplicate_attempt": 1,
+  "attempted_before_send_failures": {
+    "2": "attempt_binding_unconfirmed",
+    "3": "composer_not_empty"
+  },
+  "current_journal_event_count": 41,
+  "negative_probes": {
+    "request_id": {
+      "evidence": "controller-00100.json",
+      "rejection_code": "request_identity_unknown"
+    },
+    "control_id": {
+      "evidence": "controller-00101.json",
+      "rejection_code": "request_identity_unknown"
+    },
+    "attempt_id": {
+      "evidence": "controller-00102.json",
+      "rejection_code": "request_identity_unknown"
+    },
+    "expected_commit": {
+      "evidence": "controller-00103.json",
+      "rejection_code": "reply_identity_mismatch"
+    },
+    "conversation_url": {
+      "evidence": "controller-00104.json",
+      "rejection_code": "reply_binding_unconfirmed"
+    }
+  },
+  "negative_http": [
+    {
+      "command": {
+        "operation": "negative_http",
+        "phase": "campaign-a",
+        "field": "request_id"
+      },
+      "response_path": "controller-00105.json",
+      "http_status": 404,
+      "error_code": "request_id_unknown"
+    },
+    {
+      "command": {
+        "operation": "negative_http",
+        "phase": "campaign-a",
+        "field": "control_id"
+      },
+      "response_path": "controller-00106.json",
+      "http_status": 409,
+      "error_code": "logical_identity_mismatch"
+    },
+    {
+      "command": {
+        "operation": "negative_http",
+        "phase": "campaign-a",
+        "field": "commit"
+      },
+      "response_path": "controller-00107.json",
+      "http_status": 409,
+      "error_code": "logical_identity_mismatch"
+    },
+    {
+      "command": {
+        "operation": "negative_http",
+        "phase": "campaign-a",
+        "field": "iteration"
+      },
+      "response_path": "controller-00108.json",
+      "http_status": 409,
+      "error_code": "logical_identity_mismatch"
+    },
+    {
+      "command": {
+        "operation": "negative_http",
+        "phase": "campaign-a",
+        "field": "conversation_url"
+      },
+      "response_path": "controller-00109.json",
+      "http_status": 409,
+      "error_code": "logical_identity_mismatch"
+    }
+  ],
+  "negative_events_and_reinjection_changed_journal": false,
+  "parser_fault": {
+    "boundary": "controller strict parser input",
+    "fault": "controlled truncation of actual completed Chrome reply body; recognized fence retained",
+    "original_raw_sha256": "9a8336b7af61b6e414b3dc9347dc03ada18ce0f6921ff6806d10435eb67f6868",
+    "damaged_raw_sha256": "c73ed8b85ed2494dbc6de2905eef4143a15341f5d4c660871e98644a2c6b2054",
+    "error_code": "response_json_invalid",
+    "malformed_response_accepted": false,
+    "raw_preserved": true,
+    "repaired": false,
+    "review_instruction_executed_from_damage": false,
+    "recovery": "NEW Fresh campaign-b logical request; no rewrite of campaign-a",
+    "spontaneous_chat_malformed_output": false
+  },
+  "parser_recovery": "PENDING valid fresh campaign-b response",
+  "required_field_fix_independent_review": "PENDING",
+  "USER_INTERMEDIATE_RELAY": 0,
+  "USER_ACTIONS_DURING_CONTROL_LOOP": 0,
+  "ten_turns_started": 0,
+  "physical_note": "Real Chrome reload, background reconnect and generation1->2 reinjection observed; owned bridge restarts replayed existing sealed history without automatic send. Initial missing bridge was not counted as restart proof. All complete case ledger gates will be finalized only after campaign-b valid recovery."
+}

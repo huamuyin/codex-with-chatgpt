@@ -1,0 +1,132 @@
+{
+  "review": {
+    "STATE": "REVIEW_RESULT",
+    "ROUND": 101,
+    "REQUEST_ID": "6120b488-f48e-4852-a5ed-4e9b72ff8cba",
+    "CONTROL_ID": "7932bcc2-efda-44e0-b67d-8a4dce2f9439",
+    "ATTEMPT_ID": 4,
+    "REVIEWED_COMMIT": "2ee18abe2fdbeca62ecf44fa32edf43d0797f660",
+    "VERDICT": "CHANGES_REQUIRED",
+    "FINDINGS": [
+      {
+        "severity": "MAJOR",
+        "path": "poc_v2/extension_control/bridge/fresh_response.py",
+        "finding": "Strict response validation is incomplete. review_request.json requires REVIEW_SUMMARY, GITHUB_RESOURCES_READ and NEXT_CODEX_INSTRUCTION, but validate_response verifies only envelope identity, VERDICT and FINDINGS. test_fresh_response.py positively validates a fixture that omits all three required fields. An identity-correct but truncated control-loop reply can therefore be accepted."
+      },
+      {
+        "severity": "INFO",
+        "finding": "The recovery/lifecycle source otherwise remains bounded: observation locator faults cannot create a send; observe_request binds an existing request/control/attempt; retired content instances dispose waiters and cannot emit later results; reload_tab is exact-target maintenance; negative probes mutate only a diagnostic candidate and never forward results. Physical Chrome gates remain explicitly PENDING."
+      },
+      {
+        "severity": "INFO",
+        "finding": "PR #1 head at this review start is 53ccd03e2935645d1ca2d969740a7a28363c18aa, not the incoming immutable commit. I did not substitute that newer head; all substantive review remained bound to 2ee18abe2fdbeca62ecf44fa32edf43d0797f660 and implementation b9a5ec118b245ef9c964dffcedf7c29f1bb52d00."
+      }
+    ],
+    "REVIEW_SUMMARY": "Independent exact-commit review reproduces the framing defect. The incoming evidence commit exists and binds implementation b9a5ec118b245ef9c964dffcedf7c29f1bb52d00 to accepted parent 893a85c98ba3998eea590623e35bfd35ef263890. GitHub compare shows one bounded implementation commit changing exactly the eight Fresh source/test/doc paths, followed by one evidence-only commit adding the three failure-recovery JSON files. All eight required files were reread at the exact implementation commit and their blob IDs match source_hashes.json. Evidence reports 107 Python and 157 Node passes with physical_browser_campaign=PENDING. Those passes do not cure the parser contract defect: validate_response does not enforce three explicitly required control-loop fields and its positive fixture demonstrates that omission is accepted. Correction is required before physical fault gates or ten-turn stability work.",
+    "GITHUB_RESOURCES_READ": [
+      {
+        "path": "PR #1 metadata",
+        "ref_commit": "53ccd03e2935645d1ca2d969740a7a28363c18aa",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/pull/1",
+        "read_method": "GitHub get_pr_info",
+        "source_excerpt": "\"head_sha\":\"53ccd03e2935645d1ca2d969740a7a28363c18aa\""
+      },
+      {
+        "path": ".c2c-v2/failure-recovery-r1/review_request.json",
+        "ref_commit": "2ee18abe2fdbeca62ecf44fa32edf43d0797f660",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/2ee18abe2fdbeca62ecf44fa32edf43d0797f660/.c2c-v2/failure-recovery-r1/review_request.json",
+        "read_method": "GitHub fetch_file",
+        "source_excerpt": "\"implementation_commit\": \"b9a5ec118b245ef9c964dffcedf7c29f1bb52d00\""
+      },
+      {
+        "path": ".c2c-v2/failure-recovery-r1/test_summary.json",
+        "ref_commit": "2ee18abe2fdbeca62ecf44fa32edf43d0797f660",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/2ee18abe2fdbeca62ecf44fa32edf43d0797f660/.c2c-v2/failure-recovery-r1/test_summary.json",
+        "read_method": "GitHub fetch_file",
+        "source_excerpt": "\"physical_browser_campaign\": \"PENDING; not inferred from mocks\""
+      },
+      {
+        "path": ".c2c-v2/failure-recovery-r1/source_hashes.json",
+        "ref_commit": "2ee18abe2fdbeca62ecf44fa32edf43d0797f660",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/2ee18abe2fdbeca62ecf44fa32edf43d0797f660/.c2c-v2/failure-recovery-r1/source_hashes.json",
+        "read_method": "GitHub fetch_file/blob verification",
+        "source_excerpt": "\"protocol\": 3, \"build\": \"c2c-v2-fresh-paired-turn-completion-1\""
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/fresh_bridge.py",
+        "ref_commit": "b9a5ec118b245ef9c964dffcedf7c29f1bb52d00",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b9a5ec118b245ef9c964dffcedf7c29f1bb52d00/poc_v2/extension_control/bridge/fresh_bridge.py",
+        "read_method": "GitHub fetch_file",
+        "source_excerpt": "if observation.get(\"locator_miss\"): raise transport.RequestError(\"locator_fault_observe_only\")"
+      },
+      {
+        "path": "poc_v2/extension_control/chrome_extension/fresh_background.js",
+        "ref_commit": "b9a5ec118b245ef9c964dffcedf7c29f1bb52d00",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b9a5ec118b245ef9c964dffcedf7c29f1bb52d00/poc_v2/extension_control/chrome_extension/fresh_background.js",
+        "read_method": "GitHub fetch_file",
+        "source_excerpt": "// A probe never forwards any result, even if the shared validator unexpectedly accepts it."
+      },
+      {
+        "path": "poc_v2/extension_control/chrome_extension/fresh_content.js",
+        "ref_commit": "b9a5ec118b245ef9c964dffcedf7c29f1bb52d00",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b9a5ec118b245ef9c964dffcedf7c29f1bb52d00/poc_v2/extension_control/chrome_extension/fresh_content.js",
+        "read_method": "GitHub fetch_file",
+        "source_excerpt": "dispose() { active = false; wake(); }"
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/fresh_response.py",
+        "ref_commit": "b9a5ec118b245ef9c964dffcedf7c29f1bb52d00",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b9a5ec118b245ef9c964dffcedf7c29f1bb52d00/poc_v2/extension_control/bridge/fresh_response.py",
+        "read_method": "GitHub fetch_file",
+        "source_excerpt": "if not isinstance(value.get(\"FINDINGS\"), list): raise ResponseError(\"response_findings_invalid\")"
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/test_fresh_delivery.py",
+        "ref_commit": "b9a5ec118b245ef9c964dffcedf7c29f1bb52d00",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b9a5ec118b245ef9c964dffcedf7c29f1bb52d00/poc_v2/extension_control/bridge/test_fresh_delivery.py",
+        "read_method": "GitHub fetch_file",
+        "source_excerpt": "self.assertNotIn(b\"reply_wait_ms\", (self.path / \"events.jsonl\").read_bytes())"
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/test_fresh_response.py",
+        "ref_commit": "b9a5ec118b245ef9c964dffcedf7c29f1bb52d00",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b9a5ec118b245ef9c964dffcedf7c29f1bb52d00/poc_v2/extension_control/bridge/test_fresh_response.py",
+        "read_method": "GitHub fetch_file",
+        "source_excerpt": "self.assertEqual(validate_response(parse_response(text), **self.context), self.reply)"
+      },
+      {
+        "path": "poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+        "ref_commit": "b9a5ec118b245ef9c964dffcedf7c29f1bb52d00",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b9a5ec118b245ef9c964dffcedf7c29f1bb52d00/poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+        "read_method": "GitHub fetch_file",
+        "source_excerpt": "assert.equal(after.content_generation, before.content_generation + 1)"
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/fresh_protocol.md",
+        "ref_commit": "b9a5ec118b245ef9c964dffcedf7c29f1bb52d00",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b9a5ec118b245ef9c964dffcedf7c29f1bb52d00/poc_v2/extension_control/bridge/fresh_protocol.md",
+        "read_method": "GitHub fetch_file",
+        "source_excerpt": "All machine reviewer replies must use one fenced json object."
+      }
+    ],
+    "NEXT_CODEX_INSTRUCTION": "Patch only Fresh response framing/tests/docs/evidence: require REVIEW_SUMMARY as a non-empty string, GITHUB_RESOURCES_READ as a list, and NEXT_CODEX_INSTRUCTION as one bounded non-empty instruction in fresh_response.validate_response; add positive complete-contract coverage and negative tests deleting or mistyping each required field; preserve all current envelope/framing checks and all recovery authority boundaries; run full Python/Node/syntax/manifest/diff gates and publish a new immutable evidence commit before any physical fault or ten-turn campaign."
+  },
+  "codex_action": {
+    "caused_by": {
+      "request_id": "6120b488-f48e-4852-a5ed-4e9b72ff8cba",
+      "control_id": "7932bcc2-efda-44e0-b67d-8a4dce2f9439",
+      "attempt_id": 4,
+      "reply_sequence": 39,
+      "reviewed_commit": "2ee18abe2fdbeca62ecf44fa32edf43d0797f660",
+      "raw_sha256": "9a8336b7af61b6e414b3dc9347dc03ada18ce0f6921ff6806d10435eb67f6868",
+      "verdict": "CHANGES_REQUIRED"
+    },
+    "instruction": "Patch only Fresh response framing/tests/docs/evidence: require REVIEW_SUMMARY as a non-empty string, GITHUB_RESOURCES_READ as a list, and NEXT_CODEX_INSTRUCTION as one bounded non-empty instruction in fresh_response.validate_response; add positive complete-contract coverage and negative tests deleting or mistyping each required field; preserve all current envelope/framing checks and all recovery authority boundaries; run full Python/Node/syntax/manifest/diff gates and publish a new immutable evidence commit before any physical fault or ten-turn campaign.",
+    "action": "Enforced three required response controls, bounded instruction string, complete fixture and missing/mistyped/boundary cases; full regression and immutable commit.",
+    "implementation_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+    "checks": "repairs/review-response-required-fields/summary.json",
+    "duplicate_seq41_did_not_create_second_action": true
+  },
+  "duplicate_reply_count": 1,
+  "duplicate_did_not_create_task": true
+}
