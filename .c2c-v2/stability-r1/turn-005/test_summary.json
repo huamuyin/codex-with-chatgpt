@@ -1,0 +1,10 @@
+{
+  "source_commit": "5d93be365140d8682515f8d21e7215a28c741882",
+  "python_passed": 120,
+  "node_passed": 171,
+  "syntax_files": 21,
+  "manifest": "PASS",
+  "diff": "PASS",
+  "legacy_unchanged": 14,
+  "evidence": "repairs/turn04-late-failure-state/checks"
+}
