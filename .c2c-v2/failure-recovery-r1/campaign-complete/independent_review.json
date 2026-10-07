@@ -1,0 +1,132 @@
+{
+  "STATE": "REVIEW_RESULT",
+  "ROUND": 102,
+  "REQUEST_ID": "75270db0-5d37-4636-b6f2-82a65c849f65",
+  "CONTROL_ID": "92a4019b-1489-418f-a13c-33343989b6a9",
+  "ATTEMPT_ID": 1,
+  "REVIEWED_COMMIT": "237afd7d5544dfd476347166cb202a53d9b9ca75",
+  "VERDICT": "PASS_CONTINUE",
+  "FINDINGS": [
+    {
+      "severity": "INFO",
+      "finding": "The Round101 parser defect is corrected at implementation 5c8b56ff39e1a40c221e5aee308e34e67f24fbc5. validate_response now requires non-blank REVIEW_SUMMARY, list-typed GITHUB_RESOURCES_READ, and non-blank NEXT_CODEX_INSTRUCTION limited to 4096 characters. Tests cover a complete valid contract, deletion of each field, mistyped/blank values, 4097 rejection and exact 4096 acceptance."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The compatible Fresh lifecycle changes reviewed at the same immutable implementation retain bounded authority: 15-second ping timeout, transcript editor exclusion, retired-instance disposal, exact known-attempt draft clear, explicit original-thread restoration, and diagnostic reply probes that never forward results. No blocking source defect was found."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Physical evidence remains deliberately partial. campaign_progress records real Chrome reload, background reconnect, generation 1->2 reinjection and owned bridge restart/replay without automatic send, while parser_recovery and independent required-field review were still PENDING and ten_turns_started remained 0. Those pending states are not inferred as passes from offline tests."
+    }
+  ],
+  "REVIEW_SUMMARY": "Exact GitHub authority was re-read for this new logical request. PR #1 head matched the incoming evidence commit 237afd7d5544dfd476347166cb202a53d9b9ca75 at review start; no branch-head substitution was used. That evidence binds final implementation 5c8b56ff39e1a40c221e5aee308e34e67f24fbc5. The evidence commit is exactly one commit after that implementation and adds only the five review-002 evidence files. Every required evidence path and all ten required source paths were independently fetched at their specified immutable refs. The Round101 CHANGES_REQUIRED instruction is substantively satisfied: the three missing control fields are enforced, instruction length is bounded at <=4096, and positive/missing/mistyped/boundary tests are present. Source review also found the later Fresh lifecycle/identity repairs compatible with existing authority boundaries. Evidence reports 112 Python and 169 Node passes, but those results are not treated as substitutes for the still-pending physical gates. PASS_CONTINUE therefore authorizes only the next bounded campaign/evidence step, not ten-turn stability acceptance.",
+  "GITHUB_RESOURCES_READ": [
+    {
+      "path": ".c2c-v2/failure-recovery-r1/review-002/review_request.json",
+      "ref_commit": "237afd7d5544dfd476347166cb202a53d9b9ca75",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/237afd7d5544dfd476347166cb202a53d9b9ca75/.c2c-v2/failure-recovery-r1/review-002/review_request.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"implementation_commit\": \"5c8b56ff39e1a40c221e5aee308e34e67f24fbc5\""
+    },
+    {
+      "path": ".c2c-v2/failure-recovery-r1/review-002/test_summary.json",
+      "ref_commit": "237afd7d5544dfd476347166cb202a53d9b9ca75",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/237afd7d5544dfd476347166cb202a53d9b9ca75/.c2c-v2/failure-recovery-r1/review-002/test_summary.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"python_passed\": 112,\n  \"node_passed\": 169"
+    },
+    {
+      "path": ".c2c-v2/failure-recovery-r1/review-002/source_hashes.json",
+      "ref_commit": "237afd7d5544dfd476347166cb202a53d9b9ca75",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/237afd7d5544dfd476347166cb202a53d9b9ca75/.c2c-v2/failure-recovery-r1/review-002/source_hashes.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"implementation_commit\": \"5c8b56ff39e1a40c221e5aee308e34e67f24fbc5\""
+    },
+    {
+      "path": ".c2c-v2/failure-recovery-r1/review-002/prior_review_and_action.json",
+      "ref_commit": "237afd7d5544dfd476347166cb202a53d9b9ca75",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/237afd7d5544dfd476347166cb202a53d9b9ca75/.c2c-v2/failure-recovery-r1/review-002/prior_review_and_action.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"action\": \"Enforced three required response controls, bounded instruction string"
+    },
+    {
+      "path": ".c2c-v2/failure-recovery-r1/review-002/campaign_progress.json",
+      "ref_commit": "237afd7d5544dfd476347166cb202a53d9b9ca75",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/237afd7d5544dfd476347166cb202a53d9b9ca75/.c2c-v2/failure-recovery-r1/review-002/campaign_progress.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"parser_recovery\": \"PENDING valid fresh campaign-b response\""
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_response.py",
+      "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c8b56ff39e1a40c221e5aee308e34e67f24fbc5/poc_v2/extension_control/bridge/fresh_response.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "if not isinstance(instruction, str) or not instruction.strip() or len(instruction) > 4096:"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/test_fresh_response.py",
+      "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c8b56ff39e1a40c221e5aee308e34e67f24fbc5/poc_v2/extension_control/bridge/test_fresh_response.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"NEXT_CODEX_INSTRUCTION\": \"x\" * 4096"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_protocol.md",
+      "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c8b56ff39e1a40c221e5aee308e34e67f24fbc5/poc_v2/extension_control/bridge/fresh_protocol.md",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "Missing, mistyped, blank or oversized controls fail closed."
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_bridge.py",
+      "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c8b56ff39e1a40c221e5aee308e34e67f24fbc5/poc_v2/extension_control/bridge/fresh_bridge.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "if action not in (\"reload_extension\", \"sample_status\", \"restore_thread\", \"activate_tab\""
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/test_fresh_delivery.py",
+      "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c8b56ff39e1a40c221e5aee308e34e67f24fbc5/poc_v2/extension_control/bridge/test_fresh_delivery.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "def test_restore_original_thread_from_root_is_navigation_only_and_uses_frozen_attempt"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_background.js",
+      "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c8b56ff39e1a40c221e5aee308e34e67f24fbc5/poc_v2/extension_control/chrome_extension/fresh_background.js",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "new Promise((resolve) => { timer = setTimeout(() => resolve(null), 15000); })"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_content.js",
+      "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c8b56ff39e1a40c221e5aee308e34e67f24fbc5/poc_v2/extension_control/chrome_extension/fresh_content.js",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "if (!found || Locator.normalizeText(readText(found.element)) !== Locator.normalizeText(r.message))"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_locator.js",
+      "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c8b56ff39e1a40c221e5aee308e34e67f24fbc5/poc_v2/extension_control/chrome_extension/fresh_locator.js",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "if (isEditable(parent)) return false;"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_contract.js",
+      "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c8b56ff39e1a40c221e5aee308e34e67f24fbc5/poc_v2/extension_control/chrome_extension/fresh_contract.js",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "function sameAttempt(a, b) { return Boolean(a && b && JSON.stringify(identityOf(a))"
+    },
+    {
+      "path": "poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+      "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c8b56ff39e1a40c221e5aee308e34e67f24fbc5/poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "test(\"explicit owned draft clear keeps unknown input and never clicks or emits a review result\""
+    }
+  ],
+  "NEXT_CODEX_INSTRUCTION": "After this exact Round102 reply is accepted by the strict parser, create one evidence-only Fresh commit that records parser_recovery=PASS and required_field_fix_independent_review=PASS with this REQUEST_ID, CONTROL_ID, ATTEMPT_ID, REVIEWED_COMMIT and preserved raw-response hash; update campaign_progress without changing source or journal history, keep ten_turns_started=0, and do not infer any still-unobserved physical fault gate."
+}

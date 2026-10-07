@@ -1,0 +1,228 @@
+{
+  "campaign_a": {
+    "phase": "campaign-a",
+    "authority_commit": "2ee18abe2fdbeca62ecf44fa32edf43d0797f660",
+    "required_resources": 11,
+    "all_required_refs_reported": true,
+    "note": "Reads are reviewer-reported official GitHub operations; immutable refs, URLs and local Git objects are independently cross-checked. Contextual PR metadata may have a different head.",
+    "resources": [
+      {
+        "path": ".c2c-v2/failure-recovery-r1/review_request.json",
+        "ref_commit": "2ee18abe2fdbeca62ecf44fa32edf43d0797f660",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/2ee18abe2fdbeca62ecf44fa32edf43d0797f660/.c2c-v2/failure-recovery-r1/review_request.json",
+        "read_method": "GitHub fetch_file",
+        "source_sha256": "8ed1314b5564cee207e8b7ec8dd9533b4954ad32c99122edc1d05df9ed0deb68",
+        "excerpt_literal_or_whitespace_match": true
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/fresh_bridge.py",
+        "ref_commit": "b9a5ec118b245ef9c964dffcedf7c29f1bb52d00",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b9a5ec118b245ef9c964dffcedf7c29f1bb52d00/poc_v2/extension_control/bridge/fresh_bridge.py",
+        "read_method": "GitHub fetch_file",
+        "source_sha256": "af0b7b18260f480bb79cbe5c68da4de2cd1f2486e7bf6b704cdf749a77ec8688",
+        "excerpt_literal_or_whitespace_match": true
+      },
+      {
+        "path": "poc_v2/extension_control/chrome_extension/fresh_background.js",
+        "ref_commit": "b9a5ec118b245ef9c964dffcedf7c29f1bb52d00",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b9a5ec118b245ef9c964dffcedf7c29f1bb52d00/poc_v2/extension_control/chrome_extension/fresh_background.js",
+        "read_method": "GitHub fetch_file",
+        "source_sha256": "4bd86683b7a96d7f65a21faa7a6cfb51dc3245fe8192704df1ec9aba4260faeb",
+        "excerpt_literal_or_whitespace_match": true
+      },
+      {
+        "path": "poc_v2/extension_control/chrome_extension/fresh_content.js",
+        "ref_commit": "b9a5ec118b245ef9c964dffcedf7c29f1bb52d00",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b9a5ec118b245ef9c964dffcedf7c29f1bb52d00/poc_v2/extension_control/chrome_extension/fresh_content.js",
+        "read_method": "GitHub fetch_file",
+        "source_sha256": "7fea175533106e1c1c7aa9b12b1ed3b886f7e4f246681c614fedd943f1cbb7b0",
+        "excerpt_literal_or_whitespace_match": true
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/fresh_response.py",
+        "ref_commit": "b9a5ec118b245ef9c964dffcedf7c29f1bb52d00",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b9a5ec118b245ef9c964dffcedf7c29f1bb52d00/poc_v2/extension_control/bridge/fresh_response.py",
+        "read_method": "GitHub fetch_file",
+        "source_sha256": "23e42df69a89eb0ace04596cdbf9d83f7b261d14db2ce62c0519e2535f1d8887",
+        "excerpt_literal_or_whitespace_match": true
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/test_fresh_delivery.py",
+        "ref_commit": "b9a5ec118b245ef9c964dffcedf7c29f1bb52d00",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b9a5ec118b245ef9c964dffcedf7c29f1bb52d00/poc_v2/extension_control/bridge/test_fresh_delivery.py",
+        "read_method": "GitHub fetch_file",
+        "source_sha256": "11537584e542f20c9d1f118e42f97f724c7af9f0f05cf6837044ad00b421e6dd",
+        "excerpt_literal_or_whitespace_match": true
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/test_fresh_response.py",
+        "ref_commit": "b9a5ec118b245ef9c964dffcedf7c29f1bb52d00",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b9a5ec118b245ef9c964dffcedf7c29f1bb52d00/poc_v2/extension_control/bridge/test_fresh_response.py",
+        "read_method": "GitHub fetch_file",
+        "source_sha256": "234ace82c694fc41631ff64a2e12d97ee3bbbaeec413914ab1e7747536f16027",
+        "excerpt_literal_or_whitespace_match": true
+      },
+      {
+        "path": "poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+        "ref_commit": "b9a5ec118b245ef9c964dffcedf7c29f1bb52d00",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b9a5ec118b245ef9c964dffcedf7c29f1bb52d00/poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+        "read_method": "GitHub fetch_file",
+        "source_sha256": "2ca18fdf3fc78721588d3b456e185e3e3020c8d5eef5f6be3c71a6b2a4238b61",
+        "excerpt_literal_or_whitespace_match": true
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/fresh_protocol.md",
+        "ref_commit": "b9a5ec118b245ef9c964dffcedf7c29f1bb52d00",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b9a5ec118b245ef9c964dffcedf7c29f1bb52d00/poc_v2/extension_control/bridge/fresh_protocol.md",
+        "read_method": "GitHub fetch_file",
+        "source_sha256": "7f6a3390639b054bb47199554accb80a77fba13a033f09dc214748e129dd4115",
+        "excerpt_literal_or_whitespace_match": true
+      },
+      {
+        "path": ".c2c-v2/failure-recovery-r1/test_summary.json",
+        "ref_commit": "2ee18abe2fdbeca62ecf44fa32edf43d0797f660",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/2ee18abe2fdbeca62ecf44fa32edf43d0797f660/.c2c-v2/failure-recovery-r1/test_summary.json",
+        "read_method": "GitHub fetch_file",
+        "source_sha256": "b69f16d518084353515b8facdfdf48444e80a56c73046483977e59711ac5e0f5",
+        "excerpt_literal_or_whitespace_match": true
+      },
+      {
+        "path": ".c2c-v2/failure-recovery-r1/source_hashes.json",
+        "ref_commit": "2ee18abe2fdbeca62ecf44fa32edf43d0797f660",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/2ee18abe2fdbeca62ecf44fa32edf43d0797f660/.c2c-v2/failure-recovery-r1/source_hashes.json",
+        "read_method": "GitHub fetch_file/blob verification",
+        "source_sha256": "1de99f18d63756bf66c92580d1a0c8bcbdebae2523ded6baadea6a4b0016b52a",
+        "excerpt_literal_or_whitespace_match": true
+      }
+    ]
+  },
+  "campaign_b": {
+    "phase": "campaign-b",
+    "authority_commit": "237afd7d5544dfd476347166cb202a53d9b9ca75",
+    "required_resources": 15,
+    "all_required_refs_reported": true,
+    "note": "Reads are reviewer-reported official GitHub operations; immutable refs, URLs and local Git objects are independently cross-checked. Contextual PR metadata may have a different head.",
+    "resources": [
+      {
+        "path": ".c2c-v2/failure-recovery-r1/review-002/review_request.json",
+        "ref_commit": "237afd7d5544dfd476347166cb202a53d9b9ca75",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/237afd7d5544dfd476347166cb202a53d9b9ca75/.c2c-v2/failure-recovery-r1/review-002/review_request.json",
+        "read_method": "GitHub fetch_file",
+        "source_sha256": "65931ada24dcb4cb9d001842df0917b0cce40586056f48a137263a161713400f",
+        "excerpt_literal_or_whitespace_match": true
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/fresh_response.py",
+        "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c8b56ff39e1a40c221e5aee308e34e67f24fbc5/poc_v2/extension_control/bridge/fresh_response.py",
+        "read_method": "GitHub fetch_file",
+        "source_sha256": "4c57a01d287bef0140a51a8aefa48e4d029a76a82f39d076187a88db72d68833",
+        "excerpt_literal_or_whitespace_match": true
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/test_fresh_response.py",
+        "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c8b56ff39e1a40c221e5aee308e34e67f24fbc5/poc_v2/extension_control/bridge/test_fresh_response.py",
+        "read_method": "GitHub fetch_file",
+        "source_sha256": "714c24739c663471bc33285b0f893c23fbc5d5142dfc08c6342554099d7f6884",
+        "excerpt_literal_or_whitespace_match": true
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/fresh_protocol.md",
+        "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c8b56ff39e1a40c221e5aee308e34e67f24fbc5/poc_v2/extension_control/bridge/fresh_protocol.md",
+        "read_method": "GitHub fetch_file",
+        "source_sha256": "5d0e8ca4fe9d7b916cda9f01fef5f852759b28cbac8329be1f9ca43cf144c747",
+        "excerpt_literal_or_whitespace_match": true
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/fresh_bridge.py",
+        "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c8b56ff39e1a40c221e5aee308e34e67f24fbc5/poc_v2/extension_control/bridge/fresh_bridge.py",
+        "read_method": "GitHub fetch_file",
+        "source_sha256": "912784e35f8f64ea1decc436604c7cb7d86415fdd20c7da7ff2b163b0f2e7771",
+        "excerpt_literal_or_whitespace_match": true
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/test_fresh_delivery.py",
+        "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c8b56ff39e1a40c221e5aee308e34e67f24fbc5/poc_v2/extension_control/bridge/test_fresh_delivery.py",
+        "read_method": "GitHub fetch_file",
+        "source_sha256": "feff298ae240ee90e0c71c7c753f21917f14ec0bd257aa3f5947928116d26487",
+        "excerpt_literal_or_whitespace_match": true
+      },
+      {
+        "path": "poc_v2/extension_control/chrome_extension/fresh_background.js",
+        "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c8b56ff39e1a40c221e5aee308e34e67f24fbc5/poc_v2/extension_control/chrome_extension/fresh_background.js",
+        "read_method": "GitHub fetch_file",
+        "source_sha256": "83a74637470be08aea416e1944531677a7e697c1cc4338f605620e7675a4c9c4",
+        "excerpt_literal_or_whitespace_match": true
+      },
+      {
+        "path": "poc_v2/extension_control/chrome_extension/fresh_content.js",
+        "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c8b56ff39e1a40c221e5aee308e34e67f24fbc5/poc_v2/extension_control/chrome_extension/fresh_content.js",
+        "read_method": "GitHub fetch_file",
+        "source_sha256": "2c8551600687d40564248b2e3b85cf68cadcfaf3f037b9f5fe43bf66c715469d",
+        "excerpt_literal_or_whitespace_match": true
+      },
+      {
+        "path": "poc_v2/extension_control/chrome_extension/fresh_locator.js",
+        "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c8b56ff39e1a40c221e5aee308e34e67f24fbc5/poc_v2/extension_control/chrome_extension/fresh_locator.js",
+        "read_method": "GitHub fetch_file",
+        "source_sha256": "065dc6020cc29006f8922dfd3cba846423554edd1e70d0c0ea522eac0ed2d1ad",
+        "excerpt_literal_or_whitespace_match": true
+      },
+      {
+        "path": "poc_v2/extension_control/chrome_extension/fresh_contract.js",
+        "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c8b56ff39e1a40c221e5aee308e34e67f24fbc5/poc_v2/extension_control/chrome_extension/fresh_contract.js",
+        "read_method": "GitHub fetch_file",
+        "source_sha256": "296b5007a585763a9decaff7b1f087931e391681c64ae41da5584078bf72fb9f",
+        "excerpt_literal_or_whitespace_match": true
+      },
+      {
+        "path": "poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+        "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c8b56ff39e1a40c221e5aee308e34e67f24fbc5/poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+        "read_method": "GitHub fetch_file",
+        "source_sha256": "0a8b2866f6f161920f3063d789b31d8c97b4b37fb0ade2b3dedd649571abe546",
+        "excerpt_literal_or_whitespace_match": true
+      },
+      {
+        "path": ".c2c-v2/failure-recovery-r1/review-002/test_summary.json",
+        "ref_commit": "237afd7d5544dfd476347166cb202a53d9b9ca75",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/237afd7d5544dfd476347166cb202a53d9b9ca75/.c2c-v2/failure-recovery-r1/review-002/test_summary.json",
+        "read_method": "GitHub fetch_file",
+        "source_sha256": "53d0149832bc6c47432c7cd0c4ec50831c6c6ee0d10a64e5a948dfc94c631c1f",
+        "excerpt_literal_or_whitespace_match": true
+      },
+      {
+        "path": ".c2c-v2/failure-recovery-r1/review-002/source_hashes.json",
+        "ref_commit": "237afd7d5544dfd476347166cb202a53d9b9ca75",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/237afd7d5544dfd476347166cb202a53d9b9ca75/.c2c-v2/failure-recovery-r1/review-002/source_hashes.json",
+        "read_method": "GitHub fetch_file",
+        "source_sha256": "4fa4da025e2dec41703fb8b0ddb3915fbad807c78eb24225e9ed4e6b42daf5cc",
+        "excerpt_literal_or_whitespace_match": true
+      },
+      {
+        "path": ".c2c-v2/failure-recovery-r1/review-002/prior_review_and_action.json",
+        "ref_commit": "237afd7d5544dfd476347166cb202a53d9b9ca75",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/237afd7d5544dfd476347166cb202a53d9b9ca75/.c2c-v2/failure-recovery-r1/review-002/prior_review_and_action.json",
+        "read_method": "GitHub fetch_file",
+        "source_sha256": "c0b88bcac18db027cf5ee5171ce99128ef9de45c58e7dada6b4aef5a266e404f",
+        "excerpt_literal_or_whitespace_match": true
+      },
+      {
+        "path": ".c2c-v2/failure-recovery-r1/review-002/campaign_progress.json",
+        "ref_commit": "237afd7d5544dfd476347166cb202a53d9b9ca75",
+        "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/237afd7d5544dfd476347166cb202a53d9b9ca75/.c2c-v2/failure-recovery-r1/review-002/campaign_progress.json",
+        "read_method": "GitHub fetch_file",
+        "source_sha256": "cf19c665892c5f32e2dc6523aa1951fcd97a8a1f71374095a74a2dee01a468e6",
+        "excerpt_literal_or_whitespace_match": true
+      }
+    ]
+  }
+}
