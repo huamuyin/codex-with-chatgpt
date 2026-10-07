@@ -127,6 +127,60 @@ class FreshTests(unittest.TestCase):
         restored = self.s.requests.lookup(r["request_id"]); self.assertEqual(restored, current)
         self.assertEqual(d.encoded(restored["result"]), canonical); self.assertEqual((self.path / "events.jsonl").read_bytes(), after)
 
+    def test_websocket_origin_and_first_auth_frame_are_closed_before_registration(self):
+        self.s.unregister(self.ws); before = (self.path / "events.jsonl").read_bytes()
+        cases = [(None, {}), ("chrome-extension://" + "b" * 32, {}),
+                 (self.s.extension_origin, {"type": "auth"}),
+                 (self.s.extension_origin, {"type": "auth", "control_token": "!" * 43}),
+                 (self.s.extension_origin, {"type": "auth", "control_token": self.s.control_token})]
+        for index, (origin, auth) in enumerate(cases):
+            h = object.__new__(f.FreshHandler); h.state = self.s; h.path = "/ws"
+            h.headers = {"Host": "127.0.0.1:18797", "Upgrade": "websocket", "Connection": "Upgrade", "Sec-WebSocket-Version": "13",
+                         "Sec-WebSocket-Key": f.base64.b64encode(b"x" * 16).decode()}
+            if origin is not None: h.headers["Origin"] = origin
+            h.client_address = ("127.0.0.1", 9000); h.connection = Mock(); h.rfile = io.BytesIO(); h.wfile = io.BytesIO()
+            writes = []; h.write = lambda code, body: writes.append((code, body))
+            h.send_response = Mock(); h.send_header = Mock(); h.end_headers = Mock()
+            session = Mock(); session.closed = False; messages = []
+            session.send_json.side_effect = lambda value: messages.append(copy.deepcopy(value))
+            session.close.side_effect = lambda: setattr(session, "closed", True)
+            with patch.object(b, "WebSocketSession", return_value=session), patch.object(b, "_read_client_frame", side_effect=[(1, json.dumps(auth).encode()), (8, b"")]), \
+                 patch.object(f.threading, "Thread"), patch.object(self.s, "register", wraps=self.s.register) as register:
+                h.do_GET(); self.assertEqual(register.call_count, 1 if index == 4 else 0)
+            if index < 2: self.assertEqual(writes, [(403, {"error_code": "origin_rejected"})])
+            if index in (2, 3): self.assertEqual(messages, [{"type": "auth_error"}])
+            if index == 4:
+                self.assertEqual(len(messages), 1); self.assertEqual(messages[0]["type"], "fresh_welcome")
+            for value in (writes, messages, self.s.health(), self.s.requests.checkpoint()):
+                raw = d.encoded(value); self.assertTrue(self.s.control_token.encode() not in raw); self.assertNotIn(b'"control_token"', raw)
+            self.assertIsNone(self.s.session); self.assertEqual((self.path / "events.jsonl").read_bytes(), before)
+            self.assertEqual(self.s.requests.records, {})
+
+    def test_controller_posts_reject_wrong_host_port_peer_or_token_before_actions(self):
+        before = (self.path / "events.jsonl").read_bytes(); count = len(self.ws.messages)
+        for route in ("/review", "/retry", "/maintenance"):
+            for host, peer, token, expected in [("localhost:18797", "127.0.0.1", self.s.control_token, "host_rejected"),
+                ("127.0.0.1:18795", "127.0.0.1", self.s.control_token, "host_rejected"),
+                ("127.0.0.1:18797", "192.0.2.1", self.s.control_token, "host_rejected"),
+                ("127.0.0.1:18797", "127.0.0.1", "!" * 43, "control_token_rejected")]:
+                payload = {**self.p, "control_token": token} if route != "/maintenance" else {"action": "sample_status", "control_token": token}
+                raw = json.dumps(payload).encode(); h = object.__new__(f.FreshHandler); h.state = self.s; h.path = route
+                h.headers = {"Host": host, "Content-Type": "application/json", "Content-Length": str(len(raw))}; h.client_address = (peer, 9000); h.rfile = io.BytesIO(raw)
+                writes = []; h.write = lambda code, body: writes.append((code, body)); h.do_POST()
+                self.assertEqual(writes, [(403 if expected == "host_rejected" else 401, {"error_code": expected})])
+                self.assertEqual((self.path / "events.jsonl").read_bytes(), before); self.assertEqual(self.s.requests.records, {})
+                self.assertEqual(len(self.ws.messages), count); self.assertEqual(self.s.maintenance_commands, {})
+
+    def test_maintenance_messages_results_and_durable_files_exclude_ephemeral_credential(self):
+        mid, _ = self.s.maintenance({"action": "sample_status", "control_token": self.s.control_token})
+        self.s.message(self.ws, dict(type="fresh_maintenance_result", maintenance_id=mid, action="sample_status", complete=True))
+        p = self.s.maintenance_commands[mid]
+        for value in (p["message"], p["result"], self.ws.messages, self.s.health(), self.s.requests.checkpoint(), self.s.requests.records):
+            raw = d.encoded(value); self.assertTrue(self.s.control_token.encode() not in raw); self.assertNotIn(b'"control_token"', raw)
+        self.j.close()  # Release the Windows exclusive writer lock before inspecting its bytes too.
+        for file in self.path.iterdir():
+            if file.is_file(): self.assertTrue(self.s.control_token.encode() not in file.read_bytes()); self.assertNotIn(b'"control_token"', file.read_bytes())
+
     def test_restore_original_thread_from_root_is_navigation_only_and_uses_frozen_attempt(self):
         r = self.send(); raw = (self.path / "events.jsonl").read_bytes()
         self.s.status.update(connected=False, candidate_count=0, tab_id=None, url="",
