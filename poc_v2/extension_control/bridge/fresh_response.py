@@ -1,6 +1,7 @@
 """Strict reviewer JSON framing and identity validation; never repairs malformed input."""
 import json
 import re
+from urllib.parse import urlsplit
 
 
 class ResponseError(ValueError):
@@ -42,7 +43,17 @@ def validate_response(value, *, round_no, request_id, control_id, attempt_id, co
     if not isinstance(value.get("FINDINGS"), list): raise ResponseError("response_findings_invalid")
     summary = value.get("REVIEW_SUMMARY")
     if not isinstance(summary, str) or not summary.strip(): raise ResponseError("response_summary_invalid")
-    if not isinstance(value.get("GITHUB_RESOURCES_READ"), list): raise ResponseError("response_resources_invalid")
+    resources = value.get("GITHUB_RESOURCES_READ")
+    fields = ("path", "ref_commit", "github_url", "read_method", "source_excerpt")
+    if not isinstance(resources, list) or not resources: raise ResponseError("response_resources_invalid")
+    for resource in resources:
+        if not isinstance(resource, dict) or any(not isinstance(resource.get(k), str) or not resource[k].strip() for k in fields):
+            raise ResponseError("response_resource_invalid")
+        if not re.fullmatch(r"[A-Fa-f0-9]{40}", resource["ref_commit"]): raise ResponseError("response_resource_ref_invalid")
+        try: url = urlsplit(resource["github_url"])
+        except ValueError as error: raise ResponseError("response_resource_url_invalid") from error
+        if url.scheme != "https" or url.netloc.lower() != "github.com" or not url.path.startswith("/"):
+            raise ResponseError("response_resource_url_invalid")
     instruction = value.get("NEXT_CODEX_INSTRUCTION")
     if not isinstance(instruction, str) or not instruction.strip() or len(instruction) > 4096:
         raise ResponseError("response_instruction_invalid")

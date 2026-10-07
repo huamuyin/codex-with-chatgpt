@@ -7,7 +7,9 @@ class ResponseTests(unittest.TestCase):
     def setUp(self):
         self.reply = {"STATE": "REVIEW_RESULT", "ROUND": 1, "REQUEST_ID": "request", "CONTROL_ID": "control",
                       "ATTEMPT_ID": 2, "REVIEWED_COMMIT": "a" * 40, "VERDICT": "PASS_CONTINUE", "FINDINGS": [],
-                      "REVIEW_SUMMARY": "Inspected the exact evidence.", "GITHUB_RESOURCES_READ": [],
+                      "REVIEW_SUMMARY": "Inspected the exact evidence.", "GITHUB_RESOURCES_READ": [
+                          {"path": "fixture.json", "ref_commit": "a" * 40, "github_url": "https://github.com/owner/repo/blob/" + "a" * 40 + "/fixture.json",
+                           "read_method": "GitHub offline fixture", "source_excerpt": "A complete synthetic resource."}],
                       "NEXT_CODEX_INSTRUCTION": "Run one bounded Fresh evidence check."}
         self.context = dict(round_no=1, request_id="request", control_id="control", attempt_id=2, commit="a" * 40)
 
@@ -60,3 +62,26 @@ class ResponseTests(unittest.TestCase):
         decoded = parse_response("```json\n" + json.dumps(value) + "\n```")
         self.assertIs(validate_response(decoded, **self.context), decoded)
         self.assertEqual(decoded, value)
+
+    def test_empty_resource_list_and_nonobject_entries_rejected(self):
+        for resource in ([], [None], [False], [1], ["file"], [[]]):
+            with self.subTest(resource=resource), self.assertRaises(ResponseError):
+                validate_response({**self.reply, "GITHUB_RESOURCES_READ": resource}, **self.context)
+
+    def test_each_resource_field_is_required_nonblank_and_string_typed(self):
+        base = self.reply["GITHUB_RESOURCES_READ"][0]
+        for key in ("path", "ref_commit", "github_url", "read_method", "source_excerpt"):
+            variants = [{k:v for k,v in base.items() if k != key}]
+            variants += [{**base, key: wrong} for wrong in (None, False, 1, [], {}, "", " \n")]
+            for resource in variants:
+                with self.subTest(key=key, resource=resource), self.assertRaises(ResponseError):
+                    validate_response({**self.reply, "GITHUB_RESOURCES_READ": [resource]}, **self.context)
+
+    def test_resource_ref_and_exact_https_github_host_checked(self):
+        base = self.reply["GITHUB_RESOURCES_READ"][0]
+        cases = [("ref_commit", x) for x in ("a" * 39, "a" * 41, "z" * 40)]
+        cases += [("github_url", x) for x in ("http://github.com/file", "https://other.example/file", "https://github.com.evil/file",
+                      "https://github.com@evil.example/file", "https://user@github.com/file", "https://github.com:443/file", "https://github.com")]
+        for key, wrong in cases:
+            with self.subTest(key=key, wrong=wrong), self.assertRaises(ResponseError):
+                validate_response({**self.reply, "GITHUB_RESOURCES_READ": [{**base, key: wrong}]}, **self.context)

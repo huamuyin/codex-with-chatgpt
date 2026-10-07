@@ -265,3 +265,11 @@ the response validator requires `REVIEW_SUMMARY` as a non-empty string,
 `GITHUB_RESOURCES_READ` as an array, and `NEXT_CODEX_INSTRUCTION` as one non-empty string
 of at most 4096 characters. Validation preserves the supplied values and performs no repair
 or instruction execution. Missing, mistyped, blank or oversized controls fail closed.
+# GitHub read provenance shape
+
+`GITHUB_RESOURCES_READ` must be a non-empty array. Each item is an object with non-empty
+string fields `path`, `ref_commit`, `github_url`, `read_method`, and `source_excerpt`.
+The ref is exactly 40 hexadecimal characters and the URL uses HTTPS with the exact GitHub
+host. This shape check does not prove a read happened. The controller independently checks
+required source/evidence paths, immutable refs and exact repository URLs against its control
+request before executing the bounded instruction. Extra contextual reads may be reported.
