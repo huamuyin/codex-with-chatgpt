@@ -1,0 +1,102 @@
+{
+  "commit": "32552f09ca74f3c6bd50f9b875fd0219f4ed6ebe",
+  "action": {
+    "round": 6,
+    "request_id": "4c962f10-7fec-4679-840f-37345455e12b",
+    "control_id": "23a2938d-7f11-44e7-b603-1646ad19741b",
+    "attempt_id": 1,
+    "reviewed_commit": "20cb385d2ff002c984bbb0189c2ae419bf0d423a",
+    "verdict": "CHANGES_REQUIRED",
+    "raw_response_sha256": "ace8b8ff4b88a89d115cbbdd4d5bb06840904669fe592d111e9f30fbbd09471d",
+    "instruction": "Patch only Fresh structured-response Unicode validation, focused tests/docs and turn-007 evidence: after JSON decoding, fail closed on any isolated UTF-16 surrogate code point U+D800 through U+DFFF in object keys or string values before the response can be consumed. Preserve valid Unicode scalar text without normalization or repair. Add conformance tests proving direct Chinese text, emoji, escaped quotes/backslashes/newlines and a valid escaped surrogate pair such as \\ud83d\\ude80 round-trip semantically unchanged; reject lone high and lone low surrogate escapes in NEXT_CODEX_INSTRUCTION, REVIEW_SUMMARY, GITHUB resource text and object keys. Also prove decoded NEXT_CODEX_INSTRUCTION boundaries with 4096 valid non-BMP Unicode scalar characters accepted and 4097 rejected, while existing duplicate-key, framing and nonfinite checks remain unchanged. Run full Python/Node/syntax/manifest/diff gates and publish immutable turn-007 evidence only; do not change version/protocol/build, readiness behavior, legacy paths or unrelated runtime authority.",
+    "codex_action": "Rejected isolated surrogate code points in every decoded JSON key or value; preserved valid Chinese emoji escapes and decomposed text without repair; covered paired escapes and 4096/4097 non-BMP scalar instruction boundaries.",
+    "checks": [
+      {
+        "name": "focused-unicode-and-framing",
+        "args": [
+          "C:\\Users\\Lenovo\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+          "-B",
+          "-m",
+          "unittest",
+          "-v",
+          "test_fresh_response"
+        ],
+        "cwd": "D:\\Worktrees\\codex-with-chatgpt\\c2c-v2-github-evidence-r1\\poc_v2\\extension_control\\bridge",
+        "exit_code": 0,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "6dac72023d8e78db5eec0c0ef9798fa1bc399cb6c5a2c301cd2b7ccf994844ec"
+      },
+      {
+        "name": "scoped-diff-check",
+        "args": [
+          "git",
+          "diff",
+          "--check",
+          "--",
+          "poc_v2/extension_control"
+        ],
+        "cwd": "D:\\Worktrees\\codex-with-chatgpt\\c2c-v2-github-evidence-r1",
+        "exit_code": 0,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "bb91d09706430b992a5ce373eaa4292e8099b875254aac41df2b9de2b3ba6809"
+      }
+    ],
+    "required_GitHub_reads_cross_checked": [
+      {
+        "path": ".c2c-v2/stability-r1/turn-006/review_request.json",
+        "ref_commit": "20cb385d2ff002c984bbb0189c2ae419bf0d423a",
+        "sha256": "57d9454c085a5c9fe344aed19ad389418d41214d9ab001138f26b440f7370449",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/fresh_response.py",
+        "ref_commit": "b13ba6f8f48688e869c6b7d9b40fce5cb5ee035a",
+        "sha256": "5998c544ac92a632ca3587aee00026338acd21e8dde3e07b0545ae79adcbb73f",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/test_fresh_response.py",
+        "ref_commit": "b13ba6f8f48688e869c6b7d9b40fce5cb5ee035a",
+        "sha256": "ea73ecc614732c2cf0885f1f2cbcd467dbb688fa918a3ef79a60ed14de5cc760",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/fresh_protocol.md",
+        "ref_commit": "b13ba6f8f48688e869c6b7d9b40fce5cb5ee035a",
+        "sha256": "8a2dec9f099ab75932ff94efdb7d8983b8fba3d7a593415aa88f512a266f3e55",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": ".c2c-v2/stability-r1/turn-006/test_summary.json",
+        "ref_commit": "20cb385d2ff002c984bbb0189c2ae419bf0d423a",
+        "sha256": "6c7a6c43695692afe02ff558ed562e5da0cd774ff6b95a4767801f9310f9844f",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": ".c2c-v2/stability-r1/turn-006/source_hashes.json",
+        "ref_commit": "20cb385d2ff002c984bbb0189c2ae419bf0d423a",
+        "sha256": "bc5209cce0e2a9a039330dd5eba5cd07eacf1c7c65404f1b287e7f7adf0140d1",
+        "read_method": "GitHub fetch_file plus blob verification"
+      },
+      {
+        "path": ".c2c-v2/stability-r1/turn-006/previous_action.json",
+        "ref_commit": "20cb385d2ff002c984bbb0189c2ae419bf0d423a",
+        "sha256": "117150df10945e5abb6d426ca66fbc9354e780cbe761166162fe12572d5ac45f",
+        "read_method": "GitHub fetch_file"
+      }
+    ],
+    "source_change": true,
+    "USER_INTERMEDIATE_RELAY": 0,
+    "USER_ACTIONS_DURING_CONTROL_LOOP": 0,
+    "interpretation": "Finite instruction was interpreted within owner scope; no arbitrary reviewer shell text was executed.",
+    "full_regression": {
+      "python_passed": 123,
+      "node_passed": 173,
+      "syntax_files": 21,
+      "manifest": "PASS",
+      "diff": "PASS",
+      "legacy_unchanged": 14
+    },
+    "full_regression_evidence": "repairs/turn06-unicode-scalars/checks"
+  }
+}
