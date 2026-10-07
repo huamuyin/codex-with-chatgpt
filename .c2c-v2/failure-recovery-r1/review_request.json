@@ -1,0 +1,75 @@
+{
+  "mission": "C2C_V2_FAILURE_RECOVERY_AND_10_TURN_STABILITY_R1",
+  "implementation_commit": "b9a5ec118b245ef9c964dffcedf7c29f1bb52d00",
+  "accepted_parent": "893a85c98ba3998eea590623e35bfd35ef263890",
+  "version": "0.9.8",
+  "protocol": 3,
+  "build": "c2c-v2-fresh-paired-turn-completion-1",
+  "authority_rule": "Incoming COMMIT is the exact immutable evidence commit. REVIEWED_COMMIT must equal it. Independently inspect implementation_commit and required files.",
+  "required_source_paths": [
+    "poc_v2/extension_control/bridge/fresh_bridge.py",
+    "poc_v2/extension_control/chrome_extension/fresh_background.js",
+    "poc_v2/extension_control/chrome_extension/fresh_content.js",
+    "poc_v2/extension_control/bridge/fresh_response.py",
+    "poc_v2/extension_control/bridge/test_fresh_delivery.py",
+    "poc_v2/extension_control/bridge/test_fresh_response.py",
+    "poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+    "poc_v2/extension_control/bridge/fresh_protocol.md"
+  ],
+  "evidence_paths": [
+    ".c2c-v2/failure-recovery-r1/review_request.json",
+    ".c2c-v2/failure-recovery-r1/test_summary.json",
+    ".c2c-v2/failure-recovery-r1/source_hashes.json"
+  ],
+  "review_focus": [
+    "Verify strict framed JSON parsing, immutable logical identities and bounded observation-only options.",
+    "Review lifecycle replacement/retirement, generation witness, exact tab reload and explicit completed-request observation.",
+    "Review constrained negative-envelope probes: same validator as ordinary results; no probe forwards a result.",
+    "Find any real defect or smallest additional check; no predetermined PASS. Distinguish mock passes from pending physical Chrome gates."
+  ],
+  "planned_real_fault_classes": [
+    "caller wait timeout",
+    "assistant wait budget expiry during real generation",
+    "same-version reinjection",
+    "exact tab reload",
+    "owned bridge restart with existing journal",
+    "background/service-worker reconnect",
+    "controlled locator miss then real observation",
+    "actual duplicate/late valid replies",
+    "malformed input at parser boundary using an exact real Chrome reply",
+    "stale or wrong identity/commit/URL rejection"
+  ],
+  "negative_parser_plan": "Preserve the exact real reply and an explicitly fault-injected damaged parser input. The malformed input is rejected, never repaired or accepted. A new Fresh logical request is the recovery path; no naked JSON is requested.",
+  "reply_contract": {
+    "format": "Exactly one fenced json block; valid JSON escaping; no surrounding prose",
+    "fields": [
+      "STATE",
+      "ROUND",
+      "REQUEST_ID",
+      "CONTROL_ID",
+      "ATTEMPT_ID",
+      "REVIEWED_COMMIT",
+      "VERDICT",
+      "FINDINGS",
+      "REVIEW_SUMMARY",
+      "GITHUB_RESOURCES_READ",
+      "NEXT_CODEX_INSTRUCTION"
+    ],
+    "STATE": "REVIEW_RESULT",
+    "ROUND": "Exact incoming ITERATION",
+    "REQUEST_ID": "Incoming REQUEST_ID",
+    "CONTROL_ID": "Incoming CONTROL_ID",
+    "ATTEMPT_ID": "Incoming ATTEMPT_ID as integer",
+    "VERDICT": "PASS_CONTINUE / CHANGES_REQUIRED / BLOCKED_AUTHORITY",
+    "GITHUB_RESOURCES_READ": "Actual reads with path/ref_commit/github_url/read_method/source_excerpt"
+  },
+  "frozen_boundaries": [
+    "GitHub only evidence",
+    "Ordinary subscription high-reasoning Chat/Fresh localhost 18797",
+    "No Work/IAB/old C2C MCP/Cloudflare/OpenAI API",
+    "No other products, legacy recovery or 18795/18796 changes",
+    "No Host/Origin/token weakening or persisted ephemeral token",
+    "USER_INTERMEDIATE_RELAY=0; USER_ACTIONS_DURING_CONTROL_LOOP=0",
+    "Ten substantive turns begin only after fault gates pass; then stop before installer/productionization"
+  ]
+}
