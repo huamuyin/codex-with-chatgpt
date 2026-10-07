@@ -64,6 +64,30 @@ class FreshTests(unittest.TestCase):
         self.assertEqual(r["payload"], {k:self.p[k] for k in d.PAYLOAD_KEYS})
         self.assertNotIn(b"reply_wait_ms", (self.path / "events.jsonl").read_bytes())
 
+    def test_explicit_retry_preserves_failed_journal_byte_prefix_and_rejects_changed_authority(self):
+        original = self.send(); rid, cid = original["request_id"], original["control_id"]
+        wire1 = self.s.requests.wire_request(rid, 1)
+        self.s.timeout(rid, 1)
+        before = (self.path / "events.jsonl").read_bytes()
+        decoded = [json.loads(line) for line in before.splitlines()]
+        retried = self.retry(original); after = (self.path / "events.jsonl").read_bytes()
+        rows = [json.loads(line) for line in after.splitlines()]
+        self.assertTrue(after.startswith(before)); self.assertEqual(rows[:-1], decoded)
+        self.assertEqual(len(rows), len(decoded) + 1); self.assertEqual(rows[-1]["event"]["kind"], "send_attempt")
+        self.assertEqual(rows[-1]["event"]["data"]["attempt_id"], 2)
+        self.assertEqual(retried["request_id"], rid); self.assertEqual(retried["control_id"], cid)
+        self.assertEqual(retried["attempts"][0]["status"], "failed")
+        self.assertEqual(retried["attempts"][0]["error_code"], "caller_wait_timeout")
+        self.assertEqual(retried["attempts"][0]["wire_message"], wire1["message"])
+        wire2 = self.s.requests.wire_request(rid, 2)
+        for key in ("request_id", "control_id", "nonce", "expected_commit"):
+            self.assertEqual(wire2[key], wire1[key])
+        self.assertEqual(sum(x["event"]["kind"] == "logical_created" for x in rows), 1)
+        for key, bad in (("commit", "b" * 40), ("instruction", "changed instruction"), ("conversation_url", "https://chatgpt.com/c/other")):
+            with self.subTest(key=key), self.assertRaisesRegex(b.RequestError, "logical_identity_mismatch"):
+                self.s.send({**self.p, "request_id": rid, key: bad}, retry=True, control_id=cid)
+            self.assertEqual((self.path / "events.jsonl").read_bytes(), after)
+
     def test_restore_original_thread_from_root_is_navigation_only_and_uses_frozen_attempt(self):
         r = self.send(); raw = (self.path / "events.jsonl").read_bytes()
         self.s.status.update(connected=False, candidate_count=0, tab_id=None, url="",

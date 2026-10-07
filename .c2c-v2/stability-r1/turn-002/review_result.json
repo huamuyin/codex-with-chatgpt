@@ -1,0 +1,83 @@
+{
+  "STATE": "REVIEW_RESULT",
+  "ROUND": 2,
+  "REQUEST_ID": "676f0b7e-8f82-429f-b46a-cdcf860ae081",
+  "CONTROL_ID": "9a7f3869-697d-4d53-a9b2-b48376ad1e10",
+  "ATTEMPT_ID": 5,
+  "REVIEWED_COMMIT": "df2280c28824353263ef8e9aa49da5cc2410144b",
+  "VERDICT": "PASS_CONTINUE",
+  "FINDINGS": [
+    {
+      "severity": "INFO",
+      "finding": "The preceding Round1 Codex action is correctly bounded. Commit 63e09c929ba1728c42d01d2345101f16ec9e3137 implements the requested fail-closed GitHub-resource provenance validation and records full regression results of 115 Python and 169 Node passes without legacy changes."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Immutable logical identity and explicit retry behavior are source-consistent. FreshRequests.lookup compares every immutable PAYLOAD_KEYS value plus control_id; prepare_attempt increments attempt_id while deriving wire text from the frozen original payload/request/control identity; replay retains prior attempt_failed or delivery_uncertain state on the earlier attempt when the new send_attempt is appended."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Existing tests cover timeout then retry with preserved request/control IDs and prior error, delivery_uncertain then retry, restart then explicit retry without automatic send/write, crash after sealed send intent followed by retry, mismatched retry identity rejection, and byte-exact survival of failures/results/duplicates across restart. No blocking defect was found. A useful remaining conformance gap is a single byte-prefix assertion specifically proving that an already-failed attempt's journal bytes are untouched by explicit retry."
+    }
+  ],
+  "REVIEW_SUMMARY": "The exact incoming evidence authority df2280c28824353263ef8e9aa49da5cc2410144b was reviewed without substituting the current PR head. review_request.json fixes both implementation_commit and previous_action_commit at 63e09c929ba1728c42d01d2345101f16ec9e3137. All three required turn-002 evidence files and all three required source/test files were independently read at those immutable refs; their Git blobs match source_hashes.json. The preceding action corrected the Round1 provenance-contract defect and reports complete regression gates. For this turn's focus, the delivery ledger is append-only, original logical payload/control identity is checked before retry, retry gets a new attempt_id and wire while prior failed attempt data remains in history, and restart does not automatically retry. Existing tests substantively cover the principal retry/failure paths. I found no source defect requiring correction, so PASS_CONTINUE is appropriate; the next action is a targeted conformance test that makes failed-history byte preservation across explicit retry explicit rather than inferred from adjacent tests.",
+  "GITHUB_RESOURCES_READ": [
+    {
+      "path": ".c2c-v2/stability-r1/turn-002/review_request.json",
+      "ref_commit": "df2280c28824353263ef8e9aa49da5cc2410144b",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/df2280c28824353263ef8e9aa49da5cc2410144b/.c2c-v2/stability-r1/turn-002/review_request.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"focus\": \"Immutable logical identity and failed-history preserving explicit retry\""
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-002/test_summary.json",
+      "ref_commit": "df2280c28824353263ef8e9aa49da5cc2410144b",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/df2280c28824353263ef8e9aa49da5cc2410144b/.c2c-v2/stability-r1/turn-002/test_summary.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"python_passed\": 115,\n  \"node_passed\": 169"
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-002/source_hashes.json",
+      "ref_commit": "df2280c28824353263ef8e9aa49da5cc2410144b",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/df2280c28824353263ef8e9aa49da5cc2410144b/.c2c-v2/stability-r1/turn-002/source_hashes.json",
+      "read_method": "GitHub fetch_file and blob cross-check",
+      "source_excerpt": "\"implementation_commit\": \"63e09c929ba1728c42d01d2345101f16ec9e3137\""
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-002/previous_action.json",
+      "ref_commit": "df2280c28824353263ef8e9aa49da5cc2410144b",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/df2280c28824353263ef8e9aa49da5cc2410144b/.c2c-v2/stability-r1/turn-002/previous_action.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"codex_action\": \"Enforced non-empty GitHub resource array, five non-empty string fields"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_delivery.py",
+      "ref_commit": "63e09c929ba1728c42d01d2345101f16ec9e3137",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/63e09c929ba1728c42d01d2345101f16ec9e3137/poc_v2/extension_control/bridge/fresh_delivery.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "if (payload is not None and any(payload[k] != r[\"payload\"][k] for k in PAYLOAD_KEYS))"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/test_fresh_delivery.py",
+      "ref_commit": "63e09c929ba1728c42d01d2345101f16ec9e3137",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/63e09c929ba1728c42d01d2345101f16ec9e3137/poc_v2/extension_control/bridge/test_fresh_delivery.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "self.assertEqual(second[\"attempts\"][0][\"error_code\"], \"caller_wait_timeout\")"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_bridge.py",
+      "ref_commit": "63e09c929ba1728c42d01d2345101f16ec9e3137",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/63e09c929ba1728c42d01d2345101f16ec9e3137/poc_v2/extension_control/bridge/fresh_bridge.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "r = self.requests.lookup(rid, payload, control_id)"
+    },
+    {
+      "path": "commit 63e09c929ba1728c42d01d2345101f16ec9e3137",
+      "ref_commit": "63e09c929ba1728c42d01d2345101f16ec9e3137",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/commit/63e09c929ba1728c42d01d2345101f16ec9e3137",
+      "read_method": "GitHub fetch_commit with actual patch",
+      "source_excerpt": "poc: execute reviewer-directed stability turn 01 action"
+    }
+  ],
+  "NEXT_CODEX_INSTRUCTION": "Add one targeted Fresh Python conformance regression in test_fresh_delivery.py, with only minimal docs/evidence updates if needed: create a logical request, make attempt1 fail through caller_wait_timeout, snapshot the exact events.jsonl bytes and decoded event prefix, perform an explicit retry with the identical request_id/control_id/original payload, and assert the pre-retry bytes/events are an unchanged prefix, attempt1 retains its failure/error and original wire, exactly one new send_attempt is appended with attempt_id=2 while request_id/control_id/nonce/expected_commit stay identical, and no logical_created event is added. Then attempt retries with changed commit, instruction, and conversation_url and assert logical_identity_mismatch with zero journal-byte change. Run the full Python/Node/syntax/manifest/diff gates and publish turn-003 immutable evidence; do not change Fresh version/protocol/build, legacy sources, or unrelated runtime behavior."
+}
