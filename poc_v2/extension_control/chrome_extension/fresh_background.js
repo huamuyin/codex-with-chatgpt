@@ -6,9 +6,10 @@ const BASE = `http://${I.host}:${I.port}`, WS = `ws://${I.host}:${I.port}/ws`;
 const CACHE_KEY = "c2c.fresh.v3.attemptMirror";
 let socket = null, bridge = null, connecting = false, mirrorReady = false, target = null;
 let reconnectTimer = null, heartbeat = null;
-let targetDiagnostic = { readiness_code: "not_checked", candidate_count: 0, tab_id: null, url: "", content_version: "" };
+let targetDiagnostic = { readiness_code: "not_checked", candidate_count: 0, tab_id: null, url: "", content_version: "", content_generation: null };
 const LEGACY_SMOKE_URL = "https://chatgpt.com/c/6abcb6a6-a1b8-83e8-bc72-f85af94bb2f0";
 const attempts = new Map(), running = new Set();
+const pendingProbes = new Map();
 
 function bridgeMatches(b) { return I.version === BACKGROUND_VERSION && I.build_id === BACKGROUND_BUILD
   && C.version === BACKGROUND_VERSION && C.build_id === BACKGROUND_BUILD
@@ -39,11 +40,12 @@ async function selectTarget(preferredUrl = null) {
   const matches = tabs.filter((t) => t.url !== LEGACY_SMOKE_URL && (preferredUrl ? t.url === preferredUrl : C.isChatUrl(t.url)));
   targetDiagnostic = { readiness_code: matches.length === 0 ? "no_target" : "target_ambiguous",
     candidate_count: matches.length, tab_id: matches.length === 1 ? matches[0].id : null,
-    url: matches.length === 1 ? matches[0].url : "", content_version: "" };
+    url: matches.length === 1 ? matches[0].url : "", content_version: "", content_generation: null };
   if (matches.length !== 1 || matches[0].status !== "complete") { target = null; return null; }
   const tab = matches[0];
   const pong = await chrome.tabs.sendMessage(tab.id, { type: "C2C_FRESH_PING", target_tab_id: tab.id }).catch(() => null);
   targetDiagnostic.content_version = pong?.version || "";
+  targetDiagnostic.content_generation = Number.isSafeInteger(pong?.content_generation) ? pong.content_generation : null;
   targetDiagnostic.readiness_code = pong ? "content_identity_mismatch" : "content_unavailable";
   if (pong?.type !== "C2C_FRESH_READY" || pong.url !== tab.url || !C.componentMatches(pong)
       || chrome.runtime.getManifest().version !== I.version) { target = null; return null; }
@@ -63,38 +65,64 @@ async function status() {
   send({ type: "fresh_status", connected: Boolean(tab && bridgeMatches(bridge)), candidate_count: targetDiagnostic.candidate_count,
     tab_id: targetDiagnostic.tab_id, url: targetDiagnostic.url, readiness_code: targetDiagnostic.readiness_code,
     attempt_diagnostics: diagnostics,
+    content_generation: targetDiagnostic.content_generation,
     components: { protocol_version: 3, background_version: BACKGROUND_VERSION,
       content_version: targetDiagnostic.content_version, manifest_version: chrome.runtime.getManifest().version, build_id: I.build_id } });
 }
 async function maintenance(m) {
   if (!mirrorReady || !bridgeMatches(bridge) || !/^[a-f0-9-]{36}$/u.test(m.maintenance_id || "")) return;
   try {
-    if (["reload_content", "observe_attempt"].includes(m.action)) {
+    if (m.action === "sample_status") {
+      await status();
+    } else if (["reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"].includes(m.action)) {
       const allowed = m.url === "https://chatgpt.com/" && attempts.size === 0
         || [...attempts.values()].some((r) => r.target_tab_id === m.tab_id && (r.conversation_url === m.url
           || r.conversation_url === "https://chatgpt.com/" && C.isConversationUrl(m.url)));
       const tabs = await chrome.tabs.query({ url: "https://chatgpt.com/*" });
       const matches = tabs.filter((t) => t.url === m.url && t.url !== LEGACY_SMOKE_URL);
       if (!allowed || matches.length !== 1 || matches[0].id !== m.tab_id || matches[0].status !== "complete") throw Error("maintenance_target_unconfirmed");
+      if (m.action === "reload_tab") {
+        await chrome.tabs.reload(m.tab_id);
+        send({ type: "fresh_maintenance_result", maintenance_id: m.maintenance_id, action: m.action, complete: true }); return;
+      }
+      const before = m.action === "reload_content" ? await chrome.tabs.sendMessage(m.tab_id,
+        { type: "C2C_FRESH_PING", target_tab_id: m.tab_id }).catch(() => null) : null;
       if (m.action === "reload_content") await chrome.scripting.executeScript({ target: { tabId: m.tab_id },
         files: ["fresh_component_identity.js", "fresh_contract.js", "fresh_locator.js", "fresh_content.js"] });
       await status();
       if (!target || target.id !== m.tab_id || target.url !== m.url) throw Error("content_identity_mismatch");
-      if (m.action === "observe_attempt") {
+      if (m.action === "reload_content" && (!Number.isSafeInteger(targetDiagnostic.content_generation)
+          || targetDiagnostic.content_generation < 1 || Number.isSafeInteger(before?.content_generation)
+          && targetDiagnostic.content_generation <= before.content_generation)) throw Error("content_reinjection_unconfirmed");
+      if (["observe_attempt", "observe_request"].includes(m.action)) {
         const known = attempts.get(C.key(m.request || {}));
         if (!known || !C.validRequest(m.request) || !C.sameAttempt(known, m.request) || known.target_tab_id !== m.tab_id) throw Error("maintenance_attempt_unconfirmed");
-        const answer = await chrome.tabs.sendMessage(m.tab_id, { type: "C2C_FRESH_OBSERVE", request: { ...known, conversation_url: m.url } });
+        const answer = await chrome.tabs.sendMessage(m.tab_id, { type: "C2C_FRESH_OBSERVE", request: { ...known, conversation_url: m.url }, observation: m.observation || {} });
         if (answer?.accepted !== true) throw Error("content_observation_rejected");
       }
+      if (m.action === "probe_reply_rejection") {
+        const known = attempts.get(C.key(m.request || {}));
+        if (!known || !C.sameAttempt(known, m.request)
+            || !["request_id", "control_id", "attempt_id", "expected_commit", "conversation_url"].includes(m.field)) throw Error("probe_identity_unconfirmed");
+        pendingProbes.set(m.maintenance_id, { request: known, field: m.field });
+        try {
+          const answer = await chrome.tabs.sendMessage(m.tab_id, { type: "C2C_FRESH_PROBE_REJECTION", probe_id: m.maintenance_id, request: known });
+          send({ type: "fresh_maintenance_result", maintenance_id: m.maintenance_id, action: m.action,
+            complete: answer?.rejected === true, rejected: answer?.rejected === true, field: m.field,
+            rejection_code: answer?.rejection_code || "probe_unconfirmed" });
+        } finally { pendingProbes.delete(m.maintenance_id); }
+        return;
+      }
     } else if (m.action !== "reload_extension") throw Error("maintenance_action_invalid");
-    send({ type: "fresh_maintenance_result", maintenance_id: m.maintenance_id, action: m.action, complete: true });
+    send({ type: "fresh_maintenance_result", maintenance_id: m.maintenance_id, action: m.action, complete: true,
+      ...(Number.isSafeInteger(targetDiagnostic.content_generation) ? { content_generation: targetDiagnostic.content_generation } : {}) });
     if (m.action === "reload_extension") setTimeout(() => chrome.runtime.reload(), 100);
   } catch (error) {
     const code = /^[a-z0-9_]{1,64}$/u.test(error.message) ? error.message : "maintenance_failed";
     send({ type: "fresh_maintenance_result", maintenance_id: m.maintenance_id, action: m.action, complete: false, error_code: code });
   }
 }
-async function dispatch(r) {
+async function dispatch(r, observation = {}) {
   if (!mirrorReady || !bridgeMatches(bridge) || !C.validRequest(r)) throw Error("fresh_request_invalid");
   const k = C.key(r), known = attempts.get(k);
   if (known && !C.sameAttempt(known, r)) throw Error("attempt_identity_conflict");
@@ -106,7 +134,7 @@ async function dispatch(r) {
   attempts.set(k, r); await saveMirror(); running.add(k);
   try {
     // A new attempt can send even when a previous attempt for this logical request is known.
-    await chrome.tabs.sendMessage(tab.id, { type: "C2C_FRESH_REVIEW", request: r, may_send: !known });
+    await chrome.tabs.sendMessage(tab.id, { type: "C2C_FRESH_REVIEW", request: r, may_send: !known, observation });
   } catch (error) { running.delete(k); throw error; }
 }
 async function wire(raw) {
@@ -117,28 +145,52 @@ async function wire(raw) {
   } else if (m.type === "fresh_maintenance") {
     await maintenance(m);
   } else if (m.type === "fresh_review") {
-    try { await dispatch(m.request); }
+    try { await dispatch(m.request, m.observation || {}); }
     catch (e) { const code = /^[a-z0-9_]{1,64}$/u.test(e.message) ? e.message : "delivery_uncertain";
       send({ type: "fresh_error", ...C.identityOf(m.request || {}), error_code: code }); }
   } else if (m.type === "fresh_result_ack") running.delete(C.key(m));
 }
-async function content(m, sender) {
-  if (!["C2C_FRESH_BOUND", "C2C_FRESH_RESULT"].includes(m?.type) || sender.id !== chrome.runtime.id || !sender.tab) return;
+async function inspectContent(m, sender) {
+  if (!["C2C_FRESH_BOUND", "C2C_FRESH_RESULT"].includes(m?.type) || sender.id !== chrome.runtime.id || !sender.tab) return { error: "sender_identity_mismatch" };
   const r = attempts.get(C.key(m));
-  if (!r || Object.keys(C.identityOf(r)).some((k) => m[k] !== r[k])) return;
+  if (!r) return { error: "request_identity_unknown" };
+  if (Object.keys(C.identityOf(r)).some((k) => m[k] !== r[k])) return { error: "reply_identity_mismatch", r };
   const tabs = await chrome.tabs.query({ url: "https://chatgpt.com/*" });
   const tab = tabs.find((t) => t.id === r.target_tab_id);
   if (!tab || sender.tab.id !== r.target_tab_id || sender.url !== tab.url || !C.componentMatches(m.content_identity)) {
-    send({ type: "fresh_diagnostic", ...C.identityOf(r), code: !tab ? "tab_missing"
-      : sender.tab.id !== r.target_tab_id ? "sender_tab_mismatch" : sender.url !== tab.url ? "sender_url_mismatch" : "content_version_mismatch",
-      sender_url: sender.url, tab_url: tab?.url, content_url: m.content_identity?.url }); return;
+    return { error: !tab ? "tab_missing" : sender.tab.id !== r.target_tab_id ? "sender_tab_mismatch"
+      : sender.url !== tab.url ? "sender_url_mismatch" : "content_version_mismatch", r, tab };
   }
-  if (m.error_code) {
-    running.delete(C.key(m)); send({ type: "fresh_error", ...C.identityOf(r), error_code: m.error_code }); return;
-  }
+  if (m.error_code) return { r, tab };
   if (!C.isConversationUrl(tab.url) || m.conversation_url !== tab.url || tab.status !== "complete"
       || tabs.filter((t) => t.url === tab.url).length !== 1
-      || (r.conversation_url !== "https://chatgpt.com/" && r.conversation_url !== tab.url)) return;
+      || (r.conversation_url !== "https://chatgpt.com/" && r.conversation_url !== tab.url)) return { error: "reply_binding_unconfirmed", r, tab };
+  if (m.type === "C2C_FRESH_RESULT" && (m.assistant_generation_complete !== true || typeof m.raw_reply !== "string" || !m.raw_reply.trim())) return { error: "reply_not_complete", r, tab };
+  return { r, tab };
+}
+async function probeContent(m, sender) {
+  const pending = pendingProbes.get(m.probe_id);
+  if (!pending || !m.candidate || !C.sameAttempt(pending.request, attempts.get(C.key(pending.request)))) return { rejected: false, error_code: "probe_unknown" };
+  const base = await inspectContent(m.candidate, sender);
+  if (base.error || C.key(m.candidate) !== C.key(pending.request)) return { rejected: false, error_code: "probe_base_unconfirmed" };
+  const candidate = { ...m.candidate };
+  const values = { request_id: "00000000-0000-4000-8000-000000000000", control_id: "00000000-0000-4000-8000-000000000001",
+    attempt_id: pending.request.attempt_id + 100000, expected_commit: "0".repeat(40), conversation_url: "https://chatgpt.com/c/invalid-authority-probe" };
+  candidate[pending.field] = values[pending.field];
+  const checked = await inspectContent(candidate, sender);
+  // A probe never forwards any result, even if the shared validator unexpectedly accepts it.
+  return { rejected: Boolean(checked.error), rejection_code: checked.error || "probe_unexpected_accept" };
+}
+async function content(m, sender) {
+  const checked = await inspectContent(m, sender), { r, tab } = checked;
+  if (checked.error) {
+    if (r && ["tab_missing", "sender_tab_mismatch", "sender_url_mismatch", "content_version_mismatch"].includes(checked.error)) {
+      send({ type: "fresh_diagnostic", ...C.identityOf(r), code: checked.error,
+        sender_url: sender.url, tab_url: tab?.url, content_url: m.content_identity?.url });
+    }
+    return;
+  }
+  if (m.error_code) { running.delete(C.key(m)); send({ type: "fresh_error", ...C.identityOf(r), error_code: m.error_code }); return; }
   r.conversation_url = tab.url; await saveMirror(); await status();
   if (m.type === "C2C_FRESH_BOUND") {
     send({ type: "fresh_bound", ...C.identityOf(r), tab_id: tab.id, conversation_url: tab.url }); return;
@@ -167,7 +219,10 @@ async function connect() {
 }
 function scheduleReconnect() { if (reconnectTimer !== null) return;
   reconnectTimer = setTimeout(() => { reconnectTimer = null; void connect(); }, 2000); }
-chrome.runtime.onMessage.addListener((m, s) => { void content(m, s).catch(() => {}); return false; });
+chrome.runtime.onMessage.addListener((m, s, respond) => {
+  if (m?.type === "C2C_FRESH_PROBE_RESULT") { void probeContent(m, s).then(respond).catch(() => respond({ rejected: false, error_code: "probe_error" })); return true; }
+  void content(m, s).catch(() => {}); return false;
+});
 chrome.tabs.onUpdated.addListener(() => { void status(); });
 chrome.tabs.onRemoved.addListener(() => { void status(); });
 chrome.alarms.onAlarm.addListener(() => { if (!socket || socket.readyState !== WebSocket.OPEN) void connect(); else void status(); });

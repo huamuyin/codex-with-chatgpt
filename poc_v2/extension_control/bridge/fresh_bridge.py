@@ -1,4 +1,4 @@
-"""Future Fresh Smoke entrypoint. No deployed runtime uses this offline candidate."""
+"""Isolated Fresh protocol-3 bridge; credentials are handed off only at startup."""
 from __future__ import annotations
 import argparse
 import base64
@@ -65,7 +65,7 @@ class FreshState:
                     "journal_ok": not self.requests.journal.poisoned, "delivery_semantics": "AT_LEAST_ONCE",
                     "boundaries": copy.deepcopy(self.boundaries),
                     "extension_status": {k: copy.deepcopy(self.status.get(k)) for k in
-                        ("connected", "candidate_count", "tab_id", "url", "components", "readiness_code", "attempt_diagnostics")}}
+                        ("connected", "candidate_count", "tab_id", "url", "components", "readiness_code", "attempt_diagnostics", "content_generation")}}
 
     def boundary(self, name, **details):
         # Call sites supply only explicit non-secret fields, never headers, tokens or raw DOM.
@@ -77,12 +77,12 @@ class FreshState:
             if self.requests.journal.poisoned:
                 raise transport.RequestError("extension_disconnected", 503)
             action = value.get("action")
-            if action not in ("reload_extension", "reload_content", "observe_attempt"):
+            if action not in ("reload_extension", "sample_status", "reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"):
                 raise transport.RequestError("maintenance_action_invalid")
             if action != "reload_extension" and (self.session is None or self.session.closed):
                 raise transport.RequestError("extension_disconnected", 503)
             message = {"type": "fresh_maintenance", "maintenance_id": str(uuid.uuid4()), "action": action}
-            if action in ("reload_content", "observe_attempt"):
+            if action in ("reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"):
                 tid, url = value.get("tab_id"), value.get("url")
                 setup_root = not self.requests.records and url == "https://chatgpt.com/"
                 fresh_thread = transport.is_conversation_url(url) and any(r["conversation_url"] == url for r in self.requests.records.values())
@@ -92,7 +92,7 @@ class FreshState:
                     for r in self.requests.records.values())
                 if (type(tid) is not int or tid < 0 or not (setup_root or fresh_thread or fresh_transition)
                     or tid != self.status.get("tab_id") or url != self.status.get("url")
-                    or self.status.get("candidate_count") != 1):
+                    or type(self.status.get("candidate_count")) is not int or self.status.get("candidate_count") != 1):
                     raise transport.RequestError("maintenance_target_unconfirmed", 409)
                 message.update(tab_id=tid, url=url)
                 if action == "observe_attempt":
@@ -101,6 +101,23 @@ class FreshState:
                                and (r["conversation_url"] == url or not r["conversation_url"] and r["attempts"][-1]["conversation_url"] == "https://chatgpt.com/")]
                     if len(matches) != 1 or not self.ready(): raise transport.RequestError("maintenance_attempt_unconfirmed", 409)
                     message["request"] = matches[0]
+                if action in ("observe_request", "probe_reply_rejection"):
+                    rid, cid, aid = value.get("request_id"), value.get("control_id"), value.get("attempt_id")
+                    if not isinstance(rid, str) or not isinstance(cid, str) or type(aid) is not int:
+                        raise transport.RequestError("maintenance_identity_required", 409)
+                    r = self.requests.lookup(rid, control_id=cid)
+                    if not 1 <= aid <= len(r["attempts"]): raise transport.RequestError("attempt_unknown", 409)
+                    wire = self.requests.wire_request(rid, aid)
+                    if wire["target_tab_id"] != tid or wire["conversation_url"] != url or not self.ready():
+                        raise transport.RequestError("maintenance_attempt_unconfirmed", 409)
+                    message["request"] = wire
+                    if action == "probe_reply_rejection":
+                        field = value.get("field")
+                        if field not in ("request_id", "control_id", "attempt_id", "expected_commit", "conversation_url"):
+                            raise transport.RequestError("probe_field_invalid")
+                        message["field"] = field
+                if action in ("observe_attempt", "observe_request"):
+                    message["observation"] = self.observation_options(value.get("observation"))
             event = threading.Event()
             self.maintenance_commands[message["maintenance_id"]] = {"message": message, "event": event, "result": None}
             pending = self.maintenance_commands[message["maintenance_id"]]
@@ -123,6 +140,16 @@ class FreshState:
                     except OSError: return
             time.sleep(.01)
 
+    @staticmethod
+    def observation_options(value=None):
+        if value is None: return {}
+        if not isinstance(value, dict) or set(value) - {"reply_wait_ms", "locator_miss"}:
+            raise transport.RequestError("observation_options_invalid")
+        wait = value.get("reply_wait_ms", 600000)
+        if type(wait) is not int or not 1000 <= wait <= 600000 or type(value.get("locator_miss", False)) is not bool:
+            raise transport.RequestError("observation_options_invalid")
+        return copy.deepcopy(value)
+
     def register(self, session):
         with self.lock:
             if self.session is not None and not self.session.closed and self.session is not session:
@@ -136,8 +163,10 @@ class FreshState:
         with self.lock:
             if self.session is session: self.session = None; self.status = {}
 
-    def send(self, payload, *, retry=False, control_id=None):
+    def send(self, payload, *, retry=False, control_id=None, observation=None):
         with self.lock:
+            observation = self.observation_options(observation)
+            if observation.get("locator_miss"): raise transport.RequestError("locator_fault_observe_only")
             if not self.ready(): raise transport.RequestError("extension_or_chat_disconnected", 503)
             rid = payload.get("request_id")
             if retry:
@@ -157,7 +186,7 @@ class FreshState:
             self.active = {"request_id": rid, "control_id": wire["control_id"], "attempt_id": wire["attempt_id"]}
             self.requests.waiters.setdefault(rid, threading.Event())
             try:
-                self.session.send_json({"type": "fresh_review", "request": wire})
+                self.session.send_json({"type": "fresh_review", "request": wire, "observation": observation})
             except OSError:
                 self.requests.failed(rid, wire["attempt_id"], "delivery_uncertain", uncertain=True)
                 self.active = None
@@ -197,6 +226,13 @@ class FreshState:
                           "status": "complete" if m.get("complete") is True else "failed"}
                 code = m.get("error_code")
                 if isinstance(code, str) and re.fullmatch(r"[a-z0-9_]{1,64}", code): result["error_code"] = code
+                generation = m.get("content_generation")
+                if type(generation) is int and generation > 0: result["content_generation"] = generation
+                if pending["message"]["action"] == "probe_reply_rejection":
+                    if m.get("field") == pending["message"]["field"]: result["field"] = m["field"]
+                    code = m.get("rejection_code")
+                    if isinstance(code, str) and re.fullmatch(r"[a-z0-9_]{1,64}", code): result["rejection_code"] = code
+                    result["rejected"] = m.get("rejected") is True
                 pending["result"] = result; pending["event"].set()
                 self.boundary("maintenance", **result); return
             if m.get("type") not in ("fresh_bound", "fresh_result", "fresh_error"): return
@@ -271,7 +307,7 @@ class FreshHandler(BaseHTTPRequestHandler):
             if not hmac.compare_digest(payload["control_token"], self.state.control_token): raise transport.RequestError("control_token_rejected", 401)
             if self.path == "/review" and payload["request_id"]: result = self.state.poll(payload, value.get("control_id"))
             else:
-                result = self.state.send(payload, retry=self.path == "/retry", control_id=value.get("control_id"))
+                result = self.state.send(payload, retry=self.path == "/retry", control_id=value.get("control_id"), observation=value.get("observation"))
                 rid = result["request_id"]; aid = len(result["attempts"])
                 event = self.state.requests.waiters.get(rid)
                 if result["status"] == "pending" and event is not None: event.wait(payload["wait_seconds"])

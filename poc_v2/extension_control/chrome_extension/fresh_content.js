@@ -3,23 +3,38 @@
 (() => {
   const CONTENT_VERSION = "0.9.8";
   const CONTENT_BUILD = "c2c-v2-fresh-paired-turn-completion-1";
+  const CONTENT_STATE_KEY = "__c2cV2FreshContentControl";
+  const priorContent = globalThis[CONTENT_STATE_KEY];
+  priorContent?.dispose?.();
+  if (priorContent?.listener) chrome.runtime.onMessage.removeListener(priorContent.listener);
+  const Locator = globalThis.C2CV2FreshLocator;
+  const Contract = globalThis.C2CV2FreshContract;
+  const generation = Number.isSafeInteger(priorContent?.generation) && priorContent.generation < Number.MAX_SAFE_INTEGER ? priorContent.generation + 1 : 1;
+  let active = true;
+  const waiters = new Set();
+  function wake() { for (const resolve of [...waiters]) resolve(); }
+  function ensureCurrent() { if (!active) throw new Error("content_instance_retired"); }
+  async function pause() {
+    ensureCurrent();
+    await new Promise((resolve) => {
+      let timer;
+      const finish = () => { waiters.delete(finish); if (timer !== undefined && typeof clearTimeout === "function") clearTimeout(timer); resolve(); };
+      waiters.add(finish); timer = setTimeout(finish, 500);
+    });
+    ensureCurrent();
+  }
   function componentIdentity() {
     const shared = globalThis.C2CV2FreshIdentity;
-    const good = shared?.version === CONTENT_VERSION && shared?.build_id === CONTENT_BUILD
+    const good = active && Locator === globalThis.C2CV2FreshLocator && Contract === globalThis.C2CV2FreshContract
+      && shared?.version === CONTENT_VERSION && shared?.build_id === CONTENT_BUILD
       && globalThis.C2CV2FreshContract?.componentMatches(shared)
       && globalThis.C2CV2FreshContract.version === CONTENT_VERSION
       && globalThis.C2CV2FreshLocator?.version === CONTENT_VERSION
       && globalThis.C2CV2FreshLocator?.build_id === shared.build_id;
     return { protocol_version: 3, version: good ? CONTENT_VERSION : "",
-      build_id: good ? CONTENT_BUILD : "", url: location.href };
+      build_id: good ? CONTENT_BUILD : "", url: location.href, content_generation: generation };
   }
   let boundContentTabId = null;
-  const CONTENT_STATE_KEY = "__c2cV2FreshContentControl";
-  const priorContent = globalThis[CONTENT_STATE_KEY];
-  if (priorContent?.listener) chrome.runtime.onMessage.removeListener(priorContent.listener);
-
-  const Locator = globalThis.C2CV2FreshLocator;
-  const Contract = globalThis.C2CV2FreshContract;
   const COMPOSER_RULES = [
     ["data-testid-prompt-textarea", '[data-testid="prompt-textarea"]'],
     ["prompt-textarea-id", "#prompt-textarea"],
@@ -69,14 +84,16 @@
   async function waitUntil(predicate, timeoutMs, errorCode) {
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
+      ensureCurrent();
       const result = predicate();
       if (result) return result;
-      await new Promise((resolve) => setTimeout(resolve, POLL_MS));
+      await pause();
     }
     throw new Error(errorCode);
   }
 
   function setComposer(element, text) {
+    ensureCurrent();
     element.focus();
     if (element instanceof HTMLTextAreaElement || element instanceof HTMLInputElement) {
       const prototype = element instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
@@ -135,7 +152,12 @@
     };
   }
 
-  async function runReview(request, maySend) {
+  async function runReview(request, maySend, observation = {}) {
+    ensureCurrent();
+    if (!observation || typeof observation !== "object" || Object.keys(observation).some((k) => !["reply_wait_ms", "locator_miss"].includes(k))
+        || observation.reply_wait_ms !== undefined && (!Number.isInteger(observation.reply_wait_ms) || observation.reply_wait_ms < 1000 || observation.reply_wait_ms > MAX_WAIT_MS)
+        || observation.locator_miss !== undefined && typeof observation.locator_miss !== "boolean"
+        || maySend && observation.locator_miss) throw new Error("observation_options_invalid");
     if (!Locator || !Contract || !Contract.validRequest(request) || typeof request?.message !== "string" || !isTurnIdentity(request.message, request)) {
       throw new Error("request_identity_mismatch");
     }
@@ -148,6 +170,7 @@
     }
     let pinnedUrl = request.conversation_url === "https://chatgpt.com/" ? "" : request.conversation_url;
     function verifyBinding() {
+      ensureCurrent();
       if (boundContentTabId !== request.target_tab_id || !Contract.componentMatches(componentIdentity())
           || (pinnedUrl ? location.href !== pinnedUrl
             : location.href !== startingUrl && !Contract.isConversationUrl(location.href))) {
@@ -162,6 +185,7 @@
         control_id: request.control_id, attempt_id: request.attempt_id,
       }, request.expected_reply || "");
     }
+    if (observation.locator_miss) throw new Error("outgoing_turn_not_confirmed");
     let userTurn = findFullUser();
     let sentThisCall = false;
     let composerStrategy = "transcript-resume";
@@ -188,8 +212,9 @@
       if (decision === "composer-not-empty") throw new Error("composer_not_empty");
       if (decision !== "send-once") throw new Error("send_decision_invalid");
       setComposer(composer.element, request.message);
-      const send = await waitUntil(() => firstUsableSend(composer.element), 8000, "send_button_not_ready");
+      const send = await waitUntil(() => { verifyBinding(); return firstUsableSend(composer.element); }, 8000, "send_button_not_ready");
       sendStrategy = send.strategy;
+      verifyBinding();
       send.element.click();
       sentThisCall = true;
       userTurn = await waitUntil(findFullUser, 30000, "outgoing_turn_not_confirmed");
@@ -203,18 +228,21 @@
       task_id: request.task_id, iteration: request.iteration, nonce: request.nonce,
       expected_commit: request.expected_commit, conversation_url: location.href, content_identity: componentIdentity(),
     });
-    const deadline = Date.now() + MAX_WAIT_MS;
+    const deadline = Date.now() + (observation.reply_wait_ms || MAX_WAIT_MS);
     let priorText = "";
     let stableSamples = 0;
+    let sampledAt = -Infinity;
     while (Date.now() < deadline) {
       const currentUser = findFullUser();
       if (!currentUser) throw new Error("outgoing_turn_binding_lost");
       const assistant = Locator.findAssistantAfter(document, currentUser, request.expected_reply || "");
       const assistantText = assistant ? String(assistant.node.innerText || assistant.node.textContent || "") : "";
       if (assistantText.trim() && !isGenerating() && Locator.isAssistantComplete(document, assistant, currentUser)) {
-        if (assistantText === priorText) stableSamples += 1;
-        else stableSamples = 0;
-        priorText = assistantText;
+        if (Date.now() - sampledAt >= POLL_MS) {
+          if (assistantText === priorText) stableSamples += 1;
+          else stableSamples = 0;
+          priorText = assistantText; sampledAt = Date.now();
+        }
         if (stableSamples >= 3) {
           return {
             raw_reply: assistantText,
@@ -228,7 +256,7 @@
         stableSamples = 0;
         priorText = assistantText;
       }
-      await new Promise((resolve) => setTimeout(resolve, POLL_MS));
+      await pause();
     }
     throw new Error("assistant_turn_timeout");
   }
@@ -236,6 +264,7 @@
   const contentMessageListener = (m, _sender, respond) => {
     if (m?.type === "C2C_FRESH_PING") {
       if (Number.isInteger(m.target_tab_id)) boundContentTabId = m.target_tab_id;
+      wake();
       const diagnostics = [];
       for (const r of (Array.isArray(m.requests) ? m.requests.slice(-10) : [])) {
         if (!Contract.validRequest(r) || r.target_tab_id !== boundContentTabId
@@ -294,12 +323,30 @@
       if (JSON.stringify(diagnostics).length > 12000) for (const d of diagnostics) d.structure = [];
       respond({ type: "C2C_FRESH_READY", ...componentIdentity(), attempt_diagnostics: diagnostics }); return false;
     }
+    if (m?.type === "C2C_FRESH_PROBE_REJECTION") {
+      const r = m.request;
+      try {
+        ensureCurrent();
+        if (!Contract.validRequest(r) || r.target_tab_id !== boundContentTabId || r.conversation_url !== location.href
+            || !Contract.componentMatches(componentIdentity())) throw Error("probe_binding_unconfirmed");
+        const u = Locator.findOriginalUserTurn(document, { task_id: r.task_id, iteration: r.iteration,
+          request_id: r.request_id, nonce: r.nonce, commit: r.expected_commit, original_message: r.message,
+          control_id: r.control_id, attempt_id: r.attempt_id });
+        const a = u && Locator.findAssistantAfter(document, u);
+        if (!a || isGenerating() || !Locator.isAssistantComplete(document, a, u)) throw Error("probe_reply_unconfirmed");
+        const candidate = reviewResult(r, { raw_reply: String(a.node.innerText || a.node.textContent || ""),
+          conversation_url: location.href, assistant_generation_complete: true, reply_match_rule: "raw-exact-v1" });
+        void chrome.runtime.sendMessage({ type: "C2C_FRESH_PROBE_RESULT", probe_id: m.probe_id, candidate })
+          .then(respond).catch(() => respond({ rejected: false, error_code: "probe_channel_unavailable" }));
+      } catch (e) { respond({ rejected: false, error_code: e.message }); }
+      return true;
+    }
     if (!["C2C_FRESH_REVIEW", "C2C_FRESH_OBSERVE"].includes(m?.type) || !Contract.validRequest(m.request)) { respond({ accepted: false }); return false; }
     const r = m.request, k = Contract.key(r);
     if (handledRequests.has(k)) { respond({ accepted: true }); return false; }
-    const operation = runReview(r, m.type === "C2C_FRESH_REVIEW" && m.may_send === true)
-      .then((result) => chrome.runtime.sendMessage(reviewResult(r, result)))
-      .catch((e) => chrome.runtime.sendMessage({ type: "C2C_FRESH_RESULT", ...Contract.identityOf(r),
+    const operation = runReview(r, m.type === "C2C_FRESH_REVIEW" && m.may_send === true, m.observation || {})
+      .then((result) => { ensureCurrent(); return chrome.runtime.sendMessage(reviewResult(r, result)); })
+      .catch((e) => active && chrome.runtime.sendMessage({ type: "C2C_FRESH_RESULT", ...Contract.identityOf(r),
         error_code: /^[a-z0-9_]{1,64}$/u.test(e?.message || "") ? e.message : "content_error",
         conversation_url: location.href, content_identity: componentIdentity() }));
     handledRequests.set(k, operation);
@@ -307,5 +354,6 @@
     respond({ accepted: true }); return false;
   };
   chrome.runtime.onMessage.addListener(contentMessageListener);
-  globalThis[CONTENT_STATE_KEY] = { version: CONTENT_VERSION, listener: contentMessageListener };
+  globalThis[CONTENT_STATE_KEY] = { version: CONTENT_VERSION, listener: contentMessageListener, generation,
+    dispose() { active = false; wake(); } };
 })();

@@ -11,6 +11,7 @@ function retry(r = R) { return { ...r, attempt_id: r.attempt_id + 1, message: r.
 function worker(options = {}) {
   const sent = [], contentCalls = [], forbidden = [], storage = clone(options.storage || {}), listeners = {};
   const tabs = options.tabs || [{ id: R.target_tab_id, url: R.conversation_url, status: "complete" }];
+  let contentGeneration = 1;
   const event = (name) => ({ addListener(fn) { listeners[name] = fn; } });
   const forbid = (op) => async () => { forbidden.push(op); throw Error("forbidden " + op); };
   const sandbox = { URL, JSON, Map, Set, Promise, console,
@@ -20,11 +21,11 @@ function worker(options = {}) {
       onMessage: event("message"), onStartup: event("startup"), onInstalled: event("installed"), reload: options.runtimeReload || forbid("extension_reload") },
       alarms: { create() {}, onAlarm: event("alarm") },
       tabs: { query: async () => clone(tabs), get: async (id) => clone(tabs.find((t) => t.id === id)),
-        create: forbid("create"), update: forbid("navigate"), reload: forbid("reload"), onUpdated: event("update"), onRemoved: event("remove"),
+        create: forbid("create"), update: forbid("navigate"), reload: options.tabReload || forbid("reload"), onUpdated: event("update"), onRemoved: event("remove"),
         async sendMessage(id, m) { contentCalls.push({ id, ...clone(m) });
           if (m.type === "C2C_FRESH_PING") return { type: "C2C_FRESH_READY", ...I, url: tabs.find((t) => t.id === id)?.url,
-            ...options.ping }; return { accepted: true }; } },
-      scripting: { executeScript: options.executeScript || forbid("inject") },
+            content_generation: contentGeneration, ...options.ping }; return { accepted: true }; } },
+      scripting: { async executeScript(value) { const result = await (options.executeScript || forbid("inject"))(value); contentGeneration++; return result; } },
       storage: { session: { async get() { return clone(storage); }, async set(value) { Object.assign(storage, clone(value)); } } },
     } };
   const ctx = vm.createContext(sandbox);
@@ -264,6 +265,73 @@ test("maintenance reloads only Fresh runtime after ACK and never dispatches", as
   assert.equal(reloads, 0); timers.at(-1).fn(); assert.equal(reloads, 1);
   assert.equal(w.contentCalls.some((m) => m.type === "C2C_FRESH_REVIEW"), false); assert.deepEqual(w.forbidden, []);
 });
+
+test("content generation advances on same-version replacement and retired handler cannot act", async () => {
+  const c = content([user(), F.assistantMessage("completed")]);
+  const old = c.sandbox.__c2cV2FreshContentControl, before = c.message({ type: "C2C_FRESH_PING", target_tab_id: R.target_tab_id });
+  c.reinject(); const after = c.message({ type: "C2C_FRESH_PING", target_tab_id: R.target_tab_id });
+  assert.equal(after.content_generation, before.content_generation + 1); assert.equal(after.version, before.version);
+  old.listener({ type: "C2C_FRESH_OBSERVE", request: R }, {}, () => {}); await c.settle();
+  assert.deepEqual(c.sent, []); assert.equal(c.clicks(), 0); assert.equal(c.activeListeners.size, 1);
+});
+
+test("bounded reply budget causes timeout without accepting an unfinished reply", async () => {
+  const streaming = F.assistantMessage("in progress"); streaming.attributes["data-message-status"] = "streaming";
+  const c = content([user(), streaming]); c.message({ type: "C2C_FRESH_OBSERVE", request: R, observation: { reply_wait_ms: 1000 } }); await c.settle();
+  assert.equal(c.sent.at(-1).error_code, "assistant_turn_timeout"); assert.equal(c.sent.some((m) => m.raw_reply), false); assert.equal(c.clicks(), 0);
+});
+
+test("controlled locator miss is isolated to observation and later real observation succeeds", async () => {
+  const c = content([user(), F.assistantMessage("completed")]);
+  c.message({ type: "C2C_FRESH_OBSERVE", request: R, observation: { locator_miss: true } }); await c.settle();
+  assert.equal(c.sent.at(-1).error_code, "outgoing_turn_not_confirmed");
+  c.message({ type: "C2C_FRESH_OBSERVE", request: R }); await c.settle();
+  assert.equal(c.sent.at(-1).raw_reply, "completed"); assert.equal(c.clicks(), 0); assert.deepEqual(c.forbidden, []);
+});
+
+test("invalid observation budgets and send-path locator faults are rejected", async () => {
+  for (const observation of [{ reply_wait_ms: 0 }, { reply_wait_ms: true }, { reply_wait_ms: 600001 }, { locator_miss: "yes" }, { unknown: true }]) {
+    const c = content([user(), F.assistantMessage("completed")]);
+    c.message({ type: "C2C_FRESH_OBSERVE", request: R, observation }); await c.settle();
+    assert.equal(c.sent.at(-1).error_code, "observation_options_invalid"); assert.equal(c.clicks(), 0);
+  }
+  const c = content([user()]); c.message({ type: "C2C_FRESH_REVIEW", request: R, may_send: true, observation: { locator_miss: true } }); await c.settle();
+  assert.equal(c.sent.at(-1).error_code, "observation_options_invalid"); assert.deepEqual(c.forbidden, []);
+});
+
+test("exact Fresh tab reload is acknowledged only after API success and never sends", async () => {
+  const reloads = []; const w = worker({ tabReload: async (id) => reloads.push(id) }); await w.call("restore", fixture.checkpoint);
+  await w.call("maintenance", { maintenance_id: R.request_id, action: "reload_tab", tab_id: R.target_tab_id, url: R.conversation_url });
+  assert.deepEqual(reloads, [R.target_tab_id]); assert.equal(w.sent.at(-1).complete, true);
+  assert.equal(w.contentCalls.some((m) => m.type === "C2C_FRESH_REVIEW"), false);
+});
+
+test("authenticated status sample only pings and never dispatches or creates authority", async () => {
+  const w = worker(); await w.call("restore", fixture.checkpoint); const before = clone(w.storage);
+  await w.call("maintenance", { maintenance_id: R.request_id, action: "sample_status" });
+  assert.equal(w.sent.at(-1).complete, true); assert.equal(w.sent.some((m) => m.type === "fresh_status"), true);
+  assert.equal(w.contentCalls.some((m) => m.type !== "C2C_FRESH_PING"), false); assert.deepEqual(w.storage, before);
+});
+
+test("completed known request observation does not dispatch a send or mint identity", async () => {
+  const w = worker(); await w.call("restore", fixture.checkpoint);
+  await w.call("maintenance", { maintenance_id: R.request_id, action: "observe_request", tab_id: R.target_tab_id, url: R.conversation_url,
+    request: R, observation: { reply_wait_ms: 1000 } });
+  const m = w.contentCalls.find((m) => m.type === "C2C_FRESH_OBSERVE");
+  assert.deepEqual(m.request, R); assert.deepEqual(m.observation, { reply_wait_ms: 1000 });
+  assert.equal(w.contentCalls.some((m) => m.type === "C2C_FRESH_REVIEW"), false);
+});
+
+for (const field of ["request_id", "control_id", "attempt_id", "expected_commit", "conversation_url"]) {
+  test(`shared reply validator rejects probe ${field} and never forwards a result`, async () => {
+    const w = worker(); await w.call("restore", fixture.checkpoint);
+    w.sandbox.probe = { request: clone(R), field }; w.sandbox.probeId = R.request_id;
+    w.run("pendingProbes.set(probeId, probe)");
+    const before = clone(w.storage), answer = await w.call("probeContent", { probe_id: R.request_id, candidate: result(R) }, sender());
+    assert.equal(answer.rejected, true); assert.ok(answer.rejection_code);
+    assert.equal(w.sent.some((m) => m.type === "fresh_result"), false); assert.deepEqual(w.storage, before);
+  });
+}
 
 test("diagnostics inspect known full Fresh wire without composer, click or reply acceptance", async () => {
   const root = { ...R, conversation_url: "https://chatgpt.com/" };

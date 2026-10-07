@@ -57,6 +57,46 @@ class FreshTests(unittest.TestCase):
     def retry(self, r):
         return self.s.send({**self.p, "request_id": r["request_id"]}, retry=True, control_id=r["control_id"])
 
+    def test_observation_budget_is_not_request_authority_or_persisted_credential(self):
+        r = self.s.send(self.p, observation={"reply_wait_ms": 1000})
+        message = self.ws.messages[-1]
+        self.assertEqual(message["observation"], {"reply_wait_ms": 1000})
+        self.assertEqual(r["payload"], {k:self.p[k] for k in d.PAYLOAD_KEYS})
+        self.assertNotIn(b"reply_wait_ms", (self.path / "events.jsonl").read_bytes())
+
+    def test_invalid_observation_and_send_locator_fault_reject_before_creation(self):
+        for value in ({"reply_wait_ms": True}, {"reply_wait_ms": 0}, {"reply_wait_ms": 600001}, {"locator_miss": "yes"}, {"unknown": 1}):
+            with self.assertRaises(b.RequestError): self.s.send(self.p, observation=value)
+        with self.assertRaisesRegex(b.RequestError, "locator_fault_observe_only"): self.s.send(self.p, observation={"locator_miss": True})
+        self.assertEqual(self.j.events, []); self.assertEqual(self.ws.messages, [])
+
+    def test_explicit_completed_request_observation_preserves_original_history(self):
+        r = self.send(); self.s.message(self.ws, self.msg(r)); raw = (self.path / "events.jsonl").read_bytes()
+        self.s.maintenance({"action": "observe_request", "request_id": r["request_id"], "control_id": r["control_id"],
+                            "attempt_id": 1, "tab_id": 7, "url": URL})
+        self.assertEqual(self.ws.messages[-1]["request"]["control_id"], r["control_id"])
+        self.assertEqual((self.path / "events.jsonl").read_bytes(), raw)
+        self.s.message(self.ws, self.msg(r))
+        self.assertEqual(self.s.requests.lookup(r["request_id"])["duplicate_count"], 1)
+
+    def test_explicit_observation_unknown_or_wrong_identity_tab_url_is_rejected(self):
+        r = self.send(); value = {"action": "observe_request", "request_id": r["request_id"], "control_id": r["control_id"],
+                                "attempt_id": 1, "tab_id": 7, "url": URL}
+        for change in ({"request_id": str(uuid.uuid4())}, {"control_id": str(uuid.uuid4())}, {"attempt_id": 99}, {"attempt_id": True},
+                       {"tab_id": 8}, {"url": URL+"wrong"}):
+            with self.assertRaises(b.RequestError): self.s.maintenance({**value, **change})
+
+    def test_reload_tab_and_reply_probe_do_not_create_or_send(self):
+        r = self.send(); self.ws.messages.clear(); raw = (self.path / "events.jsonl").read_bytes()
+        self.s.maintenance({"action": "reload_tab", "tab_id": 7, "url": URL})
+        mid, _ = self.s.maintenance({"action": "probe_reply_rejection", "request_id": r["request_id"], "control_id": r["control_id"],
+             "attempt_id": 1, "tab_id": 7, "url": URL, "field": "expected_commit"})
+        self.s.message(self.ws, {"type": "fresh_maintenance_result", "maintenance_id": mid, "action": "probe_reply_rejection",
+             "complete": True, "field": "expected_commit", "rejected": True, "rejection_code": "reply_identity_mismatch"})
+        self.assertTrue(self.s.maintenance_commands[mid]["result"]["rejected"])
+        self.assertFalse(any(m["type"] == "fresh_review" for m in self.ws.messages))
+        self.assertEqual((self.path / "events.jsonl").read_bytes(), raw)
+
     def test_at_least_once_retry_keeps_logical_ids_increments_attempt_and_wire(self):
         r = self.send(); self.s.timeout(r["request_id"], 1); second = self.retry(r)
         self.assertEqual((r["request_id"], r["control_id"]), (second["request_id"], second["control_id"]))

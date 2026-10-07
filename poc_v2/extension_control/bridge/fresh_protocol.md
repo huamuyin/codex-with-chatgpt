@@ -1,5 +1,43 @@
 # Fresh protocol 3 / 0.9.8 — B2 transition diagnostics
 
+## Authorized failure recovery / ten-turn campaign R1
+
+The accepted 0.9.8/protocol-3/build identity stays unchanged. Host, extension Origin,
+ephemeral controller token, exact native tab/URL, immutable request/control/commit/iteration
+and positive completed-reply gates are unchanged. No old journal is initialized, rewritten
+or migrated. Old smoke recovery remains permanently closed.
+
+`observe_request` requires an explicit known request_id/control_id/attempt_id and exact live
+target. It can explicitly re-observe a completed modern request to prove duplicate classification;
+it never dispatches a send. The legacy ID cannot be looked up. `reload_tab` reloads only the
+verified unique Fresh native tab at its saved URL; ACK means Chrome accepted the reload API,
+and readiness after navigation must separately be verified. `reload_content` checks a strictly
+advanced content-generation witness after same-version reinjection. Generation is lifecycle
+diagnostic data, not a request nonce or durable authority. Replaced content instances retire
+their waiters and cannot click or report results/errors afterward.
+
+Authenticated optional `observation` settings are bounded to reply_wait_ms=1000..600000 and
+an observation-only controlled locator_miss boolean. They are outside the immutable original
+payload and cannot change identity, wire text, completion rules or send authority. The controller
+records test settings; actual timeout/failure events remain in the append-only journal. A
+controlled miss must be reported as fault injection, not as a natural DOM disappearance.
+Normal PING wakeups allow existing observers to recheck the same binding when Chrome delays
+timers; four stable reply samples still require at least 500 ms spacing.
+
+`probe_reply_rejection` is an authenticated diagnostic on one explicit known attempt. Content
+reads the real matched completed reply, background applies one constrained identity/URL mutation
+to a diagnostic copy and uses the same validator as normal results. No probe ever forwards a
+result or creates a task, even if a validator defect is detected. Probe ACK carries only field,
+rejection code and success/failure; journal/result authority remains unchanged.
+
+All machine reviewer replies must use one fenced json object. `fresh_response.py` accepts only
+that exact fence or a recognized rendered JSON/json language label, rejects naked JSON, unknown
+wrappers, duplicate keys, nonfinite values, malformed JSON and wrong typed envelope identities.
+It does not repair or infer missing content. Malformed variants and original raw replies are
+preserved outside Git. Browser lifecycle gates require real Chrome observations; mock results
+alone must not be labelled real-browser passes. The ten-turn substantive loop starts only after
+all bounded failure gates pass and ends after ten accepted decisions and their finite actions.
+
 ## B2 autonomous correction 2
 
 Correction 3 extends the same read-only diagnostics with a bounded list of transcript-node
