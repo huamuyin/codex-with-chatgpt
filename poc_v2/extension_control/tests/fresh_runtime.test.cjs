@@ -355,6 +355,18 @@ test("structural locator skips layout reads for unrelated decoration while retai
   assert.equal(found.node, u); assert.equal(L.findAssistantAfter(doc, found).node, a); assert.equal(L.isAssistantComplete(doc, { node: a }, found), true);
 });
 
+test("draft inspection is read only and returns no raw draft while proving exact owned wire", () => {
+  const c = content([user()], { allowSend: true });
+  const composer = c.sandbox.document.querySelectorAll("main textarea")[0]; composer.tagName = "TEXTAREA"; composer.value = R.message;
+  const answer = c.message({ type: "C2C_FRESH_INSPECT_DRAFT", request: R, candidates: [R] });
+  assert.equal(answer.inspected, true); assert.equal(answer.draft_summary.owned_attempt_id, R.attempt_id);
+  assert.equal(answer.draft_summary.length, R.message.length); assert.equal(JSON.stringify(answer).includes(R.message), false);
+  assert.equal(composer.value, R.message); assert.equal(c.clicks(), 0);
+  composer.value = "unknown private draft";
+  const unknown = c.message({ type: "C2C_FRESH_INSPECT_DRAFT", request: R, candidates: [R] });
+  assert.equal(unknown.draft_summary.owned_attempt_id, null); assert.equal(composer.value, "unknown private draft");
+});
+
 test("loading target is distinct from ambiguity and diagnostics never select pending URLs", async () => {
   const w = worker({ tabs: [{ id: R.target_tab_id, url: R.conversation_url, status: "loading", pendingUrl: "https://other.example/private" }] });
   await w.call("restore", fixture.checkpoint); await w.call("status");

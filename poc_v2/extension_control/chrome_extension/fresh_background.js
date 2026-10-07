@@ -113,7 +113,7 @@ async function maintenance(m) {
           || tabs.some((t) => t.url === m.url && t.id !== m.tab_id)) throw Error("maintenance_target_unconfirmed");
       await chrome.tabs.update(m.tab_id, { url: known.conversation_url });
       send({ type: "fresh_maintenance_result", maintenance_id: m.maintenance_id, action: m.action, complete: true }); return;
-    } else if (["activate_tab", "reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"].includes(m.action)) {
+    } else if (["activate_tab", "inspect_draft", "reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"].includes(m.action)) {
       const allowed = m.url === "https://chatgpt.com/" && attempts.size === 0
         || [...attempts.values()].some((r) => r.target_tab_id === m.tab_id && (r.conversation_url === m.url
           || r.conversation_url === "https://chatgpt.com/" && C.isConversationUrl(m.url)));
@@ -137,6 +137,14 @@ async function maintenance(m) {
         files: ["fresh_component_identity.js", "fresh_contract.js", "fresh_locator.js", "fresh_content.js"] });
       const selection = await status();
       if (!selection.tab || selection.tab.id !== m.tab_id || selection.tab.url !== m.url) throw Error("content_identity_mismatch");
+      if (m.action === "inspect_draft") {
+        const known = attempts.get(C.key(m.request || {}));
+        if (!known || !C.sameAttempt(known, m.request) || known.target_tab_id !== m.tab_id || known.conversation_url !== m.url) throw Error("maintenance_attempt_unconfirmed");
+        const candidates = [...attempts.values()].filter((r) => r.request_id === known.request_id && r.control_id === known.control_id).slice(-10);
+        const answer = await chrome.tabs.sendMessage(m.tab_id, { type: "C2C_FRESH_INSPECT_DRAFT", request: known, candidates });
+        if (answer?.inspected !== true) throw Error("draft_inspection_unconfirmed");
+        send({ type: "fresh_maintenance_result", maintenance_id: m.maintenance_id, action: m.action, complete: true, draft_summary: answer.draft_summary }); return;
+      }
       if (m.action === "reload_content" && (!Number.isSafeInteger(selection.diagnostic.content_generation)
           || selection.diagnostic.content_generation < 1 || Number.isSafeInteger(before?.content_generation)
           && selection.diagnostic.content_generation <= before.content_generation)) throw Error("content_reinjection_unconfirmed");

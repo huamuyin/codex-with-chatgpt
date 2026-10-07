@@ -333,6 +333,22 @@
         composer_present: Boolean(document.querySelectorAll('main textarea, main [contenteditable="true"]').length) };
       respond({ type: "C2C_FRESH_READY", ...componentIdentity(), attempt_diagnostics: diagnostics, page_state: pageState }); return false;
     }
+    if (m?.type === "C2C_FRESH_INSPECT_DRAFT") {
+      const r = m.request;
+      try {
+        ensureCurrent();
+        if (!Contract.validRequest(r) || r.target_tab_id !== boundContentTabId || r.conversation_url !== location.href
+            || !Contract.componentMatches(componentIdentity())) throw Error("draft_binding_unconfirmed");
+        const found = firstVisible(COMPOSER_RULES), draft = found ? readText(found.element) : "";
+        const candidates = (Array.isArray(m.candidates) ? m.candidates.slice(-10) : []).filter((a) => Contract.validRequest(a)
+          && a.request_id === r.request_id && a.control_id === r.control_id && a.target_tab_id === r.target_tab_id
+          && a.conversation_url === r.conversation_url && draft === a.message);
+        respond({ inspected: true, draft_summary: { composer_present: Boolean(found), composer_tag: found?.element.tagName || "",
+          contenteditable: found?.element.isContentEditable === true, length: draft.length, empty: !draft.trim(),
+          format_only: /^[\p{White_Space}\p{Cf}]*$/u.test(draft), owned_attempt_id: candidates.length === 1 ? candidates[0].attempt_id : null } });
+      } catch (e) { respond({ inspected: false, error_code: e.message }); }
+      return false;
+    }
     if (m?.type === "C2C_FRESH_PROBE_REJECTION") {
       const r = m.request;
       try {
