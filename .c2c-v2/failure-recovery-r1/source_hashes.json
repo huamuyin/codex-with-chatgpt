@@ -1,0 +1,143 @@
+{
+  "implementation_commit": "b9a5ec118b245ef9c964dffcedf7c29f1bb52d00",
+  "version": "0.9.8",
+  "protocol": 3,
+  "build": "c2c-v2-fresh-paired-turn-completion-1",
+  "files": [
+    {
+      "path": "poc_v2/extension_control/bridge/bridge_server.py",
+      "sha256": "54ec41a09b84425f5d209079428f248400696390584c0ccdcc40ec06972e96fb",
+      "git_blob_oid": "7ed4645cbe78cda50820aa6b04d8d5860cb0c854"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_bridge.py",
+      "sha256": "af0b7b18260f480bb79cbe5c68da4de2cd1f2486e7bf6b704cdf749a77ec8688",
+      "git_blob_oid": "2440d43bb00b6fb11e57246f97aaf1a443c4421c"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_delivery.py",
+      "sha256": "14eab483f112f72904729f3e555c78df0bd04aaca9db2da69c32b7c1851141f5",
+      "git_blob_oid": "53623a74a7be207176ae8f1b6ec4343df062f29c"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_protocol.md",
+      "sha256": "7f6a3390639b054bb47199554accb80a77fba13a033f09dc214748e129dd4115",
+      "git_blob_oid": "0df5a90125d2cb87238721ec4087f0802d87903e"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_response.py",
+      "sha256": "23e42df69a89eb0ace04596cdbf9d83f7b261d14db2ce62c0519e2535f1d8887",
+      "git_blob_oid": "ef566e940bdc7f3de89dbf8a883701f786e687a9"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/protocol.md",
+      "sha256": "0b14300a62261bdf3722cd21b97a3fa18d9405459230fc36d7a6553e1e9efb2c",
+      "git_blob_oid": "3348169c494c54a15cbe13ead2a517af38999a03"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/test_bridge_server.py",
+      "sha256": "65f7c80ff41e757e1d67ee3bef441520b6eab72bfea790b96a89e99b1adc66af",
+      "git_blob_oid": "84e2a3a8ea9f14111e1dc5f7894c097d76d576e4"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/test_fresh_delivery.py",
+      "sha256": "11537584e542f20c9d1f118e42f97f724c7af9f0f05cf6837044ad00b421e6dd",
+      "git_blob_oid": "2aef74a020caceb8b13def4323e513965ff78c9f"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/test_fresh_response.py",
+      "sha256": "234ace82c694fc41631ff64a2e12d97ee3bbbaeec413914ab1e7747536f16027",
+      "git_blob_oid": "af4de56df29ded75719d057ec000447a1bb5b7ab"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/adapter_contract.js",
+      "sha256": "b6b0e95b5e62e87b69fc3d909ed543d0557c3c76d147c9bdbae88747300e0edb",
+      "git_blob_oid": "dd878a6d89b0f91173534b8ad713becbc28f3c27"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/background.js",
+      "sha256": "30ac46af22a67839f56a47579adc476edad59e8b1edaeb43ed8153c0645dd682",
+      "git_blob_oid": "a4d84009b17f6a6b6416d614f21bf54dd835f315"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/component_identity.js",
+      "sha256": "96772ffba64f29835b750dc8be8d738224fd10b3cfae817a252cfb3ccad57ade",
+      "git_blob_oid": "e967649c8bc1c3243456eeb5e4bc6f0014f69870"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/content.js",
+      "sha256": "81ee25465d2603503071f9687ebeb12a3350c6acef709a77f75f77ab1be02190",
+      "git_blob_oid": "c369671826d417879c1e0b9e02af4f420e7e0510"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_background.js",
+      "sha256": "4bd86683b7a96d7f65a21faa7a6cfb51dc3245fe8192704df1ec9aba4260faeb",
+      "git_blob_oid": "7b26987251bad69576f422889d483596461f64f3"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_component_identity.js",
+      "sha256": "832e96f34f7bf810e6a5ff6daba2bb397ce87e2a6cd5045a3083899f55441845",
+      "git_blob_oid": "a432f0f252d12847958ecddb6246ac9dafe0f11f"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_content.js",
+      "sha256": "7fea175533106e1c1c7aa9b12b1ed3b886f7e4f246681c614fedd943f1cbb7b0",
+      "git_blob_oid": "6860b1178c00a062e46d884da6b7aa172f70f3f1"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_contract.js",
+      "sha256": "296b5007a585763a9decaff7b1f087931e391681c64ae41da5584078bf72fb9f",
+      "git_blob_oid": "ba53e6055b11b77a2e62266143f9eb9006942091"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_locator.js",
+      "sha256": "67d3d96f5a247b516ff2233dc5d3220adc6d5772926822f70af04ff57eea826a",
+      "git_blob_oid": "d577cabb1d858d8cdd1a245b38af6b702e80393e"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_manifest.json",
+      "sha256": "f417d1c9948c21447bdc35cb010f205d2d0b88d67048e4a790e1cd4bbd829fe5",
+      "git_blob_oid": "f6f9eabe19bd9ab8222ebe261437be126cb875cd"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/manifest.json",
+      "sha256": "b163580a712ebcc06cf48269f7b85178491cb3435afa4035d839dd2141ac25cf",
+      "git_blob_oid": "cde5411f2142ba758e333eaa806aca4e527134cc"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/transcript_locator.js",
+      "sha256": "321ebd32eb3eb15f973617aa65216ce455343965e4a551a1534840be39cc1ab5",
+      "git_blob_oid": "2cb57d03b678007bb718a3e76b2430c6f267ae94"
+    },
+    {
+      "path": "poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+      "sha256": "2ca18fdf3fc78721588d3b456e185e3e3020c8d5eef5f6be3c71a6b2a4238b61",
+      "git_blob_oid": "5c6ecaa7c2e1b64e010c228636aab1fe37ae0463"
+    },
+    {
+      "path": "poc_v2/extension_control/tests/legacy_inspection_fixture.json",
+      "sha256": "1165438b70a950fd1a6b57fb55c6658ada7b5cbfa7e48d3de8f5c34d2274aaa6",
+      "git_blob_oid": "63d55370af112787afe207b97a499a2f3ec1256d"
+    },
+    {
+      "path": "poc_v2/extension_control/tests/offline_fixtures.cjs",
+      "sha256": "a12ce56967875bd8cdf2fd40950e5c72e77a0749efb849d4cc392b6b40a93bf9",
+      "git_blob_oid": "8bca5c1c32cbf9f6e78c4c688ad4ae4fd414a9d7"
+    },
+    {
+      "path": "poc_v2/extension_control/tests/reply_match_vectors.json",
+      "sha256": "a74d8ae2e98de11b8df72b0161a66c59cd12e1f6dbbde7798e2332ab52c1ef96",
+      "git_blob_oid": "fbde3443f7737758cbc2c15b10205169fd92efe6"
+    },
+    {
+      "path": "poc_v2/extension_control/tests/runtime_offline.test.cjs",
+      "sha256": "78bf09136c737e171a6d969ab09825ead02cde1f41a0527548cb8ad8ba8c77a4",
+      "git_blob_oid": "00b06f8d07532aab879e0ca2af2353945140dbca"
+    },
+    {
+      "path": "poc_v2/extension_control/tests/transcript_adapter.test.cjs",
+      "sha256": "35e2b9789611b2a0605c3642f5c487b3da633776b56fbcfae590206559180bc4",
+      "git_blob_oid": "1d613f9fbdd55eda538c0bd4a2eaa67a315dd63e"
+    }
+  ]
+}

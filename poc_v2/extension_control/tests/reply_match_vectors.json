@@ -1,0 +1,42 @@
+[
+  {
+    "actual": "OK",
+    "expected": "OK",
+    "matches": true
+  },
+  {
+    "actual": " OK",
+    "expected": "OK",
+    "matches": false
+  },
+  {
+    "actual": "OK\n",
+    "expected": "OK",
+    "matches": false
+  },
+  {
+    "actual": "OK\r",
+    "expected": "OK",
+    "matches": false
+  },
+  {
+    "actual": "O K",
+    "expected": "OK",
+    "matches": false
+  },
+  {
+    "actual": "Café",
+    "expected": "Café",
+    "matches": false
+  },
+  {
+    "actual": "Café",
+    "expected": "Café",
+    "matches": true
+  },
+  {
+    "actual": "",
+    "expected": "",
+    "matches": false
+  }
+]

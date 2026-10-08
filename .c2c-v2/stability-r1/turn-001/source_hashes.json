@@ -1,0 +1,23 @@
+{
+  "implementation_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+  "files": [
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_response.py",
+      "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+      "sha256": "4c57a01d287bef0140a51a8aefa48e4d029a76a82f39d076187a88db72d68833",
+      "git_blob_oid": "fb69b990f134570857e606f1fae4292277827099"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/test_fresh_response.py",
+      "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+      "sha256": "714c24739c663471bc33285b0f893c23fbc5d5142dfc08c6342554099d7f6884",
+      "git_blob_oid": "d2e8bf7710e49a7a5e2b40bc74a19b371db82616"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_protocol.md",
+      "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+      "sha256": "5d0e8ca4fe9d7b916cda9f01fef5f852759b28cbac8329be1f9ca43cf144c747",
+      "git_blob_oid": "7f2895eb170486605efa79e53d521dc57de76527"
+    }
+  ]
+}

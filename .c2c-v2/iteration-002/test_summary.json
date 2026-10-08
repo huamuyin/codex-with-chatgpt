@@ -1,0 +1,18 @@
+{
+  "task_id": "C2C_V2_GITHUB_EVIDENCE_PLANE_POC_R1",
+  "iteration": 2,
+  "previous_evidence_commit": "38799a84a3b47890555ef5c3fb8e68186d47d845",
+  "implementation_commit": "85da6757d2bbc2289764f83401a1568d7eb5cfb5",
+  "command": "python -m unittest discover -s tests/poc_v2 -v",
+  "passed": 7,
+  "failed": 0,
+  "tests": [
+    "test_canonical_identity_is_case_insensitive",
+    "test_case_variants_share_identity_and_choose_smallest_display",
+    "test_collision_result_is_independent_of_insertion_order",
+    "test_display_value_keeps_the_trimmed_original_spelling",
+    "test_records_have_deterministic_canonical_order",
+    "test_repeated_exact_value_is_idempotent",
+    "test_trims_outer_whitespace_and_preserves_display_case"
+  ]
+}

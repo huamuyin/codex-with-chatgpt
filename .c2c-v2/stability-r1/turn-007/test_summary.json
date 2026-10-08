@@ -1,0 +1,10 @@
+{
+  "source_commit": "32552f09ca74f3c6bd50f9b875fd0219f4ed6ebe",
+  "python_passed": 123,
+  "node_passed": 173,
+  "syntax_files": 21,
+  "manifest": "PASS",
+  "diff": "PASS",
+  "legacy_unchanged": 14,
+  "evidence": "repairs/turn06-unicode-scalars/checks"
+}

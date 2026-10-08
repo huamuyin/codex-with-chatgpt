@@ -1,0 +1,12 @@
+{
+  "implementation_commit": "b9a5ec118b245ef9c964dffcedf7c29f1bb52d00",
+  "python_passed": 107,
+  "node_passed": 157,
+  "failed": 0,
+  "syntax_files": 21,
+  "manifest": "PASS",
+  "diff": "PASS",
+  "legacy_sources_unchanged": 14,
+  "physical_browser_campaign": "PENDING; not inferred from mocks",
+  "version_protocol_build_unchanged": true
+}

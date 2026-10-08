@@ -1,0 +1,133 @@
+{
+  "round": 10,
+  "request_id": "6c88876d-e36f-4429-95f1-5707ca690ec0",
+  "control_id": "84cf2dfb-afb5-40ac-bfca-20cc0aea84e2",
+  "attempt_id": 1,
+  "reviewed_commit": "e8c7d4bfd60f1f144c7153ab1e25ac61cf0ab766",
+  "verdict": "PASS_CONTINUE",
+  "raw_response_sha256": "2dd01264bbdeecf022fd6bcf054d7059896129f5d3444dbc7973e476842f751d",
+  "instruction": "Perform exactly one evidence-only Turn10 closeout action and then STOP. Persist this exact REVIEW_RESULT and create one final Fresh stability-closure JSON under .c2c-v2/stability-r1/final/ that records REVIEWED_COMMIT=e8c7d4bfd60f1f144c7153ab1e25ac61cf0ab766, implementation b71cf55ceac46b0844b0533e7ad80acc9edec785, Round9 action edb11582ac9006e4881db52d02df3e4bf509fec0, recovery authority 07cc1256e690ff80453380944e6dfae0f017b618, final gates 130 Python/179 Node/21 syntax/manifest PASS/diff PASS/14 legacy unchanged, and independent required-source blob verification PASS. Record retained limits explicitly: AT_LEAST_ONCE with duplicate sends allowed and no exactly-once claim; legacy /recover closed and no legacy import; restart/reconnect never auto-send; prepare_future_thread is future-only and cannot alter journal/checkpoint/bindings/result/history or send/retry/create; controller token is nonpersistent; journal hashes are not signatures; guaranteed power-loss recovery is not claimed. Make no source, version, protocol or build changes, create no turn-011 or new review_request, perform no send/retry/navigation/deployment/installer/productionization/other-product action, commit/push only the final closure evidence if required by the existing protocol, and STOP.",
+  "codex_action": "Persisted exact Turn10 REVIEW_RESULT and final stability closure with immutable refs, actual final gates, required source blob verification and explicit retained limits. Rechecked installed byte identities and preservation; no source or runtime mutation and no further review.",
+  "checks": [
+    {
+      "name": "closeout-blob-and-component-verification",
+      "args": [
+        "C:\\Users\\Lenovo\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+        "-B",
+        "D:\\ProjectData\\codex-with-chatgpt\\work\\FAILURE_RECOVERY_TEN_TURN_R1-20261007_202705\\verify_closeout.py"
+      ],
+      "cwd": "D:\\Worktrees\\codex-with-chatgpt\\c2c-v2-github-evidence-r1",
+      "exit_code": 0,
+      "stdout_sha256": "0f8cac1ff637684dd7bb2f58a65df43a7cf8f5d43207cdb5d50a407e84fd896f",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "final-scoped-baseline-diff-check",
+      "args": [
+        "git",
+        "-c",
+        "core.autocrlf=false",
+        "diff",
+        "--check",
+        "893a85c98ba3998eea590623e35bfd35ef263890",
+        "--",
+        "poc_v2/extension_control",
+        ".c2c-v2/failure-recovery-r1",
+        ".c2c-v2/stability-r1"
+      ],
+      "cwd": "D:\\Worktrees\\codex-with-chatgpt\\c2c-v2-github-evidence-r1",
+      "exit_code": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "required_GitHub_reads_cross_checked": [
+    {
+      "path": ".c2c-v2/stability-r1/turn-010/review_request.json",
+      "ref_commit": "e8c7d4bfd60f1f144c7153ab1e25ac61cf0ab766",
+      "sha256": "2f69db67608b7546738ba71fd6717e31cefd025f114a0e7c6ebef7b3873ad2fd",
+      "read_method": "GitHub fetch_file"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_protocol.md",
+      "ref_commit": "b71cf55ceac46b0844b0533e7ad80acc9edec785",
+      "sha256": "4e6484d1e0fc7062587e22cdf69f1222f0feb50ccecbdd35bae4209bf04ae7c7",
+      "read_method": "GitHub fetch_file"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_response.py",
+      "ref_commit": "b71cf55ceac46b0844b0533e7ad80acc9edec785",
+      "sha256": "d8256f3e19ad2e5cb5beb1d0f83411116f81b4b5c58e7d3a607c4c75c2c904d9",
+      "read_method": "GitHub fetch_file"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_delivery.py",
+      "ref_commit": "b71cf55ceac46b0844b0533e7ad80acc9edec785",
+      "sha256": "2c126056b366e17b5bde1f3b4acdb62a2307e7b8b5cc0b289da037dd37f3310a",
+      "read_method": "GitHub fetch_file"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_bridge.py",
+      "ref_commit": "b71cf55ceac46b0844b0533e7ad80acc9edec785",
+      "sha256": "1ac3eda532cfbf65f6c10cd4080649ce48f988cf775c4eeeef01f43b5c70d1d8",
+      "read_method": "GitHub fetch_file"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_background.js",
+      "ref_commit": "b71cf55ceac46b0844b0533e7ad80acc9edec785",
+      "sha256": "442dee990573fe9be815b6668b222def8f87ff00b9bd23c89f63f68f14ded0a0",
+      "read_method": "GitHub fetch_file"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/test_fresh_delivery.py",
+      "ref_commit": "b71cf55ceac46b0844b0533e7ad80acc9edec785",
+      "sha256": "2025d9eea75dce82ca68143c8f7648d476394055c2299ced407909882a891268",
+      "read_method": "GitHub fetch_file"
+    },
+    {
+      "path": "poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+      "ref_commit": "b71cf55ceac46b0844b0533e7ad80acc9edec785",
+      "sha256": "e01057ce31f67272a4eb41ee06966e433b864e2c698ff7d917b6f00d914db903",
+      "read_method": "GitHub fetch_file"
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-010/test_summary.json",
+      "ref_commit": "e8c7d4bfd60f1f144c7153ab1e25ac61cf0ab766",
+      "sha256": "846423114b1e182dbaab5147cc9e14f93554f37224bf3b1f8ec3751a9ef1092b",
+      "read_method": "GitHub fetch_file"
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-010/source_hashes.json",
+      "ref_commit": "e8c7d4bfd60f1f144c7153ab1e25ac61cf0ab766",
+      "sha256": "e4681015bc1bf710a40b555652f2874237def5acc8cd9ff57e0b8faf6c1ea21c",
+      "read_method": "GitHub fetch_file plus independent blob verification"
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-010/previous_action.json",
+      "ref_commit": "e8c7d4bfd60f1f144c7153ab1e25ac61cf0ab766",
+      "sha256": "fe08f79406ebac5c98c647af28dc72ea6914fd5233de9df4a8d3b5af05a100fe",
+      "read_method": "GitHub fetch_file"
+    },
+    {
+      "path": ".c2c-v2/stability-r1/recovery-between-009-010/repair_result.json",
+      "ref_commit": "e8c7d4bfd60f1f144c7153ab1e25ac61cf0ab766",
+      "sha256": "e7e56f524122eae1090c1fd050f5426d54997ddb01f2e73beec07bedb01b5f74",
+      "read_method": "GitHub fetch_file"
+    }
+  ],
+  "source_change": false,
+  "USER_INTERMEDIATE_RELAY": 0,
+  "USER_ACTIONS_DURING_CONTROL_LOOP": 0,
+  "interpretation": "Finite instruction was interpreted within owner scope; no arbitrary reviewer shell text was executed.",
+  "full_regression": {
+    "source_commit": "b71cf55ceac46b0844b0533e7ad80acc9edec785",
+    "python_passed": 130,
+    "node_passed": 179,
+    "syntax_files": 21,
+    "manifest": "PASS",
+    "diff": "PASS",
+    "legacy_unchanged": 14,
+    "evidence": "repairs/turn09-future-thread-setup-verified/checks"
+  },
+  "full_regression_evidence": "repairs/turn09-future-thread-setup-verified/checks"
+}

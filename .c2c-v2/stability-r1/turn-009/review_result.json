@@ -1,0 +1,100 @@
+{
+  "STATE": "REVIEW_RESULT",
+  "ROUND": 9,
+  "REQUEST_ID": "1d3dcc3d-9499-4a76-a84c-044369f2cbb7",
+  "CONTROL_ID": "0d1fab7f-f4cf-4816-a51b-ba9a2950f388",
+  "ATTEMPT_ID": 1,
+  "REVIEWED_COMMIT": "ba5c479d8825ffed3cb8754a42add4cf7741f527",
+  "VERDICT": "CHANGES_REQUIRED",
+  "FINDINGS": [
+    {
+      "severity": "MAJOR",
+      "path": "poc_v2/extension_control/chrome_extension/fresh_locator.js",
+      "finding": "Unknown explicit transcript roles can be skipped, allowing a later assistant to be associated across an intervening turn. The highest-authority data-message-author-role tier selects only user and assistant, and structuralFallback treats an explicit role as relevant only when it is exactly user or assistant. Therefore a standalone intervening node such as data-message-author-role=\"tool\" or \"system\" that lacks article/testid/label fallback metadata is absent from collectMessages(); findAssistantAfter then sees the later assistant as immediately following the user instead of failing closed."
+    },
+    {
+      "severity": "MAJOR",
+      "path": "poc_v2/extension_control/chrome_extension/fresh_locator.js",
+      "finding": "Editable-surface exclusion recognizes contenteditable only when the literal attribute value is \"true\". HTML-editable forms such as an empty contenteditable attribute, contenteditable=\"plaintext-only\", or effective inherited editability represented by isContentEditable can therefore escape isEditable(). A full-wire descendant inside such an editor can be treated as a transcript candidate, contrary to the protocol rule that editable elements and their descendants can never prove an outgoing turn."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Duplicate marker handling for recognized transcript candidates is otherwise fail-closed: marker() returns a value only when exactly one matching label occurs, findOriginalUserTurn requires every control marker plus normalized full-wire equality, and it returns a match only when exactly one full user candidate exists."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Recognized unknown or unrelated semantic turns already act as barriers because findAssistantAfter requires the first collected message after the matched user to be assistant. Existing tests cover an unrelated user, an accessible-heading unknown turn and duplicate full-user turns, but they do not cover an explicit data-message-author-role=tool/system turn that current collection omits."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The preceding Round8 action is correctly bounded. Commit 0235116ac6ce15e09d2e226475ec8729e1526576 adds the requested sealed-journal/checkpoint round-trip and corruption tests without changing Fresh production source; the background cross-language fixture proves welcome/checkpoint restoration only mirrors authority and pings status without C2C_FRESH_REVIEW. Reported full regression is 128 Python and 174 Node passes."
+    }
+  ],
+  "REVIEW_SUMMARY": "The exact incoming authority ba5c479d8825ffed3cb8754a42add4cf7741f527 was independently reviewed without substituting branch HEAD; PR #1 head matched the incoming commit at review start. review_request.json binds implementation and previous action to 0235116ac6ce15e09d2e226475ec8729e1526576. All required turn-009 evidence and all three required source/test files were reread at their immutable refs, and their Git blob IDs match source_hashes.json. The implementation-to-evidence delta is one evidence-only commit, and the preceding sealed-journal/checkpoint action satisfies the Round8 instruction. Transcript matching correctly rejects duplicate full markers and recognized semantic barriers, but two real fail-closed locator gaps remain: unrecognized explicit author roles can disappear from the message sequence, and valid editable-surface forms other than literal contenteditable=\"true\" can be mistaken for transcript. Either can permit a later assistant or a draft wire to satisfy association incorrectly, so CHANGES_REQUIRED is necessary before the final stability turn.",
+  "GITHUB_RESOURCES_READ": [
+    {
+      "path": ".c2c-v2/stability-r1/turn-009/review_request.json",
+      "ref_commit": "ba5c479d8825ffed3cb8754a42add4cf7741f527",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/ba5c479d8825ffed3cb8754a42add4cf7741f527/.c2c-v2/stability-r1/turn-009/review_request.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"focus\": \"Transcript boundaries, editable surfaces, duplicate markers and unknown intervening turns\""
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-009/test_summary.json",
+      "ref_commit": "ba5c479d8825ffed3cb8754a42add4cf7741f527",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/ba5c479d8825ffed3cb8754a42add4cf7741f527/.c2c-v2/stability-r1/turn-009/test_summary.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"python_passed\": 128, \"node_passed\": 174, \"manifest\": \"PASS\", \"diff\": \"PASS\""
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-009/source_hashes.json",
+      "ref_commit": "ba5c479d8825ffed3cb8754a42add4cf7741f527",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/ba5c479d8825ffed3cb8754a42add4cf7741f527/.c2c-v2/stability-r1/turn-009/source_hashes.json",
+      "read_method": "GitHub fetch_file plus blob verification",
+      "source_excerpt": "\"implementation_commit\": \"0235116ac6ce15e09d2e226475ec8729e1526576\""
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-009/previous_action.json",
+      "ref_commit": "ba5c479d8825ffed3cb8754a42add4cf7741f527",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/ba5c479d8825ffed3cb8754a42add4cf7741f527/.c2c-v2/stability-r1/turn-009/previous_action.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"codex_action\": \"Added sealed two-attempt failure canonical duplicate roundtrip with byte-identical head events records and checkpoint\""
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_locator.js",
+      "ref_commit": "0235116ac6ce15e09d2e226475ec8729e1526576",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/0235116ac6ce15e09d2e226475ec8729e1526576/poc_v2/extension_control/chrome_extension/fresh_locator.js",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "[\"data-message-author-role\", '[data-message-author-role=\"user\"], [data-message-author-role=\"assistant\"]']"
+    },
+    {
+      "path": "poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+      "ref_commit": "0235116ac6ce15e09d2e226475ec8729e1526576",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/0235116ac6ce15e09d2e226475ec8729e1526576/poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "test(\"heading turns preserve unknown and unrelated user barriers and reject duplicate full users\""
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_content.js",
+      "ref_commit": "0235116ac6ce15e09d2e226475ec8729e1526576",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/0235116ac6ce15e09d2e226475ec8729e1526576/poc_v2/extension_control/chrome_extension/fresh_content.js",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "const assistant = Locator.findAssistantAfter(document, currentUser, request.expected_reply || \"\");"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_protocol.md",
+      "ref_commit": "0235116ac6ce15e09d2e226475ec8729e1526576",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/0235116ac6ce15e09d2e226475ec8729e1526576/poc_v2/extension_control/bridge/fresh_protocol.md",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "Editable elements, their descendants, and containers holding editors are never transcript turns."
+    },
+    {
+      "path": "commit 0235116ac6ce15e09d2e226475ec8729e1526576",
+      "ref_commit": "0235116ac6ce15e09d2e226475ec8729e1526576",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/commit/0235116ac6ce15e09d2e226475ec8729e1526576",
+      "read_method": "GitHub fetch_commit and immutable compare",
+      "source_excerpt": "poc: execute reviewer-directed stability turn 08 action"
+    }
+  ],
+  "NEXT_CODEX_INSTRUCTION": "Patch only Fresh transcript locator semantics/tests/docs and publish turn-010 immutable review evidence. First, make every visible transcript-shaped node carrying data-message-author-role participate in ordering: user/assistant keep their roles, while any other non-empty explicit role such as tool/system becomes unknown and therefore an intervening barrier; structural fallback must likewise not silently omit an explicit unknown author role. Second, make editable exclusion honor effective editability, including node.isContentEditable, contenteditable with empty/true/plaintext-only forms, INPUT/TEXTAREA and role=textbox, so their descendants and containers cannot prove a transcript turn. Add deterministic tests for user -> data-message-author-role=tool/system -> completed assistant yielding no association/result; exact wire inside contenteditable=\"\", contenteditable=\"plaintext-only\" and an inherited editable ancestor yielding no user match; a normal transcript sibling still matching; duplicated REQUEST_ID/CONTROL_ID/NONCE labels inside one candidate yielding no match; and two distinct exact full-wire users remaining ambiguous. Assert zero click/send/result on all negatives. Run full Python/Node/syntax/manifest/diff gates, preserve version/protocol/build and unrelated authority, and publish the bounded turn-010 review authority. Do not start any post-turn10 or turn11 work."
+}

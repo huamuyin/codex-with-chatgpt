@@ -1,0 +1,23 @@
+{
+  "implementation_commit": "5d93be365140d8682515f8d21e7215a28c741882",
+  "files": [
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_content.js",
+      "ref_commit": "5d93be365140d8682515f8d21e7215a28c741882",
+      "sha256": "c71d231dcb7111ed7cb1411adfcc8b653860ebd1edec9e1ca1e833b1ecb54b36",
+      "git_blob_oid": "0628d9a657fbcbeb37cf256558b2b89da3775f64"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_background.js",
+      "ref_commit": "5d93be365140d8682515f8d21e7215a28c741882",
+      "sha256": "83a74637470be08aea416e1944531677a7e697c1cc4338f605620e7675a4c9c4",
+      "git_blob_oid": "8f8aa9719d78bf707d7e8338c379269ee7c96c7e"
+    },
+    {
+      "path": "poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+      "ref_commit": "5d93be365140d8682515f8d21e7215a28c741882",
+      "sha256": "0e2349e1ca888b4201904fe803bba8d65825d40fc65ac25523c96c9970bce230",
+      "git_blob_oid": "9549cdba4cb294b2de2b1c3bcdd68341220dbeb0"
+    }
+  ]
+}

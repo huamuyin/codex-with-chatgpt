@@ -1,0 +1,100 @@
+{
+  "commit": "b13ba6f8f48688e869c6b7d9b40fce5cb5ee035a",
+  "action": {
+    "round": 5,
+    "request_id": "5be32ac2-84cf-413e-9c0f-5049e3e25d36",
+    "control_id": "6f8abda3-3fe6-4e75-9df7-d377e165d770",
+    "attempt_id": 1,
+    "reviewed_commit": "d709310578023d811005512ca890c92f9f9ea82b",
+    "verdict": "CHANGES_REQUIRED",
+    "raw_response_sha256": "2eb5c5a0634ab702c637ae24e2c5397d40fe33bccdd6c8444a956ad4361fcdf8",
+    "instruction": "Patch only Fresh readiness sampling, focused runtime tests/docs if needed, and turn-006 evidence: make concurrent fresh_background status() publication latest-started-wins so an older async sample can never emit or commit stale target/targetDiagnostic state after a newer sample has begun. Keep target selection data local during awaits and commit shared readiness only for the current sample; use the local reload_content selection/generation proof rather than a concurrently mutable diagnostic. Add deterministic tests with two overlapping status() calls: (1) hold an older ready sample, let a newer unavailable/loading sample publish, then release the older sample and prove no trailing ready fresh_status or shared-ready state appears; (2) hold an older unavailable sample, let a newer ready sample publish, then release the older sample and prove ready remains authoritative. Assert no review dispatch, storage/attempt mutation or extra authority creation. Preserve content retirement and four-sample unfinished-reply rules. Run full Python/Node/syntax/manifest/diff gates and publish immutable turn-006 evidence only; do not change version/protocol/build, legacy behavior or unrelated runtime paths.",
+    "codex_action": "Added latest-started status epoch, made target selection fully local across awaits, guarded shared commits/publication and local generation ACK; deterministic reverse-order ready/unavailable tests prove no stale output or state/mirror mutation.",
+    "checks": [
+      {
+        "name": "focused-status-order",
+        "args": [
+          "node",
+          "--test",
+          "--test-name-pattern=older ready status|older unavailable status",
+          "poc_v2/extension_control/tests/fresh_runtime.test.cjs"
+        ],
+        "cwd": "D:\\Worktrees\\codex-with-chatgpt\\c2c-v2-github-evidence-r1",
+        "exit_code": 0,
+        "stdout_sha256": "de65de0124ad0ff8d80959884065e9745b74ca8162f9309602adfd964f874141",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "scoped-diff-check",
+        "args": [
+          "git",
+          "diff",
+          "--check",
+          "--",
+          "poc_v2/extension_control"
+        ],
+        "cwd": "D:\\Worktrees\\codex-with-chatgpt\\c2c-v2-github-evidence-r1",
+        "exit_code": 0,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "e5e53e45e238d329b6ce432419fd364ae4019533579f022c4f32e1b21b1ab139"
+      }
+    ],
+    "required_GitHub_reads_cross_checked": [
+      {
+        "path": ".c2c-v2/stability-r1/turn-005/review_request.json",
+        "ref_commit": "d709310578023d811005512ca890c92f9f9ea82b",
+        "sha256": "900022f54493840c1458f522bca19f6868590ed47254fa3bd9d26cd72e0b72a6",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": "poc_v2/extension_control/chrome_extension/fresh_content.js",
+        "ref_commit": "5d93be365140d8682515f8d21e7215a28c741882",
+        "sha256": "c71d231dcb7111ed7cb1411adfcc8b653860ebd1edec9e1ca1e833b1ecb54b36",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": "poc_v2/extension_control/chrome_extension/fresh_background.js",
+        "ref_commit": "5d93be365140d8682515f8d21e7215a28c741882",
+        "sha256": "83a74637470be08aea416e1944531677a7e697c1cc4338f605620e7675a4c9c4",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": "poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+        "ref_commit": "5d93be365140d8682515f8d21e7215a28c741882",
+        "sha256": "0e2349e1ca888b4201904fe803bba8d65825d40fc65ac25523c96c9970bce230",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": ".c2c-v2/stability-r1/turn-005/test_summary.json",
+        "ref_commit": "d709310578023d811005512ca890c92f9f9ea82b",
+        "sha256": "9d354ed3900088962e8c267c53bfdf72dd8b3a4a346d16476d1a03fca2105335",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": ".c2c-v2/stability-r1/turn-005/source_hashes.json",
+        "ref_commit": "d709310578023d811005512ca890c92f9f9ea82b",
+        "sha256": "b28692a68c3922f7713716e84d927f6114bd0570e5b89dc483de435b495ce1e1",
+        "read_method": "GitHub fetch_file plus blob verification"
+      },
+      {
+        "path": ".c2c-v2/stability-r1/turn-005/previous_action.json",
+        "ref_commit": "d709310578023d811005512ca890c92f9f9ea82b",
+        "sha256": "143bcef11414b26fbaffc19ca7ec58d87b0ac263e0ec4dff51ff366b18fdb4bf",
+        "read_method": "GitHub fetch_file"
+      }
+    ],
+    "source_change": true,
+    "USER_INTERMEDIATE_RELAY": 0,
+    "USER_ACTIONS_DURING_CONTROL_LOOP": 0,
+    "interpretation": "Finite instruction was interpreted within owner scope; no arbitrary reviewer shell text was executed.",
+    "full_regression": {
+      "python_passed": 120,
+      "node_passed": 173,
+      "syntax_files": 21,
+      "manifest": "PASS",
+      "diff": "PASS",
+      "legacy_unchanged": 14
+    },
+    "full_regression_evidence": "repairs/turn05-status-epoch/checks"
+  }
+}

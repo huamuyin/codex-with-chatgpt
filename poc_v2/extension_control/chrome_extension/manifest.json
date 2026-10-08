@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "C2C V2 Control Plane PoC",
+  "version": "0.8.1",
+  "description": "Local-only control bridge for one ordinary ChatGPT tab.",
+  "minimum_chrome_version": "120",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsWyTbDsaFEIcE9Vt/kEfNiJUZyEKQC9my8C0swpkJ9djS1vj1251KpfaYZqjcgB4qhNhnIr2HwQgPLApmxrG3FiJBya9IEj9OHR0BCQFScJOtfJgHpRX5FRFxY2QSgZKCC93Lbo/ugsqN3Z9FC9/bSFDM7llXiLRmhAEE+0lhACY5Ju2RN+40LhLrTBOkYTDxHsItqFIY8QkPGbu+b5+o3x8YcZCvO+8RDyfDW5/oTMiiTj5I535vLR3H+lVRRRdkH0lu5YgiaflQn2ZdYRATh502Ffn9/OWa/Udh0tOsEqgvKhnfZDJFumaa/hhHJsdtuQT2t3SsFkOv69yVcL5KQIDAQAB",
+  "permissions": [
+    "alarms",
+    "scripting",
+    "storage"
+  ],
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self'; object-src 'self'; connect-src http://127.0.0.1:18796 ws://127.0.0.1:18796"
+  },
+  "host_permissions": [
+    "https://chatgpt.com/*",
+    "http://127.0.0.1/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*"
+      ],
+      "js": [
+        "component_identity.js",
+        "adapter_contract.js",
+        "transcript_locator.js",
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

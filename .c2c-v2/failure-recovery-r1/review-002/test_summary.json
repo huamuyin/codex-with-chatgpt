@@ -1,0 +1,11 @@
+{
+  "implementation_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+  "python_passed": 112,
+  "node_passed": 169,
+  "failed": 0,
+  "syntax_files": 21,
+  "manifest": "PASS",
+  "diff": "PASS",
+  "legacy_sources_unchanged": 14,
+  "source_files": 27
+}

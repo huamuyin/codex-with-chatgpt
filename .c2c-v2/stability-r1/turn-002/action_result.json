@@ -1,0 +1,99 @@
+{
+  "round": 2,
+  "request_id": "676f0b7e-8f82-429f-b46a-cdcf860ae081",
+  "control_id": "9a7f3869-697d-4d53-a9b2-b48376ad1e10",
+  "attempt_id": 5,
+  "reviewed_commit": "df2280c28824353263ef8e9aa49da5cc2410144b",
+  "verdict": "PASS_CONTINUE",
+  "raw_response_sha256": "b33613bff0a5ff4959bcc47aaa35aaff0a49e820b91cc6287c51673945007887",
+  "instruction": "Add one targeted Fresh Python conformance regression in test_fresh_delivery.py, with only minimal docs/evidence updates if needed: create a logical request, make attempt1 fail through caller_wait_timeout, snapshot the exact events.jsonl bytes and decoded event prefix, perform an explicit retry with the identical request_id/control_id/original payload, and assert the pre-retry bytes/events are an unchanged prefix, attempt1 retains its failure/error and original wire, exactly one new send_attempt is appended with attempt_id=2 while request_id/control_id/nonce/expected_commit stay identical, and no logical_created event is added. Then attempt retries with changed commit, instruction, and conversation_url and assert logical_identity_mismatch with zero journal-byte change. Run the full Python/Node/syntax/manifest/diff gates and publish turn-003 immutable evidence; do not change Fresh version/protocol/build, legacy sources, or unrelated runtime behavior.",
+  "codex_action": "Added failed-journal exact byte and decoded-event prefix proof across explicit retry, preserved original wire and failure, single appended attempt, and zero-write rejection of changed commit instruction or URL.",
+  "checks": [
+    {
+      "name": "reviewer-directed-conformance",
+      "args": [
+        "C:\\Users\\Lenovo\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_fresh_delivery.FreshTests.test_explicit_retry_preserves_failed_journal_byte_prefix_and_rejects_changed_authority"
+      ],
+      "cwd": "D:\\Worktrees\\codex-with-chatgpt\\c2c-v2-github-evidence-r1\\poc_v2\\extension_control\\bridge",
+      "exit_code": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "77c51568063ce8e0644710b8ebf21552cd8df10c8377cc6b746c5d668e22504d"
+    },
+    {
+      "name": "scoped-diff-check",
+      "args": [
+        "git",
+        "diff",
+        "--check",
+        "--",
+        "poc_v2/extension_control"
+      ],
+      "cwd": "D:\\Worktrees\\codex-with-chatgpt\\c2c-v2-github-evidence-r1",
+      "exit_code": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "cfdbeb86fb3b2d0a625956e1dd394c641f7a64c44fd789a1ed51c2c0877196e7"
+    }
+  ],
+  "required_GitHub_reads_cross_checked": [
+    {
+      "path": ".c2c-v2/stability-r1/turn-002/review_request.json",
+      "ref_commit": "df2280c28824353263ef8e9aa49da5cc2410144b",
+      "sha256": "9956b71e2221d595ad71b7555305ef6c0dbce734325a942225dc6725b9c5b9a4",
+      "read_method": "GitHub fetch_file"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_delivery.py",
+      "ref_commit": "63e09c929ba1728c42d01d2345101f16ec9e3137",
+      "sha256": "14eab483f112f72904729f3e555c78df0bd04aaca9db2da69c32b7c1851141f5",
+      "read_method": "GitHub fetch_file"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/test_fresh_delivery.py",
+      "ref_commit": "63e09c929ba1728c42d01d2345101f16ec9e3137",
+      "sha256": "feff298ae240ee90e0c71c7c753f21917f14ec0bd257aa3f5947928116d26487",
+      "read_method": "GitHub fetch_file"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_bridge.py",
+      "ref_commit": "63e09c929ba1728c42d01d2345101f16ec9e3137",
+      "sha256": "912784e35f8f64ea1decc436604c7cb7d86415fdd20c7da7ff2b163b0f2e7771",
+      "read_method": "GitHub fetch_file"
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-002/test_summary.json",
+      "ref_commit": "df2280c28824353263ef8e9aa49da5cc2410144b",
+      "sha256": "71543691d7d0849efb24a613ef94e9916a1b3547db2ed281b30d7ceed141b930",
+      "read_method": "GitHub fetch_file"
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-002/source_hashes.json",
+      "ref_commit": "df2280c28824353263ef8e9aa49da5cc2410144b",
+      "sha256": "a38ff21210bbe86f75068bd46315c1e987798628d124be1e2b7706f08b075fb8",
+      "read_method": "GitHub fetch_file and blob cross-check"
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-002/previous_action.json",
+      "ref_commit": "df2280c28824353263ef8e9aa49da5cc2410144b",
+      "sha256": "50f75f6f461c2798ef0fabbb006352b8d491149c7e3ba154351f54597e300f49",
+      "read_method": "GitHub fetch_file"
+    }
+  ],
+  "source_change": true,
+  "USER_INTERMEDIATE_RELAY": 0,
+  "USER_ACTIONS_DURING_CONTROL_LOOP": 0,
+  "interpretation": "Finite instruction was interpreted within owner scope; no arbitrary reviewer shell text was executed.",
+  "full_regression": {
+    "python_passed": 116,
+    "node_passed": 170,
+    "syntax_files": 21,
+    "manifest": "PASS",
+    "diff": "PASS",
+    "legacy_unchanged": 14
+  },
+  "full_regression_evidence": "repairs/turn02-byte-prefix/checks"
+}

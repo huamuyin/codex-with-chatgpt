@@ -1,0 +1,23 @@
+{
+  "implementation_commit": "63e09c929ba1728c42d01d2345101f16ec9e3137",
+  "files": [
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_delivery.py",
+      "ref_commit": "63e09c929ba1728c42d01d2345101f16ec9e3137",
+      "sha256": "14eab483f112f72904729f3e555c78df0bd04aaca9db2da69c32b7c1851141f5",
+      "git_blob_oid": "53623a74a7be207176ae8f1b6ec4343df062f29c"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/test_fresh_delivery.py",
+      "ref_commit": "63e09c929ba1728c42d01d2345101f16ec9e3137",
+      "sha256": "feff298ae240ee90e0c71c7c753f21917f14ec0bd257aa3f5947928116d26487",
+      "git_blob_oid": "0d24cf66c782b0c4a48a940fe1c9f6c762f82119"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_bridge.py",
+      "ref_commit": "63e09c929ba1728c42d01d2345101f16ec9e3137",
+      "sha256": "912784e35f8f64ea1decc436604c7cb7d86415fdd20c7da7ff2b163b0f2e7771",
+      "git_blob_oid": "68eaebdfbe4e147e24308511456a6f66e121e0cf"
+    }
+  ]
+}

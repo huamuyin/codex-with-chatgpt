@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "C2C V2 Fresh PoC offline candidate",
+  "version": "0.9.8",
+  "description": "Local-only control bridge for one ordinary ChatGPT tab.",
+  "minimum_chrome_version": "120",
+  "permissions": [
+    "alarms",
+    "scripting",
+    "storage"
+  ],
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self'; object-src 'self'; connect-src http://127.0.0.1:18797 ws://127.0.0.1:18797"
+  },
+  "host_permissions": [
+    "https://chatgpt.com/*",
+    "http://127.0.0.1/*"
+  ],
+  "background": {
+    "service_worker": "fresh_background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*"
+      ],
+      "js": [
+        "fresh_component_identity.js",
+        "fresh_contract.js",
+        "fresh_locator.js",
+        "fresh_content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

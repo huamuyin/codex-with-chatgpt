@@ -1,0 +1,10 @@
+{
+  "source_commit": "aba581ac123b31cde660fd86908626cf5452ea97",
+  "python_passed": 117,
+  "node_passed": 171,
+  "syntax_files": 21,
+  "manifest": "PASS",
+  "diff": "PASS",
+  "legacy_unchanged": 14,
+  "evidence": "repairs/turn03-restoration-negative/checks"
+}

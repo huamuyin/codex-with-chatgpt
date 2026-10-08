@@ -1,0 +1,16 @@
+{
+  "caused_by": {
+    "request_id": "75270db0-5d37-4636-b6f2-82a65c849f65",
+    "control_id": "92a4019b-1489-418f-a13c-33343989b6a9",
+    "attempt_id": 1,
+    "reviewed_commit": "237afd7d5544dfd476347166cb202a53d9b9ca75",
+    "raw_sha256": "077a0ce28c4bdece752a1cb2424ea27d42a4a206c9694161f69f9a69f46509e4"
+  },
+  "instruction": "After this exact Round102 reply is accepted by the strict parser, create one evidence-only Fresh commit that records parser_recovery=PASS and required_field_fix_independent_review=PASS with this REQUEST_ID, CONTROL_ID, ATTEMPT_ID, REVIEWED_COMMIT and preserved raw-response hash; update campaign_progress without changing source or journal history, keep ten_turns_started=0, and do not infer any still-unobserved physical fault gate.",
+  "action": "Evidence-only closeout: strict parser recovery and independent field-fix review PASS; ten_turns_started remains0; all physical gates independently tied to existing receipts.",
+  "parser_recovery": "PASS",
+  "required_field_fix_independent_review": "PASS",
+  "ten_turns_started": 0,
+  "source_changed": false,
+  "journal_changed": false
+}

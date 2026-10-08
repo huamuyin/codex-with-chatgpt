@@ -1,0 +1,77 @@
+{
+  "task_id": "B2_REPOSITORY_CLOSURE_AND_REAL_ROUND4_ROUND5_AUTONOMOUS_LOOP_R1",
+  "iteration": 4,
+  "repo": "huamuyin/codex-with-chatgpt",
+  "branch": "poc/c2c-v2-github-bus-r1",
+  "pr": 1,
+  "implementation_commit": "ee9e74650a35b2fa0e3491c1a96544b0068ff3ed",
+  "previous_evidence_commit": "4229d59da343b0acb60cdc32e954346650f91e1d",
+  "commit_binding": "The incoming control COMMIT identifies the immutable evidence commit containing this request. REVIEWED_COMMIT must equal that exact control COMMIT. REVIEWED_IMPLEMENTATION_COMMIT must separately equal implementation_commit. Fetch both exact commits and compare the PR/branch head at review start; never silently substitute another commit.",
+  "mission": "Substantive independent GitHub-only review of the accepted B2 Fresh 0.9.8 closure, then one bounded Codex follow-up and Round 5 independent review.",
+  "evidence_paths": [
+    ".c2c-v2/iteration-004/review_request.json",
+    ".c2c-v2/iteration-004/test_summary.json",
+    ".c2c-v2/iteration-004/source_hashes.json"
+  ],
+  "required_source_paths": [
+    "poc_v2/extension_control/bridge/fresh_bridge.py",
+    "poc_v2/extension_control/bridge/fresh_delivery.py",
+    "poc_v2/extension_control/chrome_extension/fresh_background.js",
+    "poc_v2/extension_control/chrome_extension/fresh_content.js",
+    "poc_v2/extension_control/chrome_extension/fresh_locator.js",
+    "poc_v2/extension_control/chrome_extension/fresh_contract.js",
+    "poc_v2/extension_control/chrome_extension/fresh_component_identity.js",
+    "poc_v2/extension_control/chrome_extension/fresh_manifest.json",
+    "poc_v2/extension_control/bridge/test_fresh_delivery.py",
+    "poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+    "poc_v2/extension_control/bridge/fresh_protocol.md"
+  ],
+  "review_questions": [
+    "Inspect the actual exact-commit source and tests; identify any real defect in authentication, startup credential handoff, persistence, replay/checkpoint, source/build readiness or scope isolation.",
+    "Review append-only at-least-once attempts, late canonical results/duplicates, original identity preservation and no auto-send on restart/reload.",
+    "Review semantic full-wire/role-heading/paired-turn completion matching, exact native-tab/URL binding and prohibition on crossing another user or unknown turn.",
+    "Review explicit observe_attempt separation from composer/send/retry and bounded authenticated maintenance/reconnect. Is any authority or completion gate weaker than documented?",
+    "Distinguish accepted runtime metrics, offline checks and unproven deployment/generalized behavior. Do not infer a ten-turn, failure-campaign or production pass.",
+    "Return a finite bounded NEXT_CODEX_INSTRUCTION. For CHANGES_REQUIRED cite exact source evidence and smallest correction. For PASS_CONTINUE specify a concrete additional offline verification/evidence action; do not manufacture a source change."
+  ],
+  "allowed_verdicts": [
+    "PASS_CONTINUE",
+    "CHANGES_REQUIRED",
+    "BLOCKED_AUTHORITY"
+  ],
+  "required_reply_fields": [
+    "STATE",
+    "ROUND",
+    "REQUEST_ID",
+    "CONTROL_ID",
+    "REVIEWED_COMMIT",
+    "REVIEWED_IMPLEMENTATION_COMMIT",
+    "VERDICT",
+    "FINDINGS",
+    "NEXT_CODEX_INSTRUCTION",
+    "GITHUB_RESOURCES_READ",
+    "REVIEW_SUMMARY"
+  ],
+  "reply_rules": {
+    "STATE": "REVIEW_RESULT",
+    "ROUND": 4,
+    "REQUEST_ID": "Exact incoming REQUEST_ID",
+    "CONTROL_ID": "Exact incoming CONTROL_ID",
+    "REVIEWED_COMMIT": "Exact incoming COMMIT, not inferred latest HEAD",
+    "REVIEWED_IMPLEMENTATION_COMMIT": "ee9e74650a35b2fa0e3491c1a96544b0068ff3ed",
+    "FINDINGS": "Array; cite file/line or function, severity, defect and evidence. Empty is allowed only after substantive review.",
+    "NEXT_CODEX_INSTRUCTION": "A finite object with scope_paths, steps, required_checks, expected_result. Stay within this mission.",
+    "GITHUB_RESOURCES_READ": "Array of actual reads only. Each file read: path, ref_commit, github_url, read_method and a short exact source_excerpt obtained from that read. Include required evidence and source paths. Do not claim a read from the request summary. Record failure truthfully.",
+    "REVIEW_SUMMARY": "Substantive code-based reasoning, not a transport echo or predetermined PASS."
+  },
+  "frozen_boundaries": [
+    "Ordinary subscription high-reasoning Chat only",
+    "GitHub is the only evidence plane",
+    "No Work/IAB/old C2C MCP/Cloudflare/OpenAI API/new external service",
+    "No family-fund or other product change",
+    "No 18795/18796 or legacy original-smoke mutation",
+    "No Host/Origin/control-token weakening or stored ephemeral token",
+    "No intermediate User/Main Chat relay",
+    "No productionization/installer/ten-turn stability/failure-recovery campaign"
+  ]
+}

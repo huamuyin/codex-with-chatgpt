@@ -1,0 +1,102 @@
+{
+  "commit": "7d7d217cae8a3ed234de6df8d5ba0564027bb3d5",
+  "action": {
+    "round": 7,
+    "request_id": "9d07f42f-6725-4158-a4cc-e8c1188c589b",
+    "control_id": "ace106e8-755f-466b-a8cd-fc4ded4ee3e7",
+    "attempt_id": 1,
+    "reviewed_commit": "96aabde3abbccc049588d12526ca5f20da80dc97",
+    "verdict": "PASS_CONTINUE",
+    "raw_response_sha256": "b966d821d155a3e31a0e90e5de950c27ae7f447f81b4899e5ec95f9c961b757c",
+    "instruction": "Add one focused Fresh authentication conformance action for turn-008 without changing production behavior unless a test exposes a defect: exercise the FreshHandler WebSocket boundary with exact Host plus (1) missing Origin, (2) wrong extension Origin, (3) exact Origin with missing auth token, (4) exact Origin with wrong auth token, and (5) exact Origin plus the correct ephemeral token. Prove cases 1-4 cannot register a session, emit a welcome, mutate journal/request authority or expose the token; prove case 5 registers exactly once and its welcome/health/checkpoint contain no control_token. Also exercise /review, /retry and /maintenance with a valid token but wrong Host, wrong port and non-loopback peer, asserting host_rejected before any action, plus correct Host with wrong token asserting control_token_rejected. Finally assert maintenance_commands messages/results and all durable journal files exclude both the credential value and a control_token field. Run full Python/Node/syntax/manifest/diff gates and publish immutable turn-008 evidence only; do not change version/protocol/build, startup handoff semantics, legacy paths or unrelated runtime authority.",
+    "codex_action": "Added five-case WebSocket origin and first-frame authentication coverage, controller wrong host port peer token negatives, and maintenance plus durable-file credential-exclusion proofs without production behavior changes.",
+    "checks": [
+      {
+        "name": "reviewer-directed-conformance",
+        "args": [
+          "C:\\Users\\Lenovo\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+          "-B",
+          "-m",
+          "unittest",
+          "-v",
+          "test_fresh_delivery.FreshTests.test_websocket_origin_and_first_auth_frame_are_closed_before_registration"
+        ],
+        "cwd": "D:\\Worktrees\\codex-with-chatgpt\\c2c-v2-github-evidence-r1\\poc_v2\\extension_control\\bridge",
+        "exit_code": 0,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "45b067afed09391b9a1e4502a07d75c7393b85a655092a4d78ed71fa960634af"
+      },
+      {
+        "name": "scoped-diff-check",
+        "args": [
+          "git",
+          "diff",
+          "--check",
+          "--",
+          "poc_v2/extension_control"
+        ],
+        "cwd": "D:\\Worktrees\\codex-with-chatgpt\\c2c-v2-github-evidence-r1",
+        "exit_code": 0,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "cfdbeb86fb3b2d0a625956e1dd394c641f7a64c44fd789a1ed51c2c0877196e7"
+      }
+    ],
+    "required_GitHub_reads_cross_checked": [
+      {
+        "path": ".c2c-v2/stability-r1/turn-007/review_request.json",
+        "ref_commit": "96aabde3abbccc049588d12526ca5f20da80dc97",
+        "sha256": "3ae0cbe1288a5606b6abccd8f1df4af8d9a3035c07a7b0d77e3d97f4e2a13038",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/fresh_bridge.py",
+        "ref_commit": "32552f09ca74f3c6bd50f9b875fd0219f4ed6ebe",
+        "sha256": "912784e35f8f64ea1decc436604c7cb7d86415fdd20c7da7ff2b163b0f2e7771",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/test_fresh_delivery.py",
+        "ref_commit": "32552f09ca74f3c6bd50f9b875fd0219f4ed6ebe",
+        "sha256": "ec7249f78c77a905971e4dcb731d22f875114ce043899dc7745ecc2045e31c32",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/fresh_protocol.md",
+        "ref_commit": "32552f09ca74f3c6bd50f9b875fd0219f4ed6ebe",
+        "sha256": "40c684dc2e9a0dab64729e049d1371fd0b369b34d040ee006bdca36afa76c39f",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": ".c2c-v2/stability-r1/turn-007/test_summary.json",
+        "ref_commit": "96aabde3abbccc049588d12526ca5f20da80dc97",
+        "sha256": "a63a31e98058653cb9bb53e6fbdcd47c832df19f3f0972ddfba63a787cd613da",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": ".c2c-v2/stability-r1/turn-007/source_hashes.json",
+        "ref_commit": "96aabde3abbccc049588d12526ca5f20da80dc97",
+        "sha256": "bdc74cd2848f568b04e724c4f6fc32cfb25c0f414a318c369745c7f123dd4737",
+        "read_method": "GitHub fetch_file plus blob verification"
+      },
+      {
+        "path": ".c2c-v2/stability-r1/turn-007/previous_action.json",
+        "ref_commit": "96aabde3abbccc049588d12526ca5f20da80dc97",
+        "sha256": "19d5ca74c69d8d94353a75eb541705edc0d29cad1e5acc17adee8be7f862cbe8",
+        "read_method": "GitHub fetch_file"
+      }
+    ],
+    "source_change": true,
+    "USER_INTERMEDIATE_RELAY": 0,
+    "USER_ACTIONS_DURING_CONTROL_LOOP": 0,
+    "interpretation": "Finite instruction was interpreted within owner scope; no arbitrary reviewer shell text was executed.",
+    "full_regression": {
+      "python_passed": 126,
+      "node_passed": 173,
+      "syntax_files": 21,
+      "manifest": "PASS",
+      "diff": "PASS",
+      "legacy_unchanged": 14
+    },
+    "full_regression_evidence": "repairs/turn07-auth-boundaries-final/checks"
+  }
+}

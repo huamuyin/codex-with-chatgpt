@@ -1,0 +1,99 @@
+{
+  "round": 4,
+  "request_id": "54595524-9d3d-40d3-8bc5-f5bd9f37df39",
+  "control_id": "c94f3e9b-6455-4736-b2e2-22c7f49627f4",
+  "attempt_id": 1,
+  "reviewed_commit": "dde4b200d2b2d23e4a6885f55aa6447cb8edd46c",
+  "verdict": "CHANGES_REQUIRED",
+  "raw_response_sha256": "e3e160746aa6137a5dc4e384626cf10acdc10f42afaa0a54b1f227338c900362",
+  "instruction": "Patch only Fresh delivery replay semantics, focused tests/docs if needed, and turn-005 evidence: when replay processes attempt_failed or delivery_uncertain for an attempt whose status is already complete because a valid result or duplicate_reply was accepted, preserve that attempt's completed derived state and canonical logical result while retaining the late failure event in the append-only journal; do not let a late error overwrite completed attempt state. Add targeted tests for (1) canonical result then same-attempt late error, (2) retry attempt2 canonical then late attempt1 duplicate followed by late errors on either completed attempt, and (3) failure-before-result still transitioning failed->complete when the later valid reply arrives. Assert canonical result bytes/value and duplicate_count remain unchanged, restart replay yields the same derived state, and journal history remains append-only. Run full Python/Node/syntax/manifest/diff gates and publish immutable turn-005 evidence only; do not change version/protocol/build, retry authority, legacy behavior or unrelated runtime paths.",
+  "codex_action": "Preserved completed attempt projections and canonical result under late failure or uncertainty events, retained append-only audit, and added three canonical duplicate failure-before-result restart regressions.",
+  "checks": [
+    {
+      "name": "reviewer-directed-conformance",
+      "args": [
+        "C:\\Users\\Lenovo\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_fresh_delivery.FreshTests.test_both_completed_attempts_preserved_after_duplicate_and_late_errors"
+      ],
+      "cwd": "D:\\Worktrees\\codex-with-chatgpt\\c2c-v2-github-evidence-r1\\poc_v2\\extension_control\\bridge",
+      "exit_code": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "00e2cd564fd2e7992fd7f56b26bb8d151e6ff259cb6c403d8bb83443fc0ef7f5"
+    },
+    {
+      "name": "scoped-diff-check",
+      "args": [
+        "git",
+        "diff",
+        "--check",
+        "--",
+        "poc_v2/extension_control"
+      ],
+      "cwd": "D:\\Worktrees\\codex-with-chatgpt\\c2c-v2-github-evidence-r1",
+      "exit_code": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "8ffe47127c0a6077e59b92bace43250fa23b451cc6602dc655f9d6be2facbbd9"
+    }
+  ],
+  "required_GitHub_reads_cross_checked": [
+    {
+      "path": ".c2c-v2/stability-r1/turn-004/review_request.json",
+      "ref_commit": "dde4b200d2b2d23e4a6885f55aa6447cb8edd46c",
+      "sha256": "23583e21533beb729852e356cabf9c2dd24c05a3de669afa163485cc0745f922",
+      "read_method": "GitHub fetch_file"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_delivery.py",
+      "ref_commit": "aba581ac123b31cde660fd86908626cf5452ea97",
+      "sha256": "14eab483f112f72904729f3e555c78df0bd04aaca9db2da69c32b7c1851141f5",
+      "read_method": "GitHub fetch_file"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_contract.js",
+      "ref_commit": "aba581ac123b31cde660fd86908626cf5452ea97",
+      "sha256": "296b5007a585763a9decaff7b1f087931e391681c64ae41da5584078bf72fb9f",
+      "read_method": "GitHub fetch_file"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/test_fresh_delivery.py",
+      "ref_commit": "aba581ac123b31cde660fd86908626cf5452ea97",
+      "sha256": "fa0e20f39a31f4446f95bc76e4101787b76c94a1b31768efda8dd84333014e89",
+      "read_method": "GitHub fetch_file"
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-004/test_summary.json",
+      "ref_commit": "dde4b200d2b2d23e4a6885f55aa6447cb8edd46c",
+      "sha256": "bb07f220c39754731bc3f92722fae498dc9c53d09ff517ee6a642b5dd1893aee",
+      "read_method": "GitHub fetch_file"
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-004/source_hashes.json",
+      "ref_commit": "dde4b200d2b2d23e4a6885f55aa6447cb8edd46c",
+      "sha256": "b86e816e8f0333a34ff419b2e277cdc12dbb89d547277474876119d42fbc4bb6",
+      "read_method": "GitHub fetch_file plus blob verification"
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-004/previous_action.json",
+      "ref_commit": "dde4b200d2b2d23e4a6885f55aa6447cb8edd46c",
+      "sha256": "f272b92ab54b3d841304d55e9e3ce85776c7146bb0179310f90ab92d3eceeeeb",
+      "read_method": "GitHub fetch_file"
+    }
+  ],
+  "source_change": true,
+  "USER_INTERMEDIATE_RELAY": 0,
+  "USER_ACTIONS_DURING_CONTROL_LOOP": 0,
+  "interpretation": "Finite instruction was interpreted within owner scope; no arbitrary reviewer shell text was executed.",
+  "full_regression": {
+    "python_passed": 120,
+    "node_passed": 171,
+    "syntax_files": 21,
+    "manifest": "PASS",
+    "diff": "PASS",
+    "legacy_unchanged": 14
+  },
+  "full_regression_evidence": "repairs/turn04-late-failure-state/checks"
+}

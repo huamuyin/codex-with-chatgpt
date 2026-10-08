@@ -1,0 +1,23 @@
+{
+  "implementation_commit": "0235116ac6ce15e09d2e226475ec8729e1526576",
+  "files": [
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_locator.js",
+      "ref_commit": "0235116ac6ce15e09d2e226475ec8729e1526576",
+      "sha256": "065dc6020cc29006f8922dfd3cba846423554edd1e70d0c0ea522eac0ed2d1ad",
+      "git_blob_oid": "0e4c023d7ccfe0d2a0160ecbf4440ff09974452a"
+    },
+    {
+      "path": "poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+      "ref_commit": "0235116ac6ce15e09d2e226475ec8729e1526576",
+      "sha256": "46f98a444c4d78164a609b3259dbb53378544a852940bbfc99636cf60e0aef5c",
+      "git_blob_oid": "b1330d24b94b1949cbec00440ade251c86707d4c"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_content.js",
+      "ref_commit": "0235116ac6ce15e09d2e226475ec8729e1526576",
+      "sha256": "c71d231dcb7111ed7cb1411adfcc8b653860ebd1edec9e1ca1e833b1ecb54b36",
+      "git_blob_oid": "0628d9a657fbcbeb37cf256558b2b89da3775f64"
+    }
+  ]
+}

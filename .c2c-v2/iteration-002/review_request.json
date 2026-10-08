@@ -1,0 +1,24 @@
+{
+  "task_id": "C2C_V2_GITHUB_EVIDENCE_PLANE_POC_R1",
+  "iteration": 2,
+  "base_commit": "12e42bfe1fe7f2709cbe4f25f3753a49bb9e7f31",
+  "previous_evidence_commit": "38799a84a3b47890555ef5c3fb8e68186d47d845",
+  "previous_chat_review_sha256": "A89ECD1931619BEE39FCAF2F71892FA19897BF9E1E1154BA22DAE93A3E3C171C",
+  "implementation_commit": "85da6757d2bbc2289764f83401a1568d7eb5cfb5",
+  "commit_binding": "implementation_commit is the tested Round 2 code commit. This review request and test_summary are added in the subsequent evidence commit. The short review reference COMMIT must identify the PR branch head containing these evidence files; compare it exactly with the GitHub branch head.",
+  "goal": "Add deterministic collision handling for duplicate case-folded identities, make repeated insertion idempotent, and ensure insertion order does not change the selected display representative while preserving Round 1 behavior.",
+  "changed_paths": [
+    "poc_v2/identifier_registry.py",
+    "tests/poc_v2/test_identifier_registry.py"
+  ],
+  "tests": {
+    "passed": 7,
+    "failed": 0,
+    "command": "python -m unittest discover -s tests/poc_v2 -v"
+  },
+  "questions": [
+    "Does selecting the lexicographically smallest trimmed Python string satisfy deterministic collision handling for each case-folded identity?",
+    "Do the new tests demonstrate exact-repeat idempotence, shared identity for case variants, and equality under reversed insertion order while retaining all Round 1 coverage?",
+    "Identify any concrete gap in the committed Round 2 code, tests, or evidence and give the smallest evidence-based next Codex instruction."
+  ]
+}

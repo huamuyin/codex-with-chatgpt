@@ -1,0 +1,100 @@
+{
+  "commit": "edb11582ac9006e4881db52d02df3e4bf509fec0",
+  "action": {
+    "round": 9,
+    "request_id": "1d3dcc3d-9499-4a76-a84c-044369f2cbb7",
+    "control_id": "0d1fab7f-f4cf-4816-a51b-ba9a2950f388",
+    "attempt_id": 1,
+    "reviewed_commit": "ba5c479d8825ffed3cb8754a42add4cf7741f527",
+    "verdict": "CHANGES_REQUIRED",
+    "raw_response_sha256": "07499bd55b98fa1a77e7097ee28aaa14b95d9b4e954ba7c31e0a915a6212ba4c",
+    "instruction": "Patch only Fresh transcript locator semantics/tests/docs and publish turn-010 immutable review evidence. First, make every visible transcript-shaped node carrying data-message-author-role participate in ordering: user/assistant keep their roles, while any other non-empty explicit role such as tool/system becomes unknown and therefore an intervening barrier; structural fallback must likewise not silently omit an explicit unknown author role. Second, make editable exclusion honor effective editability, including node.isContentEditable, contenteditable with empty/true/plaintext-only forms, INPUT/TEXTAREA and role=textbox, so their descendants and containers cannot prove a transcript turn. Add deterministic tests for user -> data-message-author-role=tool/system -> completed assistant yielding no association/result; exact wire inside contenteditable=\"\", contenteditable=\"plaintext-only\" and an inherited editable ancestor yielding no user match; a normal transcript sibling still matching; duplicated REQUEST_ID/CONTROL_ID/NONCE labels inside one candidate yielding no match; and two distinct exact full-wire users remaining ambiguous. Assert zero click/send/result on all negatives. Run full Python/Node/syntax/manifest/diff gates, preserve version/protocol/build and unrelated authority, and publish the bounded turn-010 review authority. Do not start any post-turn10 or turn11 work.",
+    "codex_action": "Made explicit unknown author roles transcript barriers; honored effective editability; added deterministic no-send/no-result negative cases and retained normal sibling matching. Published finite reviewer-directed source/tests/protocol correction after full offline regression.",
+    "checks": [
+      {
+        "name": "focused-locator-boundaries",
+        "args": [
+          "node",
+          "--test",
+          "--test-name-pattern=explicit tool and system|empty plaintext-only|duplicate full labels",
+          "poc_v2/extension_control/tests/fresh_runtime.test.cjs"
+        ],
+        "cwd": "D:\\Worktrees\\codex-with-chatgpt\\c2c-v2-github-evidence-r1",
+        "exit_code": 0,
+        "stdout_sha256": "ceaa88b538db92df1f19216e51f2cafd4e5e86560278463da0d2e862f250c322",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "scoped-diff-check",
+        "args": [
+          "git",
+          "diff",
+          "--check",
+          "--",
+          "poc_v2/extension_control"
+        ],
+        "cwd": "D:\\Worktrees\\codex-with-chatgpt\\c2c-v2-github-evidence-r1",
+        "exit_code": 0,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "8219906108ba69bb4eea593848941b9b55fe817840dae93b70c4a75a7adc6279"
+      }
+    ],
+    "required_GitHub_reads_cross_checked": [
+      {
+        "path": ".c2c-v2/stability-r1/turn-009/review_request.json",
+        "ref_commit": "ba5c479d8825ffed3cb8754a42add4cf7741f527",
+        "sha256": "d89ddf15ed5c2fc752c1daae849505664bd02ddf39b63e730301a4e961d9178e",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": "poc_v2/extension_control/chrome_extension/fresh_locator.js",
+        "ref_commit": "0235116ac6ce15e09d2e226475ec8729e1526576",
+        "sha256": "065dc6020cc29006f8922dfd3cba846423554edd1e70d0c0ea522eac0ed2d1ad",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": "poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+        "ref_commit": "0235116ac6ce15e09d2e226475ec8729e1526576",
+        "sha256": "46f98a444c4d78164a609b3259dbb53378544a852940bbfc99636cf60e0aef5c",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": "poc_v2/extension_control/chrome_extension/fresh_content.js",
+        "ref_commit": "0235116ac6ce15e09d2e226475ec8729e1526576",
+        "sha256": "c71d231dcb7111ed7cb1411adfcc8b653860ebd1edec9e1ca1e833b1ecb54b36",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": ".c2c-v2/stability-r1/turn-009/test_summary.json",
+        "ref_commit": "ba5c479d8825ffed3cb8754a42add4cf7741f527",
+        "sha256": "6f7a672b7306b0d7e5d33bd62e75fa98476f798a70d3cd2bfc4f59b245043938",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": ".c2c-v2/stability-r1/turn-009/source_hashes.json",
+        "ref_commit": "ba5c479d8825ffed3cb8754a42add4cf7741f527",
+        "sha256": "c15e466b2899c86c147ea7f3f2a67fc96aaf63831e7e961910de3832064de93d",
+        "read_method": "GitHub fetch_file plus blob verification"
+      },
+      {
+        "path": ".c2c-v2/stability-r1/turn-009/previous_action.json",
+        "ref_commit": "ba5c479d8825ffed3cb8754a42add4cf7741f527",
+        "sha256": "35e672c66b442236c9880702e7ca064b0b56ac9c7881f80d36ca6ce16649dfe9",
+        "read_method": "GitHub fetch_file"
+      }
+    ],
+    "source_change": true,
+    "USER_INTERMEDIATE_RELAY": 0,
+    "USER_ACTIONS_DURING_CONTROL_LOOP": 0,
+    "interpretation": "Finite instruction was interpreted within owner scope; no arbitrary reviewer shell text was executed.",
+    "full_regression": {
+      "python_passed": 128,
+      "node_passed": 177,
+      "syntax_files": 21,
+      "manifest": "PASS",
+      "diff": "PASS",
+      "legacy_unchanged": 14
+    },
+    "full_regression_evidence": "repairs/turn09-locator-boundaries/checks"
+  }
+}

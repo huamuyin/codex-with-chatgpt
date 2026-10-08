@@ -1,0 +1,112 @@
+{
+  "STATE": "REVIEW_RESULT",
+  "ROUND": 7,
+  "REQUEST_ID": "9d07f42f-6725-4158-a4cc-e8c1188c589b",
+  "CONTROL_ID": "ace106e8-755f-466b-a8cd-fc4ded4ee3e7",
+  "ATTEMPT_ID": 1,
+  "REVIEWED_COMMIT": "96aabde3abbccc049588d12526ca5f20da80dc97",
+  "VERDICT": "PASS_CONTINUE",
+  "FINDINGS": [
+    {
+      "severity": "INFO",
+      "finding": "The preceding Round6 correction is correctly implemented. Commit 32552f09ca74f3c6bd50f9b875fd0219f4ed6ebe recursively rejects isolated UTF-16 surrogate code points in decoded keys and string values while preserving valid Unicode scalars, escaped surrogate pairs and decoded 4096/4097 instruction boundaries; reported regression totals are 123 Python and 173 Node passes."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Fresh HTTP authority is bound to exact loopback Host and peer address. host_ok requires Host exactly 127.0.0.1:18797 and client_address[0] exactly 127.0.0.1 before GET or POST routing. Bootstrap then independently requires Origin exactly equal to the configured chrome-extension://<32-char-id>; missing, null, ChatGPT, wrong-extension, wrong-host, wrong-port and non-loopback peer cases are explicitly rejected by tests."
+    },
+    {
+      "severity": "INFO",
+      "finding": "WebSocket authentication is independently fail-closed in source: the HTTP upgrade first inherits exact Host validation, websocket() requires the exact extension Origin, and the first text frame must contain type=auth plus the current ephemeral control_token verified with hmac.compare_digest before register() or welcome occurs."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Controller HTTP review/retry/maintenance requests require the same ephemeral token with constant-time comparison. The credential is intentionally exposed only through the authenticated bootstrap response and the one-time startup handoff; request persistence selects only PAYLOAD_KEYS, bridge identity rejects secret fields, health/boundary diagnostics exclude the token, and tests assert the token and control_token field are absent from journal events, checkpoints, records, completed results, health and journal files."
+    },
+    {
+      "severity": "INFO",
+      "finding": "No blocking authentication or credential-persistence defect was found. A useful remaining conformance gap is explicit WebSocket-level negative testing for wrong/missing Origin and wrong/missing first-frame token, plus exact-Host rejection on authenticated controller POST endpoints rather than bootstrap alone."
+    }
+  ],
+  "REVIEW_SUMMARY": "The exact incoming authority 96aabde3abbccc049588d12526ca5f20da80dc97 was independently reviewed without substituting branch HEAD; PR #1 head matched the incoming commit at review start. review_request.json binds implementation and previous action to 32552f09ca74f3c6bd50f9b875fd0219f4ed6ebe. All three required turn-007 evidence files and all three required source/test/doc files were reread at their immutable refs, and their Git blob IDs match source_hashes.json. The implementation-to-evidence delta is one evidence-only commit. The prior Unicode correction satisfies the Round6 action. Exact Host, extension Origin, controller-token and WebSocket-auth gates are coherent, and the credential is excluded from durable/public authority structures while remaining available only for bootstrap/startup handoff. No real source defect was found, so PASS_CONTINUE is justified with one focused authentication conformance action.",
+  "GITHUB_RESOURCES_READ": [
+    {
+      "path": ".c2c-v2/stability-r1/turn-007/review_request.json",
+      "ref_commit": "96aabde3abbccc049588d12526ca5f20da80dc97",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/96aabde3abbccc049588d12526ca5f20da80dc97/.c2c-v2/stability-r1/turn-007/review_request.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"focus\": \"Exact Host/Origin authentication and ephemeral controller credential exclusion\""
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-007/test_summary.json",
+      "ref_commit": "96aabde3abbccc049588d12526ca5f20da80dc97",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/96aabde3abbccc049588d12526ca5f20da80dc97/.c2c-v2/stability-r1/turn-007/test_summary.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"python_passed\": 123, \"node_passed\": 173"
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-007/source_hashes.json",
+      "ref_commit": "96aabde3abbccc049588d12526ca5f20da80dc97",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/96aabde3abbccc049588d12526ca5f20da80dc97/.c2c-v2/stability-r1/turn-007/source_hashes.json",
+      "read_method": "GitHub fetch_file plus blob verification",
+      "source_excerpt": "\"implementation_commit\": \"32552f09ca74f3c6bd50f9b875fd0219f4ed6ebe\""
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-007/previous_action.json",
+      "ref_commit": "96aabde3abbccc049588d12526ca5f20da80dc97",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/96aabde3abbccc049588d12526ca5f20da80dc97/.c2c-v2/stability-r1/turn-007/previous_action.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"codex_action\": \"Rejected isolated surrogate code points in every decoded JSON key or value\""
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_bridge.py",
+      "ref_commit": "32552f09ca74f3c6bd50f9b875fd0219f4ed6ebe",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/32552f09ca74f3c6bd50f9b875fd0219f4ed6ebe/poc_v2/extension_control/bridge/fresh_bridge.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "def host_ok(self): return self.headers.get(\"Host\") == f\"{HOST}:{PORT}\" and self.client_address[0] == HOST"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/test_fresh_delivery.py",
+      "ref_commit": "32552f09ca74f3c6bd50f9b875fd0219f4ed6ebe",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/32552f09ca74f3c6bd50f9b875fd0219f4ed6ebe/poc_v2/extension_control/bridge/test_fresh_delivery.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "def test_bootstrap_missing_null_wrong_origin_and_wrong_host_stay_closed(self):"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_protocol.md",
+      "ref_commit": "32552f09ca74f3c6bd50f9b875fd0219f4ed6ebe",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/32552f09ca74f3c6bd50f9b875fd0219f4ed6ebe/poc_v2/extension_control/bridge/fresh_protocol.md",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "Exact loopback/Host/extension-Origin checks remain."
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_response.py",
+      "ref_commit": "32552f09ca74f3c6bd50f9b875fd0219f4ed6ebe",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/32552f09ca74f3c6bd50f9b875fd0219f4ed6ebe/poc_v2/extension_control/bridge/fresh_response.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "_require_unicode_scalars(value)"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/test_fresh_response.py",
+      "ref_commit": "32552f09ca74f3c6bd50f9b875fd0219f4ed6ebe",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/32552f09ca74f3c6bd50f9b875fd0219f4ed6ebe/poc_v2/extension_control/bridge/test_fresh_response.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "def test_lone_surrogates_in_controls_resource_text_and_keys_fail_closed(self):"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/bridge_server.py",
+      "ref_commit": "32552f09ca74f3c6bd50f9b875fd0219f4ed6ebe",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/32552f09ca74f3c6bd50f9b875fd0219f4ed6ebe/poc_v2/extension_control/bridge/bridge_server.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"control_token\": control_token"
+    },
+    {
+      "path": "commit 32552f09ca74f3c6bd50f9b875fd0219f4ed6ebe",
+      "ref_commit": "32552f09ca74f3c6bd50f9b875fd0219f4ed6ebe",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/commit/32552f09ca74f3c6bd50f9b875fd0219f4ed6ebe",
+      "read_method": "GitHub fetch_commit and immutable compare",
+      "source_excerpt": "poc: execute reviewer-directed stability turn 06 action"
+    }
+  ],
+  "NEXT_CODEX_INSTRUCTION": "Add one focused Fresh authentication conformance action for turn-008 without changing production behavior unless a test exposes a defect: exercise the FreshHandler WebSocket boundary with exact Host plus (1) missing Origin, (2) wrong extension Origin, (3) exact Origin with missing auth token, (4) exact Origin with wrong auth token, and (5) exact Origin plus the correct ephemeral token. Prove cases 1-4 cannot register a session, emit a welcome, mutate journal/request authority or expose the token; prove case 5 registers exactly once and its welcome/health/checkpoint contain no control_token. Also exercise /review, /retry and /maintenance with a valid token but wrong Host, wrong port and non-loopback peer, asserting host_rejected before any action, plus correct Host with wrong token asserting control_token_rejected. Finally assert maintenance_commands messages/results and all durable journal files exclude both the credential value and a control_token field. Run full Python/Node/syntax/manifest/diff gates and publish immutable turn-008 evidence only; do not change version/protocol/build, startup handoff semantics, legacy paths or unrelated runtime authority."
+}

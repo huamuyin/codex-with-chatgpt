@@ -1,0 +1,23 @@
+{
+  "implementation_commit": "aba581ac123b31cde660fd86908626cf5452ea97",
+  "files": [
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_delivery.py",
+      "ref_commit": "aba581ac123b31cde660fd86908626cf5452ea97",
+      "sha256": "14eab483f112f72904729f3e555c78df0bd04aaca9db2da69c32b7c1851141f5",
+      "git_blob_oid": "53623a74a7be207176ae8f1b6ec4343df062f29c"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_contract.js",
+      "ref_commit": "aba581ac123b31cde660fd86908626cf5452ea97",
+      "sha256": "296b5007a585763a9decaff7b1f087931e391681c64ae41da5584078bf72fb9f",
+      "git_blob_oid": "ba53e6055b11b77a2e62266143f9eb9006942091"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/test_fresh_delivery.py",
+      "ref_commit": "aba581ac123b31cde660fd86908626cf5452ea97",
+      "sha256": "fa0e20f39a31f4446f95bc76e4101787b76c94a1b31768efda8dd84333014e89",
+      "git_blob_oid": "0679ad1916d272e13240d562794d8dcbbc719054"
+    }
+  ]
+}

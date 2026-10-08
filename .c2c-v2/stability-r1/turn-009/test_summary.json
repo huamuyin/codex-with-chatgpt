@@ -1,0 +1,10 @@
+{
+  "source_commit": "0235116ac6ce15e09d2e226475ec8729e1526576",
+  "python_passed": 128,
+  "node_passed": 174,
+  "syntax_files": 21,
+  "manifest": "PASS",
+  "diff": "PASS",
+  "legacy_unchanged": 14,
+  "evidence": "repairs/turn08-checkpoint-roundtrip/checks"
+}

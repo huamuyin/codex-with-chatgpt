@@ -1,0 +1,102 @@
+{
+  "commit": "0235116ac6ce15e09d2e226475ec8729e1526576",
+  "action": {
+    "round": 8,
+    "request_id": "b6d32365-a114-4bad-9762-7dd3e88e6c5a",
+    "control_id": "6169dc54-5f83-4172-8103-872eb4dfeedc",
+    "attempt_id": 1,
+    "reviewed_commit": "8a36de6e04926e0314650accb7e7c24adbc5359a",
+    "verdict": "PASS_CONTINUE",
+    "raw_response_sha256": "313037b86b28b13a4049464937646ceccdfa9037cf153572165002587986403b",
+    "instruction": "Add one test-focused Fresh sealed-journal/checkpoint round-trip conformance action for turn-009, changing production code only if a test exposes a real defect. Build a journal with one logical request, at least two attempts, a failure or delivery_uncertain event, a canonical result and a duplicate; snapshot events.jsonl, head.json, replayed records and checkpoint, close/reopen the journal and assert all bytes, derived records and checkpoint wires are identical and no send/maintenance/navigation occurs. Register a fresh bridge session from that reopened journal and prove the only initial authority transfer is fresh_welcome/checkpoint; feed that checkpoint to the background restore path and prove it only replaces the expendable mirror plus status pings and emits no C2C_FRESH_REVIEW. Separately corrupt head sequence/hash, delete a complete event tail, and construct a fully recomputed event hash/head around an invalid attempt sequence or wire; assert reopening fails closed, preserves the corrupted bytes, creates no replacement journal and cannot produce a checkpoint. Run full Python/Node/syntax/manifest/diff gates and publish immutable turn-009 evidence only; do not change version/protocol/build, retry policy, legacy paths or unrelated runtime authority.",
+    "codex_action": "Added sealed two-attempt failure canonical duplicate roundtrip with byte-identical head events records and checkpoint, fresh welcome without sends, background mirror-only restoration, and five corrupted-journal fail-closed preservation scenarios.",
+    "checks": [
+      {
+        "name": "reviewer-directed-conformance",
+        "args": [
+          "C:\\Users\\Lenovo\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+          "-B",
+          "-m",
+          "unittest",
+          "-v",
+          "test_fresh_delivery.FreshTests.test_sealed_checkpoint_roundtrip_exports_background_fixture_without_sending"
+        ],
+        "cwd": "D:\\Worktrees\\codex-with-chatgpt\\c2c-v2-github-evidence-r1\\poc_v2\\extension_control\\bridge",
+        "exit_code": 0,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "3e1d2b8e7b732ac1917c70c2751665f7cd4e01203d93fd2ee372b23d042ac7fc"
+      },
+      {
+        "name": "scoped-diff-check",
+        "args": [
+          "git",
+          "diff",
+          "--check",
+          "--",
+          "poc_v2/extension_control"
+        ],
+        "cwd": "D:\\Worktrees\\codex-with-chatgpt\\c2c-v2-github-evidence-r1",
+        "exit_code": 0,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "916ea11513a562aed298a46edc2c1bef37c33ea1d736c3fc53d6b8173bf742d9"
+      }
+    ],
+    "required_GitHub_reads_cross_checked": [
+      {
+        "path": ".c2c-v2/stability-r1/turn-008/review_request.json",
+        "ref_commit": "8a36de6e04926e0314650accb7e7c24adbc5359a",
+        "sha256": "4477a6ff67e451c3be96c1380f8fd92e985e6fb2db324dd92302e36dede6424b",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/fresh_delivery.py",
+        "ref_commit": "7d7d217cae8a3ed234de6df8d5ba0564027bb3d5",
+        "sha256": "2c126056b366e17b5bde1f3b4acdb62a2307e7b8b5cc0b289da037dd37f3310a",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": "poc_v2/extension_control/bridge/test_fresh_delivery.py",
+        "ref_commit": "7d7d217cae8a3ed234de6df8d5ba0564027bb3d5",
+        "sha256": "932cfce81e29b4ee693a980f4931aa11d14fca0d20898217ac0bf7e8b485fb73",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": "poc_v2/extension_control/chrome_extension/fresh_background.js",
+        "ref_commit": "7d7d217cae8a3ed234de6df8d5ba0564027bb3d5",
+        "sha256": "f99982153ed6de27227e49802030d6a6e5474242af6d12f063b2419616cec038",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": ".c2c-v2/stability-r1/turn-008/test_summary.json",
+        "ref_commit": "8a36de6e04926e0314650accb7e7c24adbc5359a",
+        "sha256": "750aedce27c267d9ba8724f9578c82206dc68b977cb5349e91a03504059bf29a",
+        "read_method": "GitHub fetch_file"
+      },
+      {
+        "path": ".c2c-v2/stability-r1/turn-008/source_hashes.json",
+        "ref_commit": "8a36de6e04926e0314650accb7e7c24adbc5359a",
+        "sha256": "b49a7dbfc5e3d444eccc54d4370b5f1d6095bc452b7179eeb4458ff39a6a6c0e",
+        "read_method": "GitHub fetch_file plus blob verification"
+      },
+      {
+        "path": ".c2c-v2/stability-r1/turn-008/previous_action.json",
+        "ref_commit": "8a36de6e04926e0314650accb7e7c24adbc5359a",
+        "sha256": "a9bf34301f7db1aec0a7598d163136569741285749511dc91965b020c1e1bedc",
+        "read_method": "GitHub fetch_file"
+      }
+    ],
+    "source_change": true,
+    "USER_INTERMEDIATE_RELAY": 0,
+    "USER_ACTIONS_DURING_CONTROL_LOOP": 0,
+    "interpretation": "Finite instruction was interpreted within owner scope; no arbitrary reviewer shell text was executed.",
+    "full_regression": {
+      "python_passed": 128,
+      "node_passed": 174,
+      "syntax_files": 21,
+      "manifest": "PASS",
+      "diff": "PASS",
+      "legacy_unchanged": 14
+    },
+    "full_regression_evidence": "repairs/turn08-checkpoint-roundtrip/checks"
+  }
+}

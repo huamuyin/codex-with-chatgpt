@@ -1,0 +1,91 @@
+{
+  "STATE": "REVIEW_RESULT",
+  "ROUND": 1,
+  "REQUEST_ID": "f83239a2-cb22-4b02-b9c1-ba1d210eff2b",
+  "CONTROL_ID": "6f13b89b-41ac-41d1-9421-3642175ae779",
+  "ATTEMPT_ID": 1,
+  "REVIEWED_COMMIT": "cbf5f0058bf2d96ac098daa6d6f6c2f4ae566343",
+  "VERDICT": "CHANGES_REQUIRED",
+  "FINDINGS": [
+    {
+      "severity": "MAJOR",
+      "path": "poc_v2/extension_control/bridge/fresh_response.py",
+      "finding": "The structured response contract is still not fully fail-closed for GITHUB_RESOURCES_READ. validate_response only checks that the field is a list. It accepts an empty list and does not validate each resource object's required path/ref_commit/github_url/read_method/source_excerpt fields. The current positive fixture itself uses GITHUB_RESOURCES_READ=[] and passes. Therefore an identity-correct response can be consumed while omitting all actual GitHub-read provenance required by this stability-turn contract."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The preceding Codex action was correctly evidence-only. GitHub compare from 237afd7d5544dfd476347166cb202a53d9b9ca75 to a4ae37e774e253bffc1a7796db346526efe8498d shows one commit adding only four campaign-complete evidence files; no Fresh source changed."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The mandatory failure campaign gate is substantively closed: failure_campaign_ledger.json records all ten bounded fault classes PASS, FAILURE_RECOVERY_CAMPAIGN=PASS, TEN_TURN_LOOP_COMPLETED=0/10, no wrong-thread/reply/commit acceptance, no lost completed review, no unauthorized automatic send, and zero User relay/actions."
+    }
+  ],
+  "REVIEW_SUMMARY": "Independent exact-commit review found the incoming authority and preceding action coherent. PR #1 head matched cbf5f0058bf2d96ac098daa6d6f6c2f4ae566343 at review start. The implementation remains fixed at 5c8b56ff39e1a40c221e5aee308e34e67f24fbc5, and all three required source blobs match turn-001 source_hashes.json. The preceding a4ae37e774e253bffc1a7796db346526efe8498d action was evidence-only and correctly closed the bounded failure campaign before stability turn 1. The previously identified required-field defect for REVIEW_SUMMARY, GITHUB_RESOURCES_READ and NEXT_CODEX_INSTRUCTION was partially corrected, including the 4096-character instruction bound. However, fail-closed consumption remains incomplete because GITHUB_RESOURCES_READ provenance entries are not structurally validated and an empty list is accepted by the positive fixture. That is a real contract defect for this turn's stated focus, so PASS_CONTINUE is not justified yet.",
+  "GITHUB_RESOURCES_READ": [
+    {
+      "path": ".c2c-v2/stability-r1/turn-001/review_request.json",
+      "ref_commit": "cbf5f0058bf2d96ac098daa6d6f6c2f4ae566343",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/cbf5f0058bf2d96ac098daa6d6f6c2f4ae566343/.c2c-v2/stability-r1/turn-001/review_request.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"focus\": \"Complete structured review contract and fail-closed consumption\""
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-001/test_summary.json",
+      "ref_commit": "cbf5f0058bf2d96ac098daa6d6f6c2f4ae566343",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/cbf5f0058bf2d96ac098daa6d6f6c2f4ae566343/.c2c-v2/stability-r1/turn-001/test_summary.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"python_passed\": 112, \"node_passed\": 169"
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-001/source_hashes.json",
+      "ref_commit": "cbf5f0058bf2d96ac098daa6d6f6c2f4ae566343",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/cbf5f0058bf2d96ac098daa6d6f6c2f4ae566343/.c2c-v2/stability-r1/turn-001/source_hashes.json",
+      "read_method": "GitHub fetch_file plus blob verification",
+      "source_excerpt": "\"implementation_commit\": \"5c8b56ff39e1a40c221e5aee308e34e67f24fbc5\""
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-001/previous_action.json",
+      "ref_commit": "cbf5f0058bf2d96ac098daa6d6f6c2f4ae566343",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/cbf5f0058bf2d96ac098daa6d6f6c2f4ae566343/.c2c-v2/stability-r1/turn-001/previous_action.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"parser_recovery\": \"PASS\", \"required_field_fix_independent_review\": \"PASS\""
+    },
+    {
+      "path": ".c2c-v2/failure-recovery-r1/campaign-complete/failure_campaign_ledger.json",
+      "ref_commit": "cbf5f0058bf2d96ac098daa6d6f6c2f4ae566343",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/cbf5f0058bf2d96ac098daa6d6f6c2f4ae566343/.c2c-v2/failure-recovery-r1/campaign-complete/failure_campaign_ledger.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"FAILURE_RECOVERY_CAMPAIGN\": \"PASS\", \"TEN_TURN_LOOP_COMPLETED\": \"0/10\""
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_response.py",
+      "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c8b56ff39e1a40c221e5aee308e34e67f24fbc5/poc_v2/extension_control/bridge/fresh_response.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "if not isinstance(value.get(\"GITHUB_RESOURCES_READ\"), list): raise ResponseError(\"response_resources_invalid\")"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/test_fresh_response.py",
+      "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c8b56ff39e1a40c221e5aee308e34e67f24fbc5/poc_v2/extension_control/bridge/test_fresh_response.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"REVIEW_SUMMARY\": \"Inspected the exact evidence.\", \"GITHUB_RESOURCES_READ\": []"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_protocol.md",
+      "ref_commit": "5c8b56ff39e1a40c221e5aee308e34e67f24fbc5",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c8b56ff39e1a40c221e5aee308e34e67f24fbc5/poc_v2/extension_control/bridge/fresh_protocol.md",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "Missing, mistyped, blank or oversized controls fail closed."
+    },
+    {
+      "path": "commit a4ae37e774e253bffc1a7796db346526efe8498d",
+      "ref_commit": "a4ae37e774e253bffc1a7796db346526efe8498d",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/commit/a4ae37e774e253bffc1a7796db346526efe8498d",
+      "read_method": "GitHub fetch_commit and compare from 237afd7d5544dfd476347166cb202a53d9b9ca75",
+      "source_excerpt": "poc: close all bounded failure gates with independent parser recovery review"
+    }
+  ],
+  "NEXT_CODEX_INSTRUCTION": "Patch only Fresh response-contract validation/tests/docs and turn-002 evidence: require GITHUB_RESOURCES_READ to be a non-empty list whose every item is an object containing non-empty string fields path, ref_commit, github_url, read_method and source_excerpt; require ref_commit to be exactly 40 hexadecimal characters and github_url to be an https://github.com/ URL. Add a positive valid-resource case plus fail-closed tests for an empty list, non-object entry, each missing field, blank/wrong-typed fields, malformed ref_commit and non-GitHub URL. Preserve existing framing, envelope, REVIEW_SUMMARY and <=4096 NEXT_CODEX_INSTRUCTION checks. Run full Python/Node/syntax/manifest/diff gates and publish only the bounded source/test/doc plus turn-002 evidence needed for the next stability review."
+}

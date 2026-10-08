@@ -1,0 +1,10 @@
+{
+  "source_commit": "1e41136b2d5cef8c85ead54fd2a76559154e68cf",
+  "python_passed": 116,
+  "node_passed": 170,
+  "syntax_files": 21,
+  "manifest": "PASS",
+  "diff": "PASS",
+  "legacy_unchanged": 14,
+  "evidence": "repairs/turn02-byte-prefix/checks"
+}

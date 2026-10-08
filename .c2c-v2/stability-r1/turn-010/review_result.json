@@ -1,0 +1,151 @@
+{
+  "STATE": "REVIEW_RESULT",
+  "ROUND": 10,
+  "REQUEST_ID": "6c88876d-e36f-4429-95f1-5707ca690ec0",
+  "CONTROL_ID": "84cf2dfb-afb5-40ac-bfca-20cc0aea84e2",
+  "ATTEMPT_ID": 1,
+  "REVIEWED_COMMIT": "e8c7d4bfd60f1f144c7153ab1e25ac61cf0ab766",
+  "VERDICT": "PASS_CONTINUE",
+  "FINDINGS": [
+    {
+      "severity": "INFO",
+      "finding": "The Round9 CHANGES_REQUIRED action was actually executed at edb11582ac9006e4881db52d02df3e4bf509fec0. The locator now retains every visible data-message-author-role node in transcript ordering, maps non-user/non-assistant explicit roles to unknown barriers, recognizes effective editability including isContentEditable and empty/true/plaintext-only contenteditable forms, and preserves duplicate-marker/full-wire ambiguity. Deterministic negatives assert no association, click, send or result; these changes remain present in the final b71cf55ceac46b0844b0533e7ad80acc9edec785 tree."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The recovery between turns 9 and 10 is bounded Fresh maintenance rather than legacy recovery. prepare_future_thread requires a canonical completed Fresh attempt, exact request/control/attempt and frozen URL, no active or pending request, a fresh status sample showing the old native tab absent, exactly one complete blank ChatGPT root tab with a different native ID, no pending navigation, and matching current bridge/background/manifest identity. Background independently rechecks the saved attempt, new tab, old-tab absence, unique-root condition and running observer state before the sole navigation side effect."
+    },
+    {
+      "severity": "INFO",
+      "finding": "prepare_future_thread does not alter the journal, checkpoint, old attempt target_tab_id, nonce, canonical result or attempt history and does not observe, retry, send or create a logical request. Its ACK is explicitly non-authoritative for readiness; ordinary post-navigation status/component gates must pass before a later new logical request. The recovery evidence records old_bindings_unchanged=true and zero user relay/actions."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Legacy and security limits remain intact. POST /recover still returns 410 legacy_recovery_closed; the legacy ID is excluded from replay; no legacy storage/import/backfill is supported; restart and reconnect do not auto-send; delivery remains explicitly AT_LEAST_ONCE with duplicate sends permitted and no exactly-once claim; control credentials remain ephemeral; journal hashes are integrity checks rather than signatures; and guaranteed power-loss recovery is not claimed."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Final source authority is internally consistent. Every required source blob at b71cf55ceac46b0844b0533e7ad80acc9edec785 matches turn-010/source_hashes.json. Version remains 0.9.8, protocol remains 3 and build remains c2c-v2-fresh-paired-turn-completion-1. The final reported regression is 130 Python passes, 179 Node passes, 21 syntax files, manifest PASS, diff PASS and 14 legacy sources unchanged."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Authority lineage is finite and reviewable: ba5c479d8825ffed3cb8754a42add4cf7741f527 -> edb11582ac9006e4881db52d02df3e4bf509fec0 executes the Round9 locator correction; -> b71cf55ceac46b0844b0533e7ad80acc9edec785 adds the bounded future-thread recovery after the old process/tab loss; -> 07cc1256e690ff80453380944e6dfae0f017b618 changes only recovery-evidence line endings; -> e8c7d4bfd60f1f144c7153ab1e25ac61cf0ab766 adds only Turn10 review evidence. No blocking source, recovery-authority or security-limit defect was found."
+    }
+  ],
+  "REVIEW_SUMMARY": "The exact incoming authority e8c7d4bfd60f1f144c7153ab1e25ac61cf0ab766 was independently reviewed without substituting branch HEAD; PR #1 head matched that commit at review start. All four required Turn10 evidence files and all seven required source/test files were independently read at their specified immutable refs, and all seven required Git blob IDs match source_hashes.json. The preceding Round9 locator defects are corrected and retained. The intervening tab/process-loss repair introduces only a tightly gated Fresh future-thread preparation path; it does not import legacy authority, rebind completed history, create/send/retry a request, or weaken existing Host/Origin/token, journal, checkpoint, reply or component gates. The documented limits remain explicit: at-least-once rather than exactly-once delivery, fail-closed journal integrity rather than guaranteed crash recovery, ephemeral credentials, closed legacy recovery and no automatic replay. No real defect requiring another source correction was found. PASS_CONTINUE therefore authorizes only the finite Turn10 closeout action below; there must be no Turn11 or further control-loop review.",
+  "GITHUB_RESOURCES_READ": [
+    {
+      "path": ".c2c-v2/stability-r1/turn-010/review_request.json",
+      "ref_commit": "e8c7d4bfd60f1f144c7153ab1e25ac61cf0ab766",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/e8c7d4bfd60f1f144c7153ab1e25ac61cf0ab766/.c2c-v2/stability-r1/turn-010/review_request.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"focus\": \"Final bounded stability evidence and retained recovery/security limits\""
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-010/test_summary.json",
+      "ref_commit": "e8c7d4bfd60f1f144c7153ab1e25ac61cf0ab766",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/e8c7d4bfd60f1f144c7153ab1e25ac61cf0ab766/.c2c-v2/stability-r1/turn-010/test_summary.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"python_passed\": 130, \"node_passed\": 179, \"manifest\": \"PASS\", \"diff\": \"PASS\""
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-010/source_hashes.json",
+      "ref_commit": "e8c7d4bfd60f1f144c7153ab1e25ac61cf0ab766",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/e8c7d4bfd60f1f144c7153ab1e25ac61cf0ab766/.c2c-v2/stability-r1/turn-010/source_hashes.json",
+      "read_method": "GitHub fetch_file plus independent blob verification",
+      "source_excerpt": "\"implementation_commit\": \"b71cf55ceac46b0844b0533e7ad80acc9edec785\""
+    },
+    {
+      "path": ".c2c-v2/stability-r1/turn-010/previous_action.json",
+      "ref_commit": "e8c7d4bfd60f1f144c7153ab1e25ac61cf0ab766",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/e8c7d4bfd60f1f144c7153ab1e25ac61cf0ab766/.c2c-v2/stability-r1/turn-010/previous_action.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"codex_action\": \"Made explicit unknown author roles transcript barriers; honored effective editability\""
+    },
+    {
+      "path": ".c2c-v2/stability-r1/recovery-between-009-010/repair_result.json",
+      "ref_commit": "e8c7d4bfd60f1f144c7153ab1e25ac61cf0ab766",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/e8c7d4bfd60f1f144c7153ab1e25ac61cf0ab766/.c2c-v2/stability-r1/recovery-between-009-010/repair_result.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"repair\": \"Authenticated explicit preparation for future logical request only; canonical completed anchor plus missing old tab, unique explicit blank new tab, exact URL/component/identity and idle gates. No history update, rebind, send or observer start.\""
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_protocol.md",
+      "ref_commit": "b71cf55ceac46b0844b0533e7ad80acc9edec785",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b71cf55ceac46b0844b0533e7ad80acc9edec785/poc_v2/extension_control/bridge/fresh_protocol.md",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "Existing request recovery gates remain unchanged. This action does not apply to legacy smoke."
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_response.py",
+      "ref_commit": "b71cf55ceac46b0844b0533e7ad80acc9edec785",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b71cf55ceac46b0844b0533e7ad80acc9edec785/poc_v2/extension_control/bridge/fresh_response.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "if not isinstance(instruction, str) or not instruction.strip() or len(instruction) > 4096:"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_delivery.py",
+      "ref_commit": "b71cf55ceac46b0844b0533e7ad80acc9edec785",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b71cf55ceac46b0844b0533e7ad80acc9edec785/poc_v2/extension_control/bridge/fresh_delivery.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "LEGACY_ID = \"4754374f-14dd-4004-bf87-3b87972e17fa\""
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_bridge.py",
+      "ref_commit": "b71cf55ceac46b0844b0533e7ad80acc9edec785",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b71cf55ceac46b0844b0533e7ad80acc9edec785/poc_v2/extension_control/bridge/fresh_bridge.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "if self.path == \"/recover\": self.write(410, {\"error_code\": \"legacy_recovery_closed\"}); return"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_background.js",
+      "ref_commit": "b71cf55ceac46b0844b0533e7ad80acc9edec785",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b71cf55ceac46b0844b0533e7ad80acc9edec785/poc_v2/extension_control/chrome_extension/fresh_background.js",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "if (old || tabs.length !== 1 || tabs[0].id !== m.tab_id || tabs[0].url !== \"https://chatgpt.com/\" || tabs[0].status !== \"complete\" || tabs[0].pendingUrl) throw Error(\"future_thread_setup_unconfirmed\");"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/test_fresh_delivery.py",
+      "ref_commit": "b71cf55ceac46b0844b0533e7ad80acc9edec785",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b71cf55ceac46b0844b0533e7ad80acc9edec785/poc_v2/extension_control/bridge/test_fresh_delivery.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "def test_future_setup_only_navigates_new_tab_without_rebinding_completed_authority(self):"
+    },
+    {
+      "path": "poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+      "ref_commit": "b71cf55ceac46b0844b0533e7ad80acc9edec785",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b71cf55ceac46b0844b0533e7ad80acc9edec785/poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "test(\"future thread preparation opens exact frozen URL for a new request only with no old binding mutation or send\""
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_locator.js",
+      "ref_commit": "b71cf55ceac46b0844b0533e7ad80acc9edec785",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b71cf55ceac46b0844b0533e7ad80acc9edec785/poc_v2/extension_control/chrome_extension/fresh_locator.js",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "if (explicit) return \"unknown\";"
+    },
+    {
+      "path": "commit edb11582ac9006e4881db52d02df3e4bf509fec0",
+      "ref_commit": "edb11582ac9006e4881db52d02df3e4bf509fec0",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/commit/edb11582ac9006e4881db52d02df3e4bf509fec0",
+      "read_method": "GitHub fetch_commit and immutable compare",
+      "source_excerpt": "poc: execute reviewer-directed stability turn 09 action"
+    },
+    {
+      "path": "commit b71cf55ceac46b0844b0533e7ad80acc9edec785",
+      "ref_commit": "b71cf55ceac46b0844b0533e7ad80acc9edec785",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/commit/b71cf55ceac46b0844b0533e7ad80acc9edec785",
+      "read_method": "GitHub fetch_commit and immutable compare",
+      "source_excerpt": "poc: prepare future Fresh thread after completed native tab loss"
+    },
+    {
+      "path": "commit 07cc1256e690ff80453380944e6dfae0f017b618",
+      "ref_commit": "07cc1256e690ff80453380944e6dfae0f017b618",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/commit/07cc1256e690ff80453380944e6dfae0f017b618",
+      "read_method": "GitHub fetch_commit and immutable compare",
+      "source_excerpt": "poc: normalize recovery authority JSON line endings"
+    }
+  ],
+  "NEXT_CODEX_INSTRUCTION": "Perform exactly one evidence-only Turn10 closeout action and then STOP. Persist this exact REVIEW_RESULT and create one final Fresh stability-closure JSON under .c2c-v2/stability-r1/final/ that records REVIEWED_COMMIT=e8c7d4bfd60f1f144c7153ab1e25ac61cf0ab766, implementation b71cf55ceac46b0844b0533e7ad80acc9edec785, Round9 action edb11582ac9006e4881db52d02df3e4bf509fec0, recovery authority 07cc1256e690ff80453380944e6dfae0f017b618, final gates 130 Python/179 Node/21 syntax/manifest PASS/diff PASS/14 legacy unchanged, and independent required-source blob verification PASS. Record retained limits explicitly: AT_LEAST_ONCE with duplicate sends allowed and no exactly-once claim; legacy /recover closed and no legacy import; restart/reconnect never auto-send; prepare_future_thread is future-only and cannot alter journal/checkpoint/bindings/result/history or send/retry/create; controller token is nonpersistent; journal hashes are not signatures; guaranteed power-loss recovery is not claimed. Make no source, version, protocol or build changes, create no turn-011 or new review_request, perform no send/retry/navigation/deployment/installer/productionization/other-product action, commit/push only the final closure evidence if required by the existing protocol, and STOP."
+}

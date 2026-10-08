@@ -1,0 +1,92 @@
+{
+  "tested_implementation_commit": "8b7797ed5936c2027fcff815cd71ffc16eef215a",
+  "caused_by_round4_control_id": "6725eaf5-59a0-44ea-89b3-10b6d2a04488",
+  "python": {
+    "command": "python -B -m unittest -v test_bridge_server test_fresh_delivery",
+    "passed": 96,
+    "failed": 0
+  },
+  "node": {
+    "command": "node --test poc_v2/extension_control/tests/*.test.cjs",
+    "passed": 145,
+    "failed": 0
+  },
+  "focused_same_version_reinjection": {
+    "passed": 2,
+    "failed": 0,
+    "variants": [
+      "current Locator implementation",
+      "current Contract implementation"
+    ],
+    "exactly_one_listener": true,
+    "prior_listener_unregistered": true,
+    "second_listener_installed": true,
+    "current_helper_invoked": true,
+    "automatic_review_dispatches": 0,
+    "composer_clicks": 0,
+    "new_logical_requests": 0,
+    "retry_attempts": 0
+  },
+  "mutation_control": {
+    "original_early_return_restored_only_in_outside_Git_mock_copy": true,
+    "expected_failures": 2,
+    "result": "Original defect detected"
+  },
+  "syntax": {
+    "files": 19,
+    "result": "PASS"
+  },
+  "manifest": {
+    "result": "PASS",
+    "exact_baseline_equal": true,
+    "permissions_unchanged": true,
+    "host_permissions_unchanged": true,
+    "CSP_unchanged": true
+  },
+  "diff_check": "PASS",
+  "patch_replay": {
+    "files": 25,
+    "byte_exact": true
+  },
+  "version": "0.9.8",
+  "protocol": 3,
+  "build": "c2c-v2-fresh-paired-turn-completion-1",
+  "actual_output_hashes": {
+    "python": {
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "c89e32a95b9c24abe0c7ab273b0b2121ee2b7d5c2b414624e652e06f50c98a27"
+    },
+    "node": {
+      "stdout_sha256": "f081ce439a2a906720d347df9cc135ab9d9fcabc4f40fa58729013361a889e13",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "focused-node": {
+      "stdout_sha256": "a427f4cf92f36a4000452d43ca77f1598e0213bd00018ead00e4541af31546e9",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "git-diff-check": {
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "8872e25e1d94b4155bdee5faadc4a3a909316e6ec90cc62f5a24b6501c9eee39"
+    }
+  },
+  "actual_python_summary": [
+    "----------------------------------------------------------------------",
+    "Ran 96 tests in 1.987s",
+    "",
+    "OK"
+  ],
+  "actual_node_summary": [
+    "ℹ tests 145",
+    "ℹ suites 0",
+    "ℹ pass 145",
+    "ℹ fail 0",
+    "ℹ cancelled 0",
+    "ℹ skipped 0",
+    "ℹ todo 0",
+    "ℹ duration_ms 1247.5037"
+  ],
+  "limitations": [
+    "Two new regressions use a mock page/Chrome context, not physical browser lifecycle attestation.",
+    "B2 acceptance is historical; Round 5 uses a new logical review."
+  ]
+}
