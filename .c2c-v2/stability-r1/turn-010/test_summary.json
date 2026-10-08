@@ -1,0 +1,10 @@
+{
+  "source_commit": "b71cf55ceac46b0844b0533e7ad80acc9edec785",
+  "python_passed": 130,
+  "node_passed": 179,
+  "syntax_files": 21,
+  "manifest": "PASS",
+  "diff": "PASS",
+  "legacy_unchanged": 14,
+  "evidence": "repairs/turn09-future-thread-setup-verified/checks"
+}

@@ -1,0 +1,47 @@
+{
+  "implementation_commit": "b71cf55ceac46b0844b0533e7ad80acc9edec785",
+  "files": [
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_protocol.md",
+      "ref_commit": "b71cf55ceac46b0844b0533e7ad80acc9edec785",
+      "sha256": "4e6484d1e0fc7062587e22cdf69f1222f0feb50ccecbdd35bae4209bf04ae7c7",
+      "git_blob_oid": "500644c2969cdffd323c2bec04b039e6315a417f"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_response.py",
+      "ref_commit": "b71cf55ceac46b0844b0533e7ad80acc9edec785",
+      "sha256": "d8256f3e19ad2e5cb5beb1d0f83411116f81b4b5c58e7d3a607c4c75c2c904d9",
+      "git_blob_oid": "b4ac8908870cc6ec12260efedd1944d28e172a79"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_delivery.py",
+      "ref_commit": "b71cf55ceac46b0844b0533e7ad80acc9edec785",
+      "sha256": "2c126056b366e17b5bde1f3b4acdb62a2307e7b8b5cc0b289da037dd37f3310a",
+      "git_blob_oid": "e7f756872f2fb949184e93db4894bd1a0d93341c"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_bridge.py",
+      "ref_commit": "b71cf55ceac46b0844b0533e7ad80acc9edec785",
+      "sha256": "1ac3eda532cfbf65f6c10cd4080649ce48f988cf775c4eeeef01f43b5c70d1d8",
+      "git_blob_oid": "0ec9ae65df2efa70abb92ec167e4942bb000c390"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_background.js",
+      "ref_commit": "b71cf55ceac46b0844b0533e7ad80acc9edec785",
+      "sha256": "442dee990573fe9be815b6668b222def8f87ff00b9bd23c89f63f68f14ded0a0",
+      "git_blob_oid": "b393cbab8806048edd4e8228883c17d0e2b1f3ec"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/test_fresh_delivery.py",
+      "ref_commit": "b71cf55ceac46b0844b0533e7ad80acc9edec785",
+      "sha256": "2025d9eea75dce82ca68143c8f7648d476394055c2299ced407909882a891268",
+      "git_blob_oid": "2e2d623541775929c45d34605c792c81a1d04dd1"
+    },
+    {
+      "path": "poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+      "ref_commit": "b71cf55ceac46b0844b0533e7ad80acc9edec785",
+      "sha256": "e01057ce31f67272a4eb41ee06966e433b864e2c698ff7d917b6f00d914db903",
+      "git_blob_oid": "0892d1a0e9c6a830d9839630d2dd2a1ba02e9845"
+    }
+  ]
+}
