@@ -19,6 +19,47 @@ EXTENSION = "a" * 32
 
 
 class FreshTests(unittest.TestCase):
+    def future_setup_fixture(self):
+        r = self.send(); self.s.message(self.ws, self.msg(r))
+        self.s.status.update(connected=False, candidate_count=0, tab_id=None, url="",
+            bound_tab_diagnostics=[dict(tab_id=7, exists=False, status="missing", url="")],
+            observed_targets=[dict(tab_id=8, url="https://chatgpt.com/", status="complete", pending_url="")])
+        return dict(action="prepare_future_thread", request_id=r["request_id"], control_id=r["control_id"],
+                    attempt_id=1, tab_id=8, url=URL)
+
+    def test_future_setup_only_navigates_new_tab_without_rebinding_completed_authority(self):
+        value = self.future_setup_fixture(); raw = (self.path / "events.jsonl").read_bytes()
+        records = copy.deepcopy(self.s.requests.records); checkpoint = self.s.requests.checkpoint()
+        mid, _ = self.s.maintenance(value); m = self.ws.messages[-1]
+        self.assertEqual(m["request"]["target_tab_id"], 7); self.assertEqual(m["tab_id"], 8)
+        self.assertTrue(m["future_only"]); self.assertEqual(m["url"], URL)
+        self.s.message(self.ws, dict(type="fresh_maintenance_result", maintenance_id=mid,
+                                    action="prepare_future_thread", complete=True, future_only=True))
+        self.assertFalse(self.s.ready()); self.assertIsNone(self.s.active)
+        self.assertEqual((self.path / "events.jsonl").read_bytes(), raw)
+        self.assertEqual(self.s.requests.records, records); self.assertEqual(self.s.requests.checkpoint(), checkpoint)
+
+    def test_future_setup_refuses_changed_identity_pending_duplicate_stale_or_existing_old_tab(self):
+        value = self.future_setup_fixture(); base = copy.deepcopy(self.s.status)
+        raw = (self.path / "events.jsonl").read_bytes(); count = len(self.ws.messages)
+        for change in (dict(request_id=str(uuid.uuid4())), dict(control_id=str(uuid.uuid4())),
+                       dict(attempt_id=2), dict(tab_id=7), dict(url="https://chatgpt.com/c/other")):
+            with self.subTest(change=change), self.assertRaises(b.RequestError): self.s.maintenance({**value, **change})
+        for variant in ("old_exists", "duplicate", "loading", "pending_url", "other_url", "mixed_components", "stale", "active", "pending", "failed"):
+            self.s.status = copy.deepcopy(base); self.s.seen_at = f.time.monotonic(); self.s.active = None
+            r = self.s.requests.records[value["request_id"]]; r["status"] = "complete"
+            if variant == "old_exists": self.s.status["bound_tab_diagnostics"][0]["exists"] = True
+            if variant == "duplicate": self.s.status["observed_targets"].append(dict(tab_id=9, url="https://chatgpt.com/", status="complete"))
+            if variant == "loading": self.s.status["observed_targets"][0]["status"] = "loading"
+            if variant == "pending_url": self.s.status["observed_targets"][0]["pending_url"] = URL
+            if variant == "other_url": self.s.status["observed_targets"][0]["url"] = URL
+            if variant == "mixed_components": self.s.status["components"]["background_version"] = "0.8.1"
+            if variant == "stale": self.s.seen_at -= 91
+            if variant == "active": self.s.active = dict(request_id=value["request_id"])
+            if variant in ("pending", "failed"): r["status"] = variant
+            with self.subTest(variant=variant), self.assertRaises(b.RequestError): self.s.maintenance(value)
+            self.assertEqual(len(self.ws.messages), count); self.assertEqual((self.path / "events.jsonl").read_bytes(), raw)
+
     def setUp(self):
         root = os.environ.get("C2C_V2_TEST_DATA_ROOT")
         if not root or not Path(root).is_absolute(): raise AssertionError("explicit C2C_V2_TEST_DATA_ROOT required")

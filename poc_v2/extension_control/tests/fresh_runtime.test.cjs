@@ -89,6 +89,42 @@ function result(r = R, change = {}) { return { type: "C2C_FRESH_RESULT", ...r, c
   raw_reply: "  Fresh exact\r\n", assistant_generation_complete: true, content_identity: I, ...change }; }
 function sender(r = R) { return { id: fixture.bridge_identity.extension_id, tab: { id: r.target_tab_id }, url: r.conversation_url }; }
 
+test("future thread preparation opens exact frozen URL for a new request only with no old binding mutation or send", async () => {
+  const id = R.target_tab_id + 1, updates = [];
+  const w = worker({ tabs: [{ id, url: "https://chatgpt.com/", status: "complete" }], tabUpdate: async (...v) => updates.push(clone(v)) });
+  await w.call("restore", fixture.checkpoint); const before = clone(w.storage);
+  await w.call("maintenance", { maintenance_id: R.request_id, action: "prepare_future_thread", future_only: true,
+    request: R, tab_id: id, url: R.conversation_url });
+  assert.deepEqual(updates, [[id, { url: R.conversation_url }]]); assert.equal(w.sent.at(-1).complete, true);
+  assert.deepEqual(w.storage, before); assert.deepEqual(w.contentCalls, []); assert.deepEqual(w.forbidden, []);
+});
+
+test("future thread preparation rejects ambiguous changed or still present old authority with zero navigation", async () => {
+  const id = R.target_tab_id + 1;
+  for (const variant of ["unknown", "control", "nonce", "url", "tab", "flag", "old_exists", "duplicate", "loading", "pending_url", "other_url", "running", "mixed"]) {
+    const updates = [], tabs = [{ id, url: "https://chatgpt.com/", status: "complete" }];
+    if (variant === "old_exists") tabs.push({ id: R.target_tab_id, url: R.conversation_url, status: "complete" });
+    if (variant === "duplicate") tabs.push({ id: id + 1, url: "https://chatgpt.com/", status: "complete" });
+    if (variant === "loading") tabs[0].status = "loading";
+    if (variant === "pending_url") tabs[0].pendingUrl = R.conversation_url;
+    if (variant === "other_url") tabs[0].url = R.conversation_url;
+    const w = worker({ tabs, tabUpdate: async (...v) => updates.push(clone(v)) }); await w.call("restore", fixture.checkpoint);
+    const before = clone(w.storage), m = { maintenance_id: R.request_id, action: "prepare_future_thread", future_only: true,
+      request: clone(R), tab_id: id, url: R.conversation_url };
+    if (variant === "unknown") m.request.request_id = "00000000-0000-4000-8000-000000000001";
+    if (variant === "control") m.request.control_id = "00000000-0000-4000-8000-000000000002";
+    if (variant === "nonce") m.request.nonce = "a".repeat(32);
+    if (variant === "url") m.url = "https://chatgpt.com/c/other";
+    if (variant === "tab") m.tab_id = R.target_tab_id;
+    if (variant === "flag") m.future_only = false;
+    if (variant === "running") w.run('running.add("synthetic-active");');
+    if (variant === "mixed") w.run('bridge.version = "0.8.1";');
+    await w.call("maintenance", m); assert.deepEqual(updates, [], variant);
+    assert.equal(w.sent.some((x) => x.complete === true), false, variant);
+    assert.deepEqual(w.storage, before, variant); assert.deepEqual(w.contentCalls, [], variant);
+  }
+});
+
 test("Python checkpoint restores after cache loss without sending, recovery, navigation or injection", async () => {
   const w = worker({ storage: { "c2c.originalRequests.v2": { legacy: "untrusted" } } });
   await w.call("wire", JSON.stringify({ type: "fresh_welcome", bridge_identity: fixture.bridge_identity, checkpoint: fixture.checkpoint }));

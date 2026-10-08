@@ -299,3 +299,20 @@ non-empty roles are unknown barriers. Effective editability includes isContentEd
 empty/true/plaintext-only contenteditable, INPUT/TEXTAREA and textbox roles. Such surfaces,
 their descendants and containers do not establish transcript authority; a normal sibling
 remains eligible. Duplicate identity labels or duplicate full-wire users remain ambiguous.
+# Preparation after a completed Fresh tab is closed
+
+`prepare_future_thread` is an explicit authenticated controller maintenance action
+for a future new logical request. Its anchor must be a known canonical completed
+Fresh attempt with exact request/control/attempt identity and frozen conversation
+URL. Both bridge and background require the old native tab to be absent and a
+single complete blank ChatGPT tab with an explicitly supplied different native
+ID, no pending navigation, and matching Fresh components. Pending requests or a
+running observer block preparation. Unknown identity, stale status, duplicate
+tabs, another conversation, or a changed URL are rejected.
+
+It only navigates that blank tab to the anchor's exact URL. It does not change
+the journal, checkpoint, old tab binding, nonce, result or attempt history, and
+does not observe, retry, send, or create a logical request. Its ACK does not mean
+ready: post-navigation component/readiness checks are still required before a
+new logical request may bind the new tab. Existing request recovery gates remain
+unchanged. This action does not apply to legacy smoke.

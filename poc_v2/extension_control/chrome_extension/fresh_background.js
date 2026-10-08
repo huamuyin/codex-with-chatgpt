@@ -108,6 +108,18 @@ async function maintenance(m) {
     if (m.action === "sample_status") {
       const sampled = await status();
       if (!sampled.superseded) contentGenerationForAck = sampled.diagnostic.content_generation;
+    } else if (m.action === "prepare_future_thread") {
+      const known = attempts.get(C.key(m.request || {}));
+      if (m.future_only !== true || !known || !C.validRequest(m.request) || !C.sameAttempt(known, m.request) || running.size
+          || !Number.isSafeInteger(m.tab_id) || m.tab_id < 0 || m.tab_id === known.target_tab_id
+          || m.url !== known.conversation_url || !C.isConversationUrl(m.url)) throw Error("future_thread_setup_unconfirmed");
+      const tabs = await chrome.tabs.query({ url: "https://chatgpt.com/*" });
+      const old = await chrome.tabs.get(known.target_tab_id).catch(() => null);
+      if (old || tabs.length !== 1 || tabs[0].id !== m.tab_id || tabs[0].url !== "https://chatgpt.com/"
+          || tabs[0].status !== "complete" || tabs[0].pendingUrl) throw Error("future_thread_setup_unconfirmed");
+      await chrome.tabs.update(m.tab_id, { url: m.url });
+      send({ type: "fresh_maintenance_result", maintenance_id: m.maintenance_id, action: m.action,
+        complete: true, future_only: true }); return;
     } else if (m.action === "restore_thread") {
       const known = attempts.get(C.key(m.request || {}));
       if (!known || !C.sameAttempt(known, m.request) || m.tab_id !== known.target_tab_id
