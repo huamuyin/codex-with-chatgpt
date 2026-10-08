@@ -427,6 +427,44 @@ test("wire inside an editable draft and its ancestors cannot prove an outgoing t
   const real = user(); const actual = F.semanticDocument([real, wrapper]); assert.equal(L.findOriginalUserTurn(actual, identity).node, real);
 });
 
+test("explicit tool and system author nodes are retained as unknown barriers without results or sends", async () => {
+  for (const role of ["tool", "system"]) {
+    const barrier = new F.FixtureNode("div", { "data-message-author-role": role }, "Unrelated explicit role");
+    const reply = new F.FixtureNode("div", { "data-message-author-role": "assistant", "data-message-status": "complete" }, "completed reply");
+    const c = content([user(), barrier, reply]);
+    const L = c.sandbox.C2CV2FreshLocator, u = L.collectMessages(c.sandbox.document).find((m) => m.role === "user");
+    assert.equal(L.collectMessages(c.sandbox.document).some((m) => m.node === barrier && m.role === "unknown"), true);
+    assert.equal(L.findAssistantAfter(c.sandbox.document, u), null);
+    c.message({ type: "C2C_FRESH_OBSERVE", request: R, observation: { reply_wait_ms: 1000 } }); await c.settle();
+    assert.equal(c.sent.some((m) => m.raw_reply), false); assert.equal(c.clicks(), 0); assert.deepEqual(c.forbidden, []);
+  }
+});
+
+test("empty plaintext-only and inherited editability exclude draft wire while normal sibling still matches", async () => {
+  for (const kind of ["empty", "plaintext-only", "inherited"]) {
+    const attrs = kind === "empty" ? { contenteditable: "" } : kind === "plaintext-only" ? { contenteditable: "plaintext-only" } : {};
+    const draft = new F.FixtureNode("div", {}, R.message), editor = new F.FixtureNode("div", attrs, "", [draft]);
+    if (kind === "inherited") editor.isContentEditable = true;
+    const c = content([editor]); c.message({ type: "C2C_FRESH_OBSERVE", request: R }); await c.settle();
+    assert.equal(c.sent.some((m) => m.raw_reply), false); assert.equal(c.sent.at(-1).error_code, "outgoing_turn_not_confirmed");
+    assert.equal(c.clicks(), 0); assert.deepEqual(c.forbidden, []);
+    const normal = user(); const positive = content([normal, editor]);
+    const d = positive.message({ type: "C2C_FRESH_PING", target_tab_id: R.target_tab_id, requests: [R] }).attempt_diagnostics[0];
+    assert.equal(d.full_user_match, true);
+  }
+});
+
+test("duplicate full labels or two full users remain ambiguous with no association result or send", async () => {
+  for (const nodes of [[user(), user()], ...["REQUEST_ID", "CONTROL_ID", "NONCE"].map((key) => {
+    const value = key === "REQUEST_ID" ? R.request_id : R.control_id;
+    return [new F.FixtureNode("div", { "data-message-author-role": "user" }, R.message + `\n${key}: ${value}`)];
+  })]) {
+    const c = content(nodes); const d = c.message({ type: "C2C_FRESH_PING", target_tab_id: R.target_tab_id, requests: [R] }).attempt_diagnostics[0];
+    assert.equal(d.full_user_match, false); c.message({ type: "C2C_FRESH_OBSERVE", request: R }); await c.settle();
+    assert.equal(c.sent.some((m) => m.raw_reply), false); assert.equal(c.clicks(), 0); assert.deepEqual(c.forbidden, []);
+  }
+});
+
 test("explicit owned draft clear keeps unknown input and never clicks or emits a review result", () => {
   const c = content([user()], { allowSend: true }), composer = c.sandbox.document.querySelectorAll("main textarea")[0];
   composer.value = "unknown private draft";

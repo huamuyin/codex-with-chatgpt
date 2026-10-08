@@ -292,3 +292,10 @@ After JSON decoding, every object key and string value must contain Unicode scal
 Isolated UTF-16 surrogate code points are rejected, never repaired or normalized. Valid
 escaped surrogate pairs decode to their non-BMP scalar value and remain unchanged. The
 instruction limit counts decoded scalar characters: 4096 accepted, 4097 rejected.
+# Explicit roles and effective editable boundaries
+
+Visible nodes with an explicit author role participate in transcript ordering. Unrecognized
+non-empty roles are unknown barriers. Effective editability includes isContentEditable,
+empty/true/plaintext-only contenteditable, INPUT/TEXTAREA and textbox roles. Such surfaces,
+their descendants and containers do not establish transcript authority; a normal sibling
+remains eligible. Duplicate identity labels or duplicate full-wire users remain ambiguous.

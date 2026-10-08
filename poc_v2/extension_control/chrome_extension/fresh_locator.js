@@ -2,7 +2,7 @@
 
 globalThis.C2CV2FreshLocator = (() => {
   const TIERS = [
-    ["data-message-author-role", '[data-message-author-role="user"], [data-message-author-role="assistant"]'],
+    ["data-message-author-role", '[data-message-author-role]'],
     ["semantic-article", "main article, article, [role=\"article\"]"],
     ["accessible-role-name", '[role="listitem"][aria-label], [role="group"][aria-label], [role="region"][aria-label]'],
     ["stable-testid", '[data-testid^="conversation-turn"], [data-testid*="message"]'],
@@ -64,6 +64,7 @@ globalThis.C2CV2FreshLocator = (() => {
   function roleOf(node, text, expectedReply = "") {
     const explicit = attribute(node, "data-message-author-role").toLocaleLowerCase();
     if (explicit === "user" || explicit === "assistant") return explicit;
+    if (explicit) return "unknown";
     const labelled = labelRole(node);
     if (labelled) return labelled;
     const expected = normalizeText(expectedReply);
@@ -84,16 +85,18 @@ globalThis.C2CV2FreshLocator = (() => {
   }
 
   function isEditable(node) {
+    if (node?.isContentEditable === true) return true;
+    const editable = typeof node?.getAttribute === "function" ? node.getAttribute("contenteditable") : null;
     return /^(INPUT|TEXTAREA)$/u.test(node?.tagName || "") || attribute(node, "contenteditable") === "true"
-      || attribute(node, "role") === "textbox";
+      || attribute(node, "role") === "textbox" || typeof editable === "string" && ["", "true", "plaintext-only"].includes(editable.trim().toLowerCase());
   }
 
   function isTranscriptSurface(node) {
     for (let parent = node, depth = 0; parent && depth < MAX_STRUCTURAL_DEPTH; parent = parent.parentElement, depth++) {
       if (isEditable(parent)) return false;
     }
-    if (typeof node?.querySelector === "function") {
-      return !node.querySelector('input, textarea, [contenteditable="true"], [role="textbox"]');
+    if (typeof node?.querySelectorAll === "function") {
+      return ![...node.querySelectorAll('input, textarea, [contenteditable], [role="textbox"]')].some(isEditable);
     }
     const queue = [...(node?.children || [])]; let scanned = 0;
     while (queue.length && scanned++ < MAX_STRUCTURAL_NODES) {
@@ -182,7 +185,7 @@ globalThis.C2CV2FreshLocator = (() => {
       // Every roleOf branch is represented here; the final role and wire checks are unchanged.
       const cheap = String(node.textContent || "");
       const explicit = attribute(node, "data-message-author-role").toLowerCase();
-      const relevant = explicit === "user" || explicit === "assistant" || labelRole(node)
+      const relevant = Boolean(explicit) || labelRole(node)
         || cheap.includes("TASK_ID") && (cheap.includes("NONCE") && cheap.includes("COMMIT") || cheap.includes("STATE"))
         || expectedReply && normalizeText(cheap).includes(normalizeText(expectedReply));
       if (relevant && isTranscriptSurface(node) && isVisible(node)) {
