@@ -21,7 +21,7 @@ function worker(options = {}) {
       onMessage: event("message"), onStartup: event("startup"), onInstalled: event("installed"), reload: options.runtimeReload || forbid("extension_reload") },
       alarms: { create() {}, onAlarm: event("alarm") },
       tabs: { query: async () => clone(tabs), get: options.tabGet || (async (id) => clone(tabs.find((t) => t.id === id))),
-        create: forbid("create"), update: options.tabUpdate || forbid("navigate"), reload: options.tabReload || forbid("reload"), onUpdated: event("update"), onRemoved: event("remove"),
+        create: options.tabCreate || forbid("create"), update: options.tabUpdate || forbid("navigate"), reload: options.tabReload || forbid("reload"), onUpdated: event("update"), onRemoved: event("remove"),
         async sendMessage(id, m) { contentCalls.push({ id, ...clone(m) });
           if (options.sendMessage) return options.sendMessage(id, m);
           if (m.type === "C2C_FRESH_PING") return { type: "C2C_FRESH_READY", ...I, url: tabs.find((t) => t.id === id)?.url,
@@ -88,6 +88,62 @@ function user(r = R) { return new F.FixtureNode("div", { "data-message-author-ro
 function result(r = R, change = {}) { return { type: "C2C_FRESH_RESULT", ...r, conversation_url: r.conversation_url,
   raw_reply: "  Fresh exact\r\n", assistant_generation_complete: true, content_identity: I, ...change }; }
 function sender(r = R) { return { id: fixture.bridge_identity.extension_id, tab: { id: r.target_tab_id }, url: r.conversation_url }; }
+
+test("scoped new review entry creates its own tab and never selects the existing old conversation", async () => {
+  const setup = JSON.parse(fs.readFileSync(path.join(process.env.C2C_V2_TEST_DATA_ROOT, "new-review-session-cross-language.json"), "utf8"));
+  const tabs = [{id:7,url:"https://chatgpt.com/c/old",status:"complete"}], created=[];
+  const w=worker({tabs,tabCreate:async v=>{created.push(clone(v));const t={id:99,url:"https://chatgpt.com/",status:"complete"};tabs.push(t);return clone(t);}});
+  const scope={...setup.scope,intent:null,binding:null};
+  await w.call("wire",JSON.stringify({type:"fresh_welcome",bridge_identity:setup.bridge_identity,checkpoint:setup.empty_checkpoint,review_session_setup:scope}));
+  assert.equal(w.sent.at(-1).connected,false);assert.equal(w.run("target"),null);
+  await w.call("maintenance",{maintenance_id:R.request_id,action:"create_review_session",grant:setup.grant});
+  assert.equal(created.length,1);assert.equal(w.sent.find(x=>x.action==="create_review_session").proof.tab_id,99);
+  assert.equal(w.sent.at(-1).connected,true);assert.equal(w.sent.at(-1).tab_id,99);
+  assert.equal(w.sent.at(-1).review_setup_binding.nonce,setup.grant.nonce);
+  assert.equal(w.contentCalls.every(x=>x.type==="C2C_FRESH_PING" && x.id===99),true);
+  assert.equal(w.sent.some(x=>["fresh_review","fresh_bound","fresh_result"].includes(x.type)),false);
+  assert.deepEqual(tabs[0],{id:7,url:"https://chatgpt.com/c/old",status:"complete"});
+});
+
+test("scoped welcome cannot import historic request checkpoint or adopt an old tab", async () => {
+  const setup = JSON.parse(fs.readFileSync(path.join(process.env.C2C_V2_TEST_DATA_ROOT, "new-review-session-cross-language.json"), "utf8"));
+  const w=worker({tabs:[{id:7,url:"https://chatgpt.com/c/old",status:"complete"}]});
+  await assert.rejects(w.call("wire",JSON.stringify({type:"fresh_welcome",bridge_identity:setup.bridge_identity,
+    checkpoint:fixture.checkpoint,review_session_setup:setup.scope})),/checkpoint_outside_scope/);
+  assert.equal(w.contentCalls.length,0);assert.equal(w.forbidden.length,0);
+  const clean=worker({tabs:[{id:7,url:"https://chatgpt.com/",status:"complete"}]});
+  await clean.call("wire",JSON.stringify({type:"fresh_welcome",bridge_identity:setup.bridge_identity,
+    checkpoint:setup.empty_checkpoint,review_session_setup:setup.scope}));
+  assert.equal(clean.sent.at(-1).connected,false);assert.equal(clean.contentCalls.length,0);
+  assert.equal(clean.run("target"),null);
+});
+
+test("scoped new session cannot dispatch a wrong control task commit or native binding", async () => {
+  const setup = JSON.parse(fs.readFileSync(path.join(process.env.C2C_V2_TEST_DATA_ROOT, "new-review-session-cross-language.json"), "utf8"));
+  const w=worker({tabs:[{id:99,url:"https://chatgpt.com/",status:"complete"}]});
+  await w.call("wire",JSON.stringify({type:"fresh_welcome",bridge_identity:setup.bridge_identity,
+    checkpoint:setup.empty_checkpoint,review_session_setup:setup.scope}));
+  const calls=w.contentCalls.length;
+  await assert.rejects(w.call("dispatch",R),/request_outside_scope/);
+  assert.equal(w.contentCalls.length,calls);assert.equal(w.run("attempts.size"),0);
+});
+
+test("new pinned root-to-conversation transition ignores different old URLs and rejects exact duplicate URL", async () => {
+  const setup=JSON.parse(fs.readFileSync(path.join(process.env.C2C_V2_TEST_DATA_ROOT,"new-review-session-cross-language.json"),"utf8"));
+  const next="https://chatgpt.com/c/new-owned-review",tabs=[{id:7,url:"https://chatgpt.com/c/old",status:"complete"},{id:99,url:"https://chatgpt.com/",status:"complete"}];
+  const w=worker({tabs});
+  await w.call("wire",JSON.stringify({type:"fresh_welcome",bridge_identity:setup.bridge_identity,
+    checkpoint:setup.empty_checkpoint,review_session_setup:setup.scope}));
+  await w.call("dispatch",setup.scoped_request);tabs[1].url=next;
+  await w.call("status");assert.equal(w.sent.at(-1).connected,true);assert.equal(w.sent.at(-1).tab_id,99);
+  await w.call("content",{type:"C2C_FRESH_BOUND",...setup.scoped_request,conversation_url:next,content_identity:I},
+    {id:setup.bridge_identity.extension_id,tab:{id:99},url:next});
+  assert.equal(w.sent.at(-1).type,"fresh_bound");assert.equal(w.sent.at(-1).tab_id,99);assert.equal(w.sent.at(-1).conversation_url,next);
+  assert.equal(w.contentCalls.filter(x=>x.type==="C2C_FRESH_REVIEW").length,1);
+  const before=w.contentCalls.length;tabs.push({id:100,url:next,status:"complete"});
+  await w.call("status");assert.equal(w.sent.at(-1).connected,false);assert.equal(w.contentCalls.length,before);
+  assert.equal(w.contentCalls.some(x=>x.id===7 || x.id===100),false);
+});
 
 test("future thread preparation opens exact frozen URL for a new request only with no old binding mutation or send", async () => {
   const id = R.target_tab_id + 1, updates = [];
