@@ -16,3 +16,12 @@ input mutation. No raw artifacts, credentials, browser or API access are involve
 This draft is not acceptance. Independent review must check pending CR boundary
 and allocation behavior, failure precedence, sticky metadata, adversarial chunk
 partitions, deep immutability and syntax/depth limits. Hashes are not signatures.
+
+The draft review found that recursive immutable conversion could exhaust Python's
+stack outside the parsing error boundary. Finalize now catches that exhaustion
+and enters the same sticky `json_depth_exceeded` failure state, preserving the full
+input fingerprint and accepted-record count. It cannot remain OPEN or expose a
+partial Artifact after this failure. A deterministic injected exhaustion test and
+a practical 40-level valid immutable-object test cover this correction. The
+corrected candidate still requires final independent review; arbitrary depth is
+not promised, and explicit byte/record limits remain caller responsibilities.

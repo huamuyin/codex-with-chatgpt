@@ -1,0 +1,115 @@
+{
+  "STATE": "REVIEW_RESULT",
+  "ROUND": 2,
+  "REQUEST_ID": "e80957c5-4acc-4f60-9222-4abece31c411",
+  "CONTROL_ID": "a891f231-d002-4e0b-a3c8-134f0ac9684f",
+  "ATTEMPT_ID": 1,
+  "REVIEWED_COMMIT": "7c7124cec4e01b29c10ceeaa8e7976298a74b27c",
+  "VERDICT": "CHANGES_REQUIRED",
+  "FINDINGS": [
+    {
+      "severity": "MAJOR",
+      "path": "poc_v2/chrome_r6_synthetic/m2_jsonl.py",
+      "finding": "finalize() performs the recursive deep-freeze outside the reader's fail-closed exception path: Artifact(tuple(freeze(x) for x in self._records), ...). A sufficiently deep JSON object can be accepted by json.loads/strict_object and then make freeze() raise a raw RecursionError during finalize. That exception is not converted through _fail(), so lifecycle state remains OPEN, no sticky ReaderError fingerprint is created, and later calls are not governed by the required FAILED-state semantics. This violates the PLAN requirement that any artifact failure become deterministic/sticky and never expose a non-ReaderError finalization failure."
+    },
+    {
+      "severity": "MAJOR",
+      "path": "poc_v2/chrome_r6_synthetic/test_m2_jsonl.py",
+      "finding": "The draft has no conformance case for an exception occurring during immutable artifact construction/finalization. Existing depth handling only covers RecursionError raised inside strict_object during feed(). The draft documentation itself leaves syntax/depth limits and deep immutability as independent-review obligations, so this untested finalization path is a real missing contract rather than stylistic hardening."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The chunk/framing implementation otherwise follows the approved M2 PLAN closely: bytes-only feeds, whole-chunk SHA256/raw-byte accounting before parsing, explicit total/record/count limits, LF framing with one optional delimiter CR, provisional trailing-CR allowance, strict UTF-8, duplicate-key rejection through object_pairs_hook, nonfinite rejection including numeric overflow, lone-surrogate rejection, object-only top level and unfinished-final-record rejection."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Sticky failures that occur during feed() are implemented correctly: _fail() freezes a bounded immutable Failure fingerprint containing code/hash/raw byte count/accepted count/current index; subsequent feed/finalize calls return the same ReaderError without hashing or consuming later input. A later invalid record also cannot produce a successful Artifact even after earlier records parsed."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Successful Artifact output is recursively immutable for ordinary accepted nesting through frozen dataclasses, tuples and MappingProxyType views. The draft also preserves composed/decomposed Unicode distinctly, verifies long Chinese/emoji input across every split point, tests split CRLF and valid escaped surrogate pairs, exact size/count/total boundaries, mixed delimiters and chunking invariance."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The immutable review package is coherent. Implementation c266c474318bea2d59fff59eab3b3f823539b1e7 is one bounded M2 implementation commit after the PLAN authority and changes only M2 synthetic files plus M2 PLAN evidence; incoming 7c7124cec4e01b29c10ceeaa8e7976298a74b27c is one evidence-only commit after it. All three independently fetched Git blob IDs match draft/source_hashes.json. Reported gates are 171 Python passes, 181 Node passes, 25 syntax files, manifest PASS and diff PASS."
+    },
+    {
+      "severity": "INFO",
+      "finding": "No M1 source or existing Fresh runtime source is changed by the M2 implementation delta, preserving the required mission isolation."
+    }
+  ],
+  "REVIEW_SUMMARY": "The exact incoming authority 7c7124cec4e01b29c10ceeaa8e7976298a74b27c and every required path/ref in its descriptor were independently read through the official GitHub connector. The M2 draft substantially implements the approved bounded JSONL reader contract and its current positive/negative tests are meaningful. One concrete fail-closed defect remains: recursive immutable conversion during finalize() can raise RecursionError outside _fail(), leaving the reader OPEN with no sticky ReaderError fingerprint even though the PLAN requires every artifact failure to become terminal and deterministic. This also corresponds directly to the draft's stated unresolved syntax/depth/deep-immutability review obligation. Therefore CHANGES_REQUIRED is warranted with one small finalization/depth correction and focused regression before M2 final review.",
+  "GITHUB_RESOURCES_READ": [
+    {
+      "path": ".c2c-v2/chrome-r6/m2/draft/review_request.json",
+      "ref_commit": "7c7124cec4e01b29c10ceeaa8e7976298a74b27c",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/7c7124cec4e01b29c10ceeaa8e7976298a74b27c/.c2c-v2/chrome-r6/m2/draft/review_request.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"request\": \"Independently review the actual draft against the substantive PLAN. Find concrete implementation defects and missing required conformance coverage\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/owner_scope.json",
+      "ref_commit": "7c7124cec4e01b29c10ceeaa8e7976298a74b27c",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/7c7124cec4e01b29c10ceeaa8e7976298a74b27c/.c2c-v2/chrome-r6/owner_scope.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"synthetic_project\": \"poc_v2/chrome_r6_synthetic\", \"global_installation\": false"
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m2/draft/test_summary.json",
+      "ref_commit": "7c7124cec4e01b29c10ceeaa8e7976298a74b27c",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/7c7124cec4e01b29c10ceeaa8e7976298a74b27c/.c2c-v2/chrome-r6/m2/draft/test_summary.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"python_passed\": 171, \"node_passed\": 181, \"syntax_files\": 25, \"manifest\": \"PASS\", \"diff\": \"PASS\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m2/draft/source_hashes.json",
+      "ref_commit": "7c7124cec4e01b29c10ceeaa8e7976298a74b27c",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/7c7124cec4e01b29c10ceeaa8e7976298a74b27c/.c2c-v2/chrome-r6/m2/draft/source_hashes.json",
+      "read_method": "GitHub fetch_file plus independent Git blob verification",
+      "source_excerpt": "\"path\": \"poc_v2/chrome_r6_synthetic/m2_jsonl.py\", \"ref_commit\": \"c266c474318bea2d59fff59eab3b3f823539b1e7\", \"git_blob\": \"f0f39bd0d05d0b36b2a8dc7f3931400ce54c6588\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m2/draft/previous_action.json",
+      "ref_commit": "7c7124cec4e01b29c10ceeaa8e7976298a74b27c",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/7c7124cec4e01b29c10ceeaa8e7976298a74b27c/.c2c-v2/chrome-r6/m2/draft/previous_action.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"implementation_commit\": \"c266c474318bea2d59fff59eab3b3f823539b1e7\""
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/M2_JSONL.md",
+      "ref_commit": "c266c474318bea2d59fff59eab3b3f823539b1e7",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/c266c474318bea2d59fff59eab3b3f823539b1e7/poc_v2/chrome_r6_synthetic/M2_JSONL.md",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "Independent review must check pending CR boundary and allocation behavior, failure precedence, sticky metadata, adversarial chunk partitions, deep immutability and syntax/depth limits."
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/m2_jsonl.py",
+      "ref_commit": "c266c474318bea2d59fff59eab3b3f823539b1e7",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/c266c474318bea2d59fff59eab3b3f823539b1e7/poc_v2/chrome_r6_synthetic/m2_jsonl.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "self._artifact=Artifact(tuple(freeze(x) for x in self._records),len(self._records),self._bytes,self._sha.hexdigest(),tuple(self._info))"
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/test_m2_jsonl.py",
+      "ref_commit": "c266c474318bea2d59fff59eab3b3f823539b1e7",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/c266c474318bea2d59fff59eab3b3f823539b1e7/poc_v2/chrome_r6_synthetic/test_m2_jsonl.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "def test_no_unicode_normalization_and_deep_immutability(self):"
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m2/plan/review_result.json",
+      "ref_commit": "c266c474318bea2d59fff59eab3b3f823539b1e7",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/c266c474318bea2d59fff59eab3b3f823539b1e7/.c2c-v2/chrome-r6/m2/plan/review_result.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "Any failure invalidates the whole artifact even if earlier records parsed successfully."
+    },
+    {
+      "path": "commit c266c474318bea2d59fff59eab3b3f823539b1e7",
+      "ref_commit": "c266c474318bea2d59fff59eab3b3f823539b1e7",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/commit/c266c474318bea2d59fff59eab3b3f823539b1e7",
+      "read_method": "GitHub fetch_commit and immutable compare",
+      "source_excerpt": "poc: execute Chrome R6 m2 draft development action"
+    }
+  ],
+  "NEXT_CODEX_INSTRUCTION": "Correct only the bounded M2 finalization/depth defect and publish M2 final-review evidence; do not modify M1, Fresh runtime or start M3. In StrictJsonlReader.finalize(), ensure immutable-result construction can never leak a raw RecursionError or leave the reader OPEN after a finalization failure. At minimum catch RecursionError from recursive freeze/artifact construction and route it through the existing sticky _fail(\"json_depth_exceeded\") path so raw_sha256/raw_bytes_seen/accepted_record_count/current_record_index remain the frozen fingerprint and every later feed/finalize returns that same ReaderError. Alternatively replace recursive freeze with an iterative bounded deep-freeze, but retain fail-closed handling for any depth exhaustion. Add a deterministic focused test that injects or otherwise forces RecursionError during final immutable conversion after a syntactically valid record has already been accepted, then assert: finalize raises ReaderError with json_depth_exceeded; state is terminal; the failure hash/counts equal all supplied raw bytes and accepted records; repeated finalize and later feed return the identical sticky error without mutation; no Artifact is obtainable. Also add one practical deeply nested valid-object test exercising deep immutability if feasible without runtime-dependent recursion assumptions. Preserve all existing CRLF/UTF-8/limit/chunking tests and contracts. Run focused M2 tests plus full Python/Node/syntax/manifest/diff gates, commit only M2 synthetic source/docs/tests and draft-review evidence, then publish an immutable .c2c-v2/chrome-r6/m2/final review descriptor with exact implementation commit, source hashes and actual results. Request final independent M2 review only; no APIs/credentials/install/main merge/Edge/family-fund/old-branch changes."
+}

@@ -2,6 +2,7 @@ from dataclasses import FrozenInstanceError
 import hashlib
 import json
 import unittest
+from unittest.mock import patch
 from m2_jsonl import StrictJsonlReader,ReaderError
 
 class JsonlTests(unittest.TestCase):
@@ -78,3 +79,22 @@ class JsonlTests(unittest.TestCase):
                 with self.assertRaises(ValueError):StrictJsonlReader(**v)
         for value in ['text',bytearray(b'{}\n'),memoryview(b'{}\n')]:
             with self.assertRaises(ReaderError):self.reader().feed(value)
+
+    def test_final_immutable_conversion_depth_failure_is_terminal_sticky_and_preserves_fingerprint(self):
+        raw=b'{"a":{"nested":[1,2,3]}}\n';r=self.reader();r.feed(raw)
+        with patch('m2_jsonl.freeze',side_effect=RecursionError('forced synthetic depth exhaustion')):
+            with self.assertRaises(ReaderError) as first:r.finalize()
+        f=first.exception.fingerprint;self.assertEqual(f.error_code,'json_depth_exceeded')
+        self.assertEqual(f.raw_sha256,hashlib.sha256(raw).hexdigest());self.assertEqual(f.raw_bytes_seen,len(raw))
+        self.assertEqual(f.accepted_record_count,1);self.assertEqual(f.current_record_index,2)
+        for fn in [r.finalize,lambda:r.feed(b'{}\n')]:
+            with self.assertRaises(ReaderError) as later:fn()
+            self.assertIs(later.exception,first.exception);self.assertEqual(later.exception.fingerprint,f)
+
+    def test_practical_nested_valid_object_is_deeply_immutable(self):
+        value={'leaf':['中文',1]}
+        for _ in range(40):value={'child':value}
+        r=self.reader();r.feed((json.dumps(value,ensure_ascii=False)+'\n').encode());item=r.finalize().records[0]
+        for _ in range(40):item=item['child']
+        self.assertEqual(item['leaf'],('中文',1))
+        with self.assertRaises(TypeError):item['leaf']=('changed',)

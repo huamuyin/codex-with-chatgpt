@@ -99,5 +99,6 @@ class StrictJsonlReader:
         if self._state=="FAILED":raise self._error
         if self._state=="FINALIZED":return self._artifact
         if self._pending:self._fail("unfinished_final_record")
-        self._artifact=Artifact(tuple(freeze(x) for x in self._records),len(self._records),self._bytes,self._sha.hexdigest(),tuple(self._info))
+        try:self._artifact=Artifact(tuple(freeze(x) for x in self._records),len(self._records),self._bytes,self._sha.hexdigest(),tuple(self._info))
+        except RecursionError:self._fail("json_depth_exceeded")
         self._state="FINALIZED";return self._artifact

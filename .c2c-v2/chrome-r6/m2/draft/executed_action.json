@@ -1,0 +1,14 @@
+{
+  "response_sha256": "9dc961f5993c87a866f663baa1d33078f0660b77a112c618104b2e53db9548e5",
+  "instruction": "Correct only the bounded M2 finalization/depth defect and publish M2 final-review evidence; do not modify M1, Fresh runtime or start M3. In StrictJsonlReader.finalize(), ensure immutable-result construction can never leak a raw RecursionError or leave the reader OPEN after a finalization failure. At minimum catch RecursionError from recursive freeze/artifact construction and route it through the existing sticky _fail(\"json_depth_exceeded\") path so raw_sha256/raw_bytes_seen/accepted_record_count/current_record_index remain the frozen fingerprint and every later feed/finalize returns that same ReaderError. Alternatively replace recursive freeze with an iterative bounded deep-freeze, but retain fail-closed handling for any depth exhaustion. Add a deterministic focused test that injects or otherwise forces RecursionError during final immutable conversion after a syntactically valid record has already been accepted, then assert: finalize raises ReaderError with json_depth_exceeded; state is terminal; the failure hash/counts equal all supplied raw bytes and accepted records; repeated finalize and later feed return the identical sticky error without mutation; no Artifact is obtainable. Also add one practical deeply nested valid-object test exercising deep immutability if feasible without runtime-dependent recursion assumptions. Preserve all existing CRLF/UTF-8/limit/chunking tests and contracts. Run focused M2 tests plus full Python/Node/syntax/manifest/diff gates, commit only M2 synthetic source/docs/tests and draft-review evidence, then publish an immutable .c2c-v2/chrome-r6/m2/final review descriptor with exact implementation commit, source hashes and actual results. Request final independent M2 review only; no APIs/credentials/install/main merge/Edge/family-fund/old-branch changes.",
+  "actual_checks": {
+    "python_passed": 173,
+    "node_passed": 181,
+    "syntax_files": 25,
+    "manifest": "PASS",
+    "diff": "PASS"
+  },
+  "actual_check_output_refs": "private evidence/checks/m2-final",
+  "state": "EXECUTED_REVIEWABLE_CANDIDATE",
+  "arbitrary_reviewer_shell_executed": false
+}
