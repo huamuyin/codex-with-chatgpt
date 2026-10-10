@@ -19,6 +19,7 @@ from urllib.parse import urlsplit
 
 import bridge_server as transport
 from fresh_delivery import FreshJournal, FreshRequests, VERSION, BUILD_ID, PROTOCOL, PAYLOAD_KEYS
+from fresh_review_session import ReviewSetup, BUILD as REVIEW_SETUP_BUILD
 
 HOST, PORT = "127.0.0.1", 18797
 DATA_ROOT = Path(r"D:\ProjectData\codex-with-chatgpt")
@@ -26,7 +27,7 @@ MAX_BODY = 65536
 
 
 class FreshState:
-    def __init__(self, journal, extension_id):
+    def __init__(self, journal, extension_id, *, review_session_commit=None, review_iteration=6):
         if not re.fullmatch(r"[a-p]{32}", extension_id): raise ValueError("extension_id_invalid")
         self.requests = FreshRequests(journal)
         self.extension_origin = "chrome-extension://" + extension_id
@@ -38,6 +39,8 @@ class FreshState:
         self.seen_at = 0.0
         self.boundaries = {}
         self.maintenance_commands = {}
+        self.review_setup = (ReviewSetup(journal, review_session_commit, review_iteration)
+                             if review_session_commit is not None else None)
         self.identity = {"version": VERSION, "protocol_version": PROTOCOL, "build_id": BUILD_ID,
             "host": HOST, "port": PORT, "pid": os.getpid(), "started_at_unix": time.time(),
             "source_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
@@ -46,7 +49,10 @@ class FreshState:
 
     def ready(self):
         s = self.status
-        return (not self.requests.journal.poisoned and self.session is not None and not self.session.closed
+        scoped = (self.review_setup is None or self.review_setup.binding is not None
+                  and s.get("review_setup_binding") == self.review_setup.ready_proof()
+                  and s.get("tab_id") == self.review_setup.binding["tab_id"])
+        return (scoped and not self.requests.journal.poisoned and self.session is not None and not self.session.closed
             and time.monotonic() - self.seen_at < 90 and s.get("connected") is True
             and s.get("candidate_count") == 1 and type(s.get("candidate_count")) is int
             and type(s.get("tab_id")) is int and s["tab_id"] >= 0
@@ -63,9 +69,10 @@ class FreshState:
             return {"bridge_identity": copy.deepcopy(self.identity), "extension_connected": self.session is not None and not self.session.closed,
                     "ready": self.ready(), "active_attempt": copy.deepcopy(self.active),
                     "journal_ok": not self.requests.journal.poisoned, "delivery_semantics": "AT_LEAST_ONCE",
+                    "review_session_setup": self.review_setup.scope() if self.review_setup else None,
                     "boundaries": copy.deepcopy(self.boundaries),
                     "extension_status": {k: copy.deepcopy(self.status.get(k)) for k in
-                        ("connected", "candidate_count", "tab_id", "url", "components", "readiness_code", "attempt_diagnostics", "content_generation", "observed_targets", "bound_tab_diagnostics", "page_state")}}
+                        ("connected", "candidate_count", "tab_id", "url", "components", "readiness_code", "attempt_diagnostics", "content_generation", "observed_targets", "bound_tab_diagnostics", "page_state", "review_setup_capability", "review_setup_binding")}}
 
     def boundary(self, name, **details):
         # Call sites supply only explicit non-secret fields, never headers, tokens or raw DOM.
@@ -77,11 +84,21 @@ class FreshState:
             if self.requests.journal.poisoned:
                 raise transport.RequestError("extension_disconnected", 503)
             action = value.get("action")
-            if action not in ("reload_extension", "sample_status", "refresh_loading_target", "prepare_future_thread", "restore_thread", "activate_tab", "inspect_draft", "clear_owned_draft", "reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"):
+            if action not in ("create_review_session", "reload_extension", "sample_status", "refresh_loading_target", "prepare_future_thread", "restore_thread", "activate_tab", "inspect_draft", "clear_owned_draft", "reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"):
                 raise transport.RequestError("maintenance_action_invalid")
             if action != "reload_extension" and (self.session is None or self.session.closed):
                 raise transport.RequestError("extension_disconnected", 503)
             message = {"type": "fresh_maintenance", "maintenance_id": str(uuid.uuid4()), "action": action}
+            if action == "create_review_session":
+                if (self.review_setup is None or self.requests.records or self.active is not None
+                    or set(value) != {"action", "control_token"}
+                    or self.status.get("review_setup_capability") != REVIEW_SETUP_BUILD
+                    or time.monotonic() - self.seen_at >= 90
+                    or any(self.status.get("components", {}).get(k) != v
+                           for k, v in self.expected_components().items() if k != "content_version")):
+                    raise transport.RequestError("new_review_setup_unconfirmed", 409)
+                self.requests.journal.verify()
+                message["grant"] = self.review_setup.begin(self.identity)
             if action == "refresh_loading_target":
                 rid, cid, aid = value.get("request_id"), value.get("control_id"), value.get("attempt_id")
                 if not isinstance(rid, str) or not isinstance(cid, str) or type(aid) is not int: raise transport.RequestError("maintenance_identity_required", 409)
@@ -213,7 +230,9 @@ class FreshState:
             checkpoint = self.requests.checkpoint()
             self.session = session; self.status = {}; self.seen_at = time.monotonic()
             # Restoring a mirror never sends or retries a request.
-            return {"type": "fresh_welcome", "bridge_identity": copy.deepcopy(self.identity), "checkpoint": checkpoint}
+            welcome = {"type": "fresh_welcome", "bridge_identity": copy.deepcopy(self.identity), "checkpoint": checkpoint}
+            if self.review_setup: welcome["review_session_setup"] = self.review_setup.scope()
+            return welcome
 
     def unregister(self, session):
         with self.lock:
@@ -221,6 +240,10 @@ class FreshState:
 
     def send(self, payload, *, retry=False, control_id=None, observation=None):
         with self.lock:
+            if self.review_setup:
+                self.review_setup.validate_payload(payload)
+                if retry: raise transport.RequestError("new_review_retry_disabled", 409)
+                if self.requests.records: raise transport.RequestError("new_review_logical_request_already_created", 409)
             observation = self.observation_options(observation)
             if observation.get("locator_miss"): raise transport.RequestError("locator_fault_observe_only")
             if not self.ready(): raise transport.RequestError("extension_or_chat_disconnected", 503)
@@ -278,6 +301,19 @@ class FreshState:
             if m.get("type") == "fresh_maintenance_result":
                 pending = self.maintenance_commands.get(m.get("maintenance_id"))
                 if pending is None or m.get("action") != pending["message"]["action"]: return
+                if pending["message"]["action"] == "create_review_session":
+                    if pending["result"] is not None: return
+                    ok = m.get("complete") is True
+                    if ok:
+                        try:
+                            if not self.review_setup or m.get("proof", {}).get("grant") != pending["message"]["grant"]:
+                                raise ValueError("new_review_ack_identity_mismatch")
+                            self.review_setup.bind(m["proof"])
+                        except (OSError, ValueError, TypeError, KeyError, AttributeError): ok = False
+                    pending["result"] = {"maintenance_id": m["maintenance_id"], "action": m["action"],
+                        "status": "complete" if ok else "failed", "error_code": None if ok else "new_review_creation_unconfirmed",
+                        "review_session_setup": self.review_setup.scope() if self.review_setup else None}
+                    pending["event"].set(); self.boundary("maintenance", **pending["result"]); return
                 result = {"maintenance_id": m["maintenance_id"], "action": m["action"],
                           "status": "complete" if m.get("complete") is True else "failed"}
                 code = m.get("error_code")
@@ -433,6 +469,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-root", required=True); parser.add_argument("--namespace", required=True)
     parser.add_argument("--extension-id", required=True); parser.add_argument("--initialize-journal", action="store_true")
+    parser.add_argument("--new-review-commit"); parser.add_argument("--new-review-iteration", type=int, default=6)
     args = parser.parse_args()
     if Path(args.data_root).resolve() != DATA_ROOT.resolve(): parser.error("exact project data-root required")
     if not re.fullmatch(r"[A-Za-z0-9_.-]{1,96}", args.namespace) or args.namespace in (".", ".."): parser.error("namespace invalid")
@@ -440,7 +477,8 @@ def main():
     journal = FreshJournal(DATA_ROOT / "runtime" / "extension_control_fresh_18797" / args.namespace,
                            args.namespace, initialize=args.initialize_journal)
     try:
-        state = FreshState(journal, args.extension_id)
+        state = FreshState(journal, args.extension_id, review_session_commit=args.new_review_commit,
+                           review_iteration=args.new_review_iteration)
         handler = type("BoundFreshHandler", (FreshHandler,), {"state": state})
         server = transport.LocalThreadingHTTPServer((HOST, PORT), handler)
         print(json.dumps({"event": "fresh_bridge_ready", "bridge_identity": state.identity, "control_token": state.control_token}), flush=True)

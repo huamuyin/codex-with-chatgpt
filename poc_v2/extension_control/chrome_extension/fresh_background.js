@@ -1,5 +1,5 @@
 "use strict";
-importScripts("fresh_component_identity.js", "fresh_contract.js", "fresh_locator.js");
+importScripts("fresh_component_identity.js", "fresh_contract.js", "fresh_locator.js", "fresh_review_session.js");
 const I = globalThis.C2CV2FreshIdentity, C = globalThis.C2CV2FreshContract;
 const BACKGROUND_VERSION = "0.9.8", BACKGROUND_BUILD = "c2c-v2-fresh-paired-turn-completion-1";
 const BASE = `http://${I.host}:${I.port}`, WS = `ws://${I.host}:${I.port}/ws`;
@@ -7,6 +7,7 @@ const CACHE_KEY = "c2c.fresh.v3.attemptMirror";
 let socket = null, bridge = null, connecting = false, mirrorReady = false, target = null;
 let reconnectTimer = null, heartbeat = null;
 let statusEpoch = 0;
+let reviewSessionScope = null;
 let targetDiagnostic = { readiness_code: "not_checked", candidate_count: 0, tab_id: null, url: "", content_version: "", content_generation: null };
 const LEGACY_SMOKE_URL = "https://chatgpt.com/c/6abcb6a6-a1b8-83e8-bc72-f85af94bb2f0";
 const attempts = new Map(), running = new Set();
@@ -34,6 +35,7 @@ async function restore(checkpoint) {
   const checked = new Map(), logical = new Map();
   for (const r of checkpoint.requests) {
     if (!C.validRequest(r) || checked.has(C.key(r))) throw Error("checkpoint_attempt_invalid");
+    if (reviewSessionScope && !globalThis.C2CV2ReviewSessionSetup.validRequest(r, reviewSessionScope)) throw Error("new_review_checkpoint_outside_scope");
     const prior = logical.get(r.request_id);
     if (prior && ["control_id", "task_id", "iteration", "repo", "branch", "expected_commit"].some((k) => r[k] !== prior[k])) throw Error("checkpoint_logical_conflict");
     logical.set(r.request_id, r); checked.set(C.key(r), r);
@@ -44,7 +46,14 @@ async function restore(checkpoint) {
 }
 async function selectTarget(preferredUrl = null, snapshot = false) {
   const tabs = await chrome.tabs.query({ url: "https://chatgpt.com/*" });
-  const matches = tabs.filter((t) => t.url !== LEGACY_SMOKE_URL && (preferredUrl ? t.url === preferredUrl : C.isChatUrl(t.url)));
+  const binding = reviewSessionScope?.binding;
+  const expected = preferredUrl || (reviewSessionScope && attempts.size === 0 ? "https://chatgpt.com/" : null);
+  const matches = tabs.filter((t) => t.url !== LEGACY_SMOKE_URL && (expected ? t.url === expected : C.isChatUrl(t.url)));
+  // A scoped session can only select its newly created native ID, never an active/old tab.
+  if (reviewSessionScope && (!binding || matches.length !== 1 || matches[0].id !== binding.tab_id)) {
+    return snapshot ? { tab: null, diagnostic: { readiness_code: "new_review_binding_unconfirmed", candidate_count: 0,
+      tab_id: null, url: "", content_version: "", content_generation: null } } : null;
+  }
   const diagnostic = { readiness_code: matches.length === 0 ? "no_target" : "target_ambiguous",
     candidate_count: matches.length, tab_id: matches.length === 1 ? matches[0].id : null,
     url: matches.length === 1 ? matches[0].url : "", content_version: "", content_generation: null };
@@ -91,6 +100,8 @@ async function status() {
   if (epoch !== statusEpoch) return { ...selection, superseded: true };
   target = tab; targetDiagnostic = diagnostic;
   send({ type: "fresh_status", connected: Boolean(tab && bridgeMatches(bridge)), candidate_count: diagnostic.candidate_count,
+    review_setup_capability: globalThis.C2CV2ReviewSessionSetup.build,
+    review_setup_binding: globalThis.C2CV2ReviewSessionSetup.readyProof(reviewSessionScope),
     tab_id: diagnostic.tab_id, url: diagnostic.url, readiness_code: diagnostic.readiness_code,
     attempt_diagnostics: diagnostics,
     content_generation: diagnostic.content_generation,
@@ -105,7 +116,13 @@ async function maintenance(m) {
   if (!mirrorReady || !bridgeMatches(bridge) || !/^[a-f0-9-]{36}$/u.test(m.maintenance_id || "")) return;
   try {
     let contentGenerationForAck = null;
-    if (m.action === "sample_status") {
+    if (m.action === "create_review_session") {
+      if (!reviewSessionScope || attempts.size || running.size) throw Error("new_review_history_not_empty");
+      const proof = await globalThis.C2CV2ReviewSessionSetup.create(chrome, m.grant, reviewSessionScope, bridge);
+      reviewSessionScope = { ...reviewSessionScope, intent: proof.grant, binding: proof };
+      send({ type: "fresh_maintenance_result", maintenance_id: m.maintenance_id, action: m.action, complete: true, proof });
+      await status(); return;
+    } else if (m.action === "sample_status") {
       const sampled = await status();
       if (!sampled.superseded) contentGenerationForAck = sampled.diagnostic.content_generation;
     } else if (m.action === "refresh_loading_target") {
@@ -219,6 +236,7 @@ async function maintenance(m) {
 }
 async function dispatch(r, observation = {}) {
   if (!mirrorReady || !bridgeMatches(bridge) || !C.validRequest(r)) throw Error("fresh_request_invalid");
+  if (reviewSessionScope && !globalThis.C2CV2ReviewSessionSetup.validRequest(r, reviewSessionScope)) throw Error("new_review_request_outside_scope");
   const k = C.key(r), known = attempts.get(k);
   if (known && !C.sameAttempt(known, r)) throw Error("attempt_identity_conflict");
   if (running.has(k)) return;
@@ -236,6 +254,9 @@ async function wire(raw) {
   const m = JSON.parse(raw);
   if (m.type === "fresh_welcome") {
     if (!bridgeMatches(m.bridge_identity)) throw Error("bridge_version_mismatch");
+    const setup = m.review_session_setup;
+    if (setup && !globalThis.C2CV2ReviewSessionSetup.validScope(setup)) throw Error("new_review_scope_invalid");
+    reviewSessionScope = setup || null;
     bridge = m.bridge_identity; await restore(m.checkpoint); await status();
   } else if (m.type === "fresh_maintenance") {
     await maintenance(m);
