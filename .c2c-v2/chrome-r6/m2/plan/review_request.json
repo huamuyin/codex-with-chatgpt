@@ -1,0 +1,12 @@
+{
+  "mission_id": "C2C_V2_CHROME_R6_M2",
+  "stage": "PLAN",
+  "iteration": 1,
+  "required_paths_at_incoming_commit": [
+    ".c2c-v2/chrome-r6/owner_scope.json",
+    "poc_v2/chrome_r6_synthetic/README.md",
+    "poc_v2/chrome_r6_synthetic/m1_receipts.py",
+    ".c2c-v2/chrome-r6/m1/closure/mission_result.json"
+  ],
+  "request": "M1 is independently closed. Provide a separate substantive finite M2 PLAN for the specified bounded incremental strict UTF-8 JSONL structured-artifact reader, explicit size/record/finalization semantics and real positive/negative conformance tests. Initial candidate remains a reviewable draft; choose actual missing contract/defects during independent review. Do not change M1 source or treat this as another M1 round. Only safe Chrome R6 synthetic code; include long Chinese/emoji and split CRLF/UTF8 fixtures. No runtime credentials or APIs."
+}
