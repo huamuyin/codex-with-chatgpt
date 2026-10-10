@@ -1,0 +1,20 @@
+[
+  {
+    "path": "poc_v2/chrome_r6_synthetic/M2_JSONL.md",
+    "ref_commit": "c266c474318bea2d59fff59eab3b3f823539b1e7",
+    "sha256": "077fa20d6c298d0663dcf0f0a36a87068a1e24d1677727afb017ee1ea983c732",
+    "git_blob": "1bc42754e0e4b7c7b28ebd50163656fd074d47f2"
+  },
+  {
+    "path": "poc_v2/chrome_r6_synthetic/m2_jsonl.py",
+    "ref_commit": "c266c474318bea2d59fff59eab3b3f823539b1e7",
+    "sha256": "53c37bc1687f99d16a18e414e64d150213a8d061b3480a0fee3cb0a8d862da50",
+    "git_blob": "f0f39bd0d05d0b36b2a8dc7f3931400ce54c6588"
+  },
+  {
+    "path": "poc_v2/chrome_r6_synthetic/test_m2_jsonl.py",
+    "ref_commit": "c266c474318bea2d59fff59eab3b3f823539b1e7",
+    "sha256": "2b399cd360b1eee387c606c4f1f879621939ebbe18e95a767729df43cb81e4a5",
+    "git_blob": "23ad880e78d00ce7eaba5ccd6a79592d957c7a92"
+  }
+]
