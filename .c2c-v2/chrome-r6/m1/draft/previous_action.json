@@ -1,0 +1,13 @@
+{
+  "previous_phase": "m1-plan",
+  "reply_sha256": "84a3ab5c4099785db65fecc12030ff6a02dd60320a57f2335bd6a6e004e9d934",
+  "implementation_commit": "b94adb92b0858028907a44087fe9939aea3a623e",
+  "reviewer_instruction": "Implement the M1 reviewable draft exactly within Chrome R6 synthetic scope. Add poc_v2/chrome_r6_synthetic/m1_receipts.py, test_m1_receipts.py and M1_RECEIPTS.md; do not modify existing Fresh runtime files. Implement a strict append-only ReceiptLedger in an explicit caller-supplied absolute private directory outside the repo. Bind mission_id/workspace_id/round_no/request_id/control_id/reviewed_commit plus sequential attempt_id. Reuse fresh_response parse/validate for each raw framed review. Canonicalize the validated logical review excluding only ATTEMPT_ID from its semantic hash while retaining all substantive review fields; store canonical_attempt_id separately. Preserve attempt_failed/delivery_uncertain history; permit a late valid known attempt to become canonical only before canonicalization; classify later semantic equality as duplicate and reject changed canonical content. Put deterministic action_id, bounded NEXT_CODEX_INSTRUCTION and instruction hash in the canonical event so action reservation is atomic. claim_action must append action_started and yield the instruction once only; after started or receipt it must never yield again, including after restore. Record one bounded completed/failed/blocked receipt; exact replay is idempotent, conflicting receipt fails closed. Use deterministic UTF-8 sorted compact JSON, strict duplicate-key/nonfinite/surrogate rejection, hash-chained events and sealed head; export/reopen must be byte-stable. Add all positive/negative/concurrency/tamper/path/credential-exclusion tests specified by this PLAN using only synthetic IDs and a caller-provided private test root. Run focused M1 tests, syntax/compile checks and git diff --check. Then commit the reviewable draft and publish an evidence-only .c2c-v2/chrome-r6/m1/draft review package containing exact implementation commit, source hashes, actual test counts/results and explicitly remaining independent-review obligations. Do not claim acceptance, access credentials or APIs, touch Edge/family-fund/old branch/main, install anything or start M2.",
+  "actual_tests": {
+    "python_passed": 148,
+    "node_passed": 179,
+    "syntax_files": 23,
+    "manifest": "PASS",
+    "diff": "PASS"
+  }
+}
