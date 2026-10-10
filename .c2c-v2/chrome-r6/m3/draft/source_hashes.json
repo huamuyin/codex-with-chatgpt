@@ -1,0 +1,32 @@
+[
+  {
+    "path": "poc_v2/chrome_r6_synthetic/M3_REGISTRY.md",
+    "ref_commit": "94e0091cfbe4b6248f388c620b397ab2ba733b1e",
+    "sha256": "973525c5bb28a88699b03cdd9a0d3015084dfd145ece8ff7634bd26b00560d1a",
+    "git_blob": "4966f29c902d58e9da56959b23712c84f40833fa"
+  },
+  {
+    "path": "poc_v2/chrome_r6_synthetic/m3_registry.py",
+    "ref_commit": "94e0091cfbe4b6248f388c620b397ab2ba733b1e",
+    "sha256": "cefb7351fcf5c91b9e6715be9afda1fdbe1361378ba88a0029d39235e46df0a6",
+    "git_blob": "0c6a66869c9e4173bb631271cc4ea6883f7c6e8b"
+  },
+  {
+    "path": "poc_v2/chrome_r6_synthetic/test_m3_registry.py",
+    "ref_commit": "94e0091cfbe4b6248f388c620b397ab2ba733b1e",
+    "sha256": "f5227a5fbd36e0dc47ae1ad23a2b9be2a19534953249f2bc03ecf7e01756a55e",
+    "git_blob": "c8bcf7f9483709bcb3c57cb40f3d2aab88d238c3"
+  },
+  {
+    "path": ".c2c-v2/chrome-r6/m3/integration/result.json",
+    "ref_commit": "94e0091cfbe4b6248f388c620b397ab2ba733b1e",
+    "sha256": "158fa8ab91a5d6bb3eec996c1fe11420050a0c58841a44ed83cac8a5f584cc2b",
+    "git_blob": "f14a00fdaaca5f078838dc6d11afff5562983e34"
+  },
+  {
+    "path": ".c2c-v2/chrome-r6/m3/integration/B_independent_review.json",
+    "ref_commit": "94e0091cfbe4b6248f388c620b397ab2ba733b1e",
+    "sha256": "07d50287f6d88fd2cfb7e766419902891cfba3a0e7f99a12d8e6221e72ff2b12",
+    "git_blob": "206aa9bc7d1d71fc8a9867bbebf55f40154dc845"
+  }
+]
