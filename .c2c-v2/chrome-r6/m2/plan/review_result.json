@@ -1,0 +1,109 @@
+{
+  "STATE": "REVIEW_RESULT",
+  "ROUND": 1,
+  "REQUEST_ID": "c3868794-c097-4cff-a1ad-427ea412a759",
+  "CONTROL_ID": "fd4df3d8-af44-4378-b12e-bb2a140a3c1b",
+  "ATTEMPT_ID": 2,
+  "REVIEWED_COMMIT": "8815d4965419fcbdb9338c39f8e09d8f6969c2e1",
+  "VERDICT": "PASS_CONTINUE",
+  "FINDINGS": [
+    {
+      "severity": "INFO",
+      "finding": "M1 is independently closed and the incoming descriptor is a separate owner-scoped M2 PLAN request. The M1 closure records mission_complete=true, source_changes_after_final_review=false and its retained synthetic/non-production limits; this PLAN must not alter M1 source or treat M2 as another M1 round."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "Implement M2 only under poc_v2/chrome_r6_synthetic as an independent Python chunk-fed StrictJsonlReader. Constructor limits must be explicit positive non-boolean integers with no unlimited defaults: max_record_bytes, max_records and max_total_bytes. The reader accepts bytes chunks only, keeps bounded pending bytes, a rolling SHA256 of the exact raw bytes supplied, parsed-record metadata and a sticky lifecycle state of OPEN, FAILED or FINALIZED."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "Define JSONL framing exactly: LF is the record delimiter; a single CR immediately preceding LF is delimiter syntax and is removed before UTF-8 decoding; no other whitespace, Unicode or newline normalization occurs. Empty chunks are no-ops. Empty input is a valid finalized artifact with zero records. Blank records are invalid. Every non-empty artifact record must terminate with LF or CRLF; finalize() with any remaining buffered bytes fails as unfinished_final_record. feed() after failure or successful finalization is rejected; successful finalize may return the same immutable result on repeated calls but may never consume more bytes."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "Record byte limits are measured on the raw JSON payload after removing LF and the optional immediately preceding CR. Incremental buffering must fail as soon as it is impossible for the pending record to fit: more than max_record_bytes payload bytes, allowing only one provisional trailing CR while awaiting a possible LF. max_records counts successfully decoded complete records; record N+1 fails before acceptance. max_total_bytes counts every exact input byte including delimiters and is checked for every feed call."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "Decode each completed payload with strict UTF-8 only after its full delimiter is available, which naturally permits multibyte UTF-8 sequences and CRLF to split across arbitrary feed boundaries. JSON decoding must reject duplicate keys at every object depth, NaN/Infinity/-Infinity and malformed JSON. Recursively reject any decoded string or object key containing U+D800 through U+DFFF so escaped lone high/low surrogates fail while a valid escaped surrogate pair decodes to its non-BMP scalar. Do not NFC/NFKC-normalize or otherwise rewrite strings."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "For this structured-artifact reader require each JSONL record to decode to one JSON object; arrays and scalar top-level records fail closed. Preserve decoded JSON semantics exactly. For every accepted record retain index, raw_payload_bytes length and SHA256 of the exact payload bytes. Do not retain or write raw artifact contents to Git or evidence."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "Failure provenance must be deterministic and sticky. Before parsing a supplied feed chunk, incorporate that entire chunk into raw_bytes_seen and the rolling artifact SHA256; therefore a failure reports the hash of all bytes actually handed to that feed call, including the failing chunk. ReaderError must expose only bounded synthetic metadata: error_code, raw_sha256, raw_bytes_seen, accepted_record_count and current_record_index. After failure, later feed/finalize calls must not alter the stored failure fingerprint or expose a successful artifact."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "No parsed records become authoritative before successful finalize. feed() may parse and internally accumulate bounded records, but finalize() is the commit boundary and returns an immutable result containing records, record_count, total raw byte count, total raw SHA256 and per-record byte/hash metadata. Any failure invalidates the whole artifact even if earlier records parsed successfully."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "Required positive conformance tests: empty artifact; one and many records; multiple records in one chunk; one long record split at every byte position; long Chinese and emoji strings split inside 2/3/4-byte UTF-8 sequences; CR and LF delivered in separate chunks; mixed LF/CRLF records without semantic rewriting; nested Unicode data; valid escaped non-BMP surrogate pair; exact max_record_bytes/max_records/max_total_bytes boundaries; identical values and hashes across different chunkings; and preservation of canonically distinct Unicode sequences such as composed and decomposed text."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "Required negative tests: invalid UTF-8 including a split malformed sequence; duplicate keys at top level and nested objects; NaN, Infinity and -Infinity; escaped lone high and low surrogates including in object keys; malformed JSON; top-level array/string/number/null; blank LF and CRLF records; unfinished final record; max_record_bytes+1, max_records+1 and max_total_bytes+1; oversized pending record before delimiter; feed after finalize; feed/finalize after failure; boolean/zero/negative limits; and failure in a later record proving earlier parsed values are not returned as a successful artifact."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The existing high-level M2 description leaves several contracts intentionally unspecified: whether empty input is valid, whether blank lines are records, whether final LF is mandatory, what byte count includes CRLF, when oversize pending data fails, whether parsed prefixes may escape after a later failure, and what exact bytes a failure hash covers. The PLAN above resolves those ambiguities explicitly so the draft can be independently reviewed rather than relying on parser-library defaults."
+    },
+    {
+      "severity": "INFO",
+      "finding": "M1's strict decoded/encoded helpers provide useful patterns for duplicate-key, nonfinite and surrogate rejection, but M2 should be a new isolated module rather than importing M1 ledger authority or mutating m1_receipts.py. M2 has no credential, browser, API, networking, installation or product-data responsibility."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Independent draft-review obligations remain open: verify error precedence and sticky failure metadata, inspect every exact boundary for off-by-one errors around trailing CR and record limits, test equivalent results under adversarial chunk partitions, confirm nested duplicate-key and surrogate rejection, confirm no partial artifact can be accepted before finalize, and verify evidence contains only synthetic fixtures, hashes, counts and test results. The later review verdict is not predetermined."
+    }
+  ],
+  "REVIEW_SUMMARY": "The exact incoming M2 PLAN authority 8815d4965419fcbdb9338c39f8e09d8f6969c2e1 and all four descriptor-required paths were independently read through the official GitHub connector. M1 is closed and remains untouched. The finite M2 plan defines a separate strict bounded chunk-fed UTF-8 JSONL artifact reader with explicit byte, record, CRLF, blank-line and finalization rules; strict duplicate-key/nonfinite/surrogate/object decoding; rolling raw hashes preserved on sticky failure; no semantic Unicode rewriting; no successful partial artifact before finalize; and concrete positive, negative and adversarial chunk-boundary tests. The initial implementation is to remain a reviewable synthetic draft with independent defect discovery, correction and final review before M2 closure.",
+  "GITHUB_RESOURCES_READ": [
+    {
+      "path": ".c2c-v2/chrome-r6/m2/plan/review_request.json",
+      "ref_commit": "8815d4965419fcbdb9338c39f8e09d8f6969c2e1",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/8815d4965419fcbdb9338c39f8e09d8f6969c2e1/.c2c-v2/chrome-r6/m2/plan/review_request.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"request\": \"M1 is independently closed. Provide a separate substantive finite M2 PLAN for the specified bounded incremental strict UTF-8 JSONL structured-artifact reader\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/owner_scope.json",
+      "ref_commit": "8815d4965419fcbdb9338c39f8e09d8f6969c2e1",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/8815d4965419fcbdb9338c39f8e09d8f6969c2e1/.c2c-v2/chrome-r6/owner_scope.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"synthetic_project\": \"poc_v2/chrome_r6_synthetic\", \"global_installation\": false, \"secrets_in_evidence\": false"
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/README.md",
+      "ref_commit": "8815d4965419fcbdb9338c39f8e09d8f6969c2e1",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/8815d4965419fcbdb9338c39f8e09d8f6969c2e1/poc_v2/chrome_r6_synthetic/README.md",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "Build a strict UTF-8 incremental JSONL reader for synthetic large framed review artifacts. Handle chunk boundaries through multibyte characters and CRLF without semantic rewriting"
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/m1_receipts.py",
+      "ref_commit": "8815d4965419fcbdb9338c39f8e09d8f6969c2e1",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/8815d4965419fcbdb9338c39f8e09d8f6969c2e1/poc_v2/chrome_r6_synthetic/m1_receipts.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "return clean(json.loads(raw, object_pairs_hook=pairs, parse_constant=lambda _: (_ for _ in ()).throw(ValueError(\"nonfinite\"))))"
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m1/closure/mission_result.json",
+      "ref_commit": "8815d4965419fcbdb9338c39f8e09d8f6969c2e1",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/8815d4965419fcbdb9338c39f8e09d8f6969c2e1/.c2c-v2/chrome-r6/m1/closure/mission_result.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"source_changes_after_final_review\": false, \"mission_complete\": true"
+    },
+    {
+      "path": "commit 8815d4965419fcbdb9338c39f8e09d8f6969c2e1",
+      "ref_commit": "8815d4965419fcbdb9338c39f8e09d8f6969c2e1",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/commit/8815d4965419fcbdb9338c39f8e09d8f6969c2e1",
+      "read_method": "GitHub fetch_commit",
+      "source_excerpt": "poc: close accepted Chrome R6 M1 and request independent M2 plan"
+    }
+  ],
+  "NEXT_CODEX_INSTRUCTION": "Implement only the Chrome R6 M2 reviewable draft; do not modify M1 or existing Fresh runtime. Add poc_v2/chrome_r6_synthetic/m2_jsonl.py, test_m2_jsonl.py and M2_JSONL.md. Implement StrictJsonlReader with caller-required positive non-bool max_record_bytes, max_records and max_total_bytes. Accept bytes chunks only; LF delimits records and one immediately preceding CR is delimiter syntax, with no other normalization. Empty input finalizes successfully with zero records; blank records fail; every nonempty final record must end in LF/CRLF. Bound payload bytes after CR removal and fail oversized pending records as soon as they cannot fit. Maintain a rolling SHA256 and raw byte count over every exact chunk supplied before parsing; on any error freeze a ReaderError containing bounded code/hash/bytes/count/index metadata. Parse completed records with strict UTF-8, duplicate-key rejection at every object level, nonfinite rejection and recursive lone-surrogate rejection; require each top-level record to be an object. Preserve Unicode without normalization. Keep accepted records internal until finalize; successful finalize returns immutable records plus total/per-record byte counts and SHA256 values. After FAILED or FINALIZED, no further feed may mutate state; repeat successful finalize may return the identical result. Add deterministic tests for empty input, multi-record input, long Chinese/emoji split at every byte boundary, split CRLF, valid surrogate pair, NFC/NFD preservation, exact size/count/total boundaries and chunking invariance; and negatives for invalid/split UTF-8, nested/top duplicate keys, nonfinite values, lone surrogates in values/keys, malformed/non-object JSON, blank lines, unfinished final record, each limit+1, feed after finalize, sticky failure and a later-record failure proving no partial successful artifact. Run focused M2 tests plus the existing full Python/Node/syntax/manifest/diff gates. Commit only M2 synthetic source/docs/tests and PLAN evidence, then publish an evidence-only .c2c-v2/chrome-r6/m2/draft review descriptor with exact implementation commit, source hashes, actual test counts/results and explicit remaining independent-review obligations. Do not claim acceptance, start M3, use APIs/credentials, install anything, merge main, or touch Edge/family-fund/old branch."
+}
