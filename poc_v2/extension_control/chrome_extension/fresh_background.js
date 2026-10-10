@@ -48,10 +48,12 @@ async function selectTarget(preferredUrl = null, snapshot = false) {
   const tabs = await chrome.tabs.query({ url: "https://chatgpt.com/*" });
   const binding = reviewSessionScope?.binding;
   const expected = preferredUrl || (reviewSessionScope && attempts.size === 0 ? "https://chatgpt.com/" : null);
-  const matches = tabs.filter((t) => t.url !== LEGACY_SMOKE_URL && (expected ? t.url === expected : C.isChatUrl(t.url)));
+  let matches = tabs.filter((t) => t.url !== LEGACY_SMOKE_URL && (expected ? t.url === expected : C.isChatUrl(t.url)));
   // A scoped session can only select its newly created native ID, never an active/old tab.
-  if (reviewSessionScope && (!binding || matches.length !== 1 || matches[0].id !== binding.tab_id)) {
-    return snapshot ? { tab: null, diagnostic: { readiness_code: "new_review_binding_unconfirmed", candidate_count: 0,
+  if (reviewSessionScope) {
+    const owned = binding && matches.find(t => t.id === binding.tab_id);
+    matches = owned && tabs.filter(t => t.url === owned.url).length === 1 ? [owned] : [];
+    if (matches.length !== 1) return snapshot ? { tab: null, diagnostic: { readiness_code: "new_review_binding_unconfirmed", candidate_count: 0,
       tab_id: null, url: "", content_version: "", content_generation: null } } : null;
   }
   const diagnostic = { readiness_code: matches.length === 0 ? "no_target" : "target_ambiguous",

@@ -63,6 +63,9 @@ checkpoints and out-of-scope requests. The bridge requires exact setup proof,
 native ID and the existing content/background/manifest/protocol checks before
 ready. A creation ACK is not readiness, logged-in status, model selection,
 successful sending or a completed review.
+After a registered first attempt transitions from root to `/c/...`, different
+old conversation URLs do not become candidates. The pinned native ID and unique
+exact current URL remain required; an identical-URL duplicate blocks readiness.
 
 The only new logical review has task `C2C_V2_CHROME_R6_M3`, repository
 `huamuyin/codex-with-chatgpt`, branch `codex/c2c-v2-chrome-r6`, and frozen startup

@@ -162,7 +162,9 @@ class ReviewSessionTests(unittest.TestCase):
         self.assertEqual(p.read_bytes(),before)
 
     def test_z_emit_cross_language_fixture_without_credentials(self):
-        mid,grant,proof=self.bind();v=dict(scope=self.s.review_setup.scope(),grant=grant,proof=proof,
-            bridge_identity=self.s.identity,empty_checkpoint=self.s.requests.checkpoint())
+        mid,grant,proof=self.bind();checkpoint=self.s.requests.checkpoint();r=self.s.send(self.p)
+        v=dict(scope=self.s.review_setup.scope(),grant=grant,proof=proof,
+            bridge_identity=self.s.identity,empty_checkpoint=checkpoint,
+            scoped_request=self.s.requests.wire_request(r["request_id"],1))
         raw=d.encoded(v);self.assertFalse(self.s.control_token.encode() in raw)
         (self.root/"new-review-session-cross-language.json").write_bytes(raw+b"\n")

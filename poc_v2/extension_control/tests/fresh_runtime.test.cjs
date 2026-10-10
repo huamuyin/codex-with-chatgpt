@@ -128,6 +128,23 @@ test("scoped new session cannot dispatch a wrong control task commit or native b
   assert.equal(w.contentCalls.length,calls);assert.equal(w.run("attempts.size"),0);
 });
 
+test("new pinned root-to-conversation transition ignores different old URLs and rejects exact duplicate URL", async () => {
+  const setup=JSON.parse(fs.readFileSync(path.join(process.env.C2C_V2_TEST_DATA_ROOT,"new-review-session-cross-language.json"),"utf8"));
+  const next="https://chatgpt.com/c/new-owned-review",tabs=[{id:7,url:"https://chatgpt.com/c/old",status:"complete"},{id:99,url:"https://chatgpt.com/",status:"complete"}];
+  const w=worker({tabs});
+  await w.call("wire",JSON.stringify({type:"fresh_welcome",bridge_identity:setup.bridge_identity,
+    checkpoint:setup.empty_checkpoint,review_session_setup:setup.scope}));
+  await w.call("dispatch",setup.scoped_request);tabs[1].url=next;
+  await w.call("status");assert.equal(w.sent.at(-1).connected,true);assert.equal(w.sent.at(-1).tab_id,99);
+  await w.call("content",{type:"C2C_FRESH_BOUND",...setup.scoped_request,conversation_url:next,content_identity:I},
+    {id:setup.bridge_identity.extension_id,tab:{id:99},url:next});
+  assert.equal(w.sent.at(-1).type,"fresh_bound");assert.equal(w.sent.at(-1).tab_id,99);assert.equal(w.sent.at(-1).conversation_url,next);
+  assert.equal(w.contentCalls.filter(x=>x.type==="C2C_FRESH_REVIEW").length,1);
+  const before=w.contentCalls.length;tabs.push({id:100,url:next,status:"complete"});
+  await w.call("status");assert.equal(w.sent.at(-1).connected,false);assert.equal(w.contentCalls.length,before);
+  assert.equal(w.contentCalls.some(x=>x.id===7 || x.id===100),false);
+});
+
 test("future thread preparation opens exact frozen URL for a new request only with no old binding mutation or send", async () => {
   const id = R.target_tab_id + 1, updates = [];
   const w = worker({ tabs: [{ id, url: "https://chatgpt.com/", status: "complete" }], tabUpdate: async (...v) => updates.push(clone(v)) });
