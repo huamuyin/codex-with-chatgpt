@@ -466,6 +466,29 @@ test("owned draft diagnostics report bounded composer button metadata without te
   assert.equal(JSON.stringify(answer).includes(editor.value), false); assert.equal(c.clicks(), 0); assert.deepEqual(c.sent, []);
 });
 
+test("send re-resolves replaced editor and rejects a changed draft before any click", async () => {
+  for (const changed of [false, true]) {
+    const nodes = [], c = content(nodes, { allowSend: true }), doc = c.sandbox.document;
+    const original = doc.querySelectorAll("main textarea")[0];
+    const replacement = new c.sandbox.HTMLTextAreaElement(); replacement.value = changed ? "other user's draft" : R.message;
+    let replaced = false, clicks = 0;
+    original.dispatchEvent = () => { replaced = true; original.isConnected = false; };
+    const button = { isConnected: true, disabled: false, getBoundingClientRect: () => ({ width: 20, height: 20 }),
+      getAttribute: () => null, click() { clicks++; const u = user(); u.parentElement = doc.querySelector("main"); nodes.push(u, F.assistantMessage("completed after replacement")); } };
+    original.closest = () => ({ querySelectorAll: () => [] }); replacement.closest = () => ({ querySelectorAll: () => [button] });
+    const query = doc.querySelectorAll;
+    doc.querySelectorAll = (selector) => {
+      if (selector.includes("prompt-textarea") || selector === "main textarea") return [replaced ? replacement : original];
+      if (selector.startsWith("button[")) return [];
+      return query.call(doc, selector);
+    };
+    c.message({ type: "C2C_FRESH_REVIEW", request: R, may_send: true }); await c.settle();
+    assert.equal(clicks, changed ? 0 : 1);
+    if (changed) { assert.equal(c.sent.some((x) => x.raw_reply), false); assert.equal(replacement.value, "other user's draft"); }
+    else assert.equal(c.sent.find((x) => x.raw_reply).raw_reply, "completed after replacement");
+  }
+});
+
 test("wire inside an editable draft and its ancestors cannot prove an outgoing transcript turn", () => {
   const w = worker(), L = w.sandbox.C2CV2FreshLocator;
   const draft = new F.FixtureNode("div", { contenteditable: "true", role: "textbox" }, R.message);
