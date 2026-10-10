@@ -453,6 +453,19 @@ test("draft inspection is read only and returns no raw draft while proving exact
   assert.equal(unknown.draft_summary.owned_attempt_id, null); assert.equal(unknown.draft_summary.normalized_owned_attempt_id, null); assert.equal(composer.value, "unknown private draft");
 });
 
+test("owned draft diagnostics report bounded composer button metadata without text contents clicks or sends", () => {
+  const c = content([user()], { allowSend: true }), editor = c.sandbox.document.querySelectorAll("main textarea")[0];
+  editor.value = "unknown private draft";
+  const b = { isConnected: true, disabled: true, getBoundingClientRect: () => ({ width: 20, height: 20 }),
+    getAttribute: (k) => ({ "data-testid": "composer-submit-button", "aria-label": "发送" + "x".repeat(100), type: "button" })[k] || null };
+  editor.closest = () => ({ querySelectorAll: () => Array(15).fill(b) });
+  const answer = c.message({ type: "C2C_FRESH_INSPECT_DRAFT", request: R, candidates: [R] });
+  assert.equal(answer.inspected, true); assert.equal(answer.draft_summary.composer_form_present, true);
+  assert.equal(answer.draft_summary.composer_buttons.length, 12); assert.equal(answer.draft_summary.composer_buttons[0].aria_label.length, 80);
+  assert.equal(answer.draft_summary.composer_buttons[0].disabled, true);
+  assert.equal(JSON.stringify(answer).includes(editor.value), false); assert.equal(c.clicks(), 0); assert.deepEqual(c.sent, []);
+});
+
 test("wire inside an editable draft and its ancestors cannot prove an outgoing transcript turn", () => {
   const w = worker(), L = w.sandbox.C2CV2FreshLocator;
   const draft = new F.FixtureNode("div", { contenteditable: "true", role: "textbox" }, R.message);
