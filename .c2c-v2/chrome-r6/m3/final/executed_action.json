@@ -1,0 +1,14 @@
+{
+  "response_sha256": "c9db27d1df0d73240ed276805feaa0b2c6bb3114af4eb6b5369403b3d078b236",
+  "instruction": "Correct only the M3 recovery fail-closed input boundary and add focused regression; do not change M1/M2 or retained Fresh runtime and do not start another mission. Make recovery() return {decision:\"SAFE_BLOCK\", reason:\"authority_or_lifecycle_unconfirmed\"} for every malformed/incomplete identity, snapshot or observation shape rather than leaking AttributeError/TypeError after the protected decision block. In particular, never call identity.get or dictionary membership unless identity is a dict and mission_id is a validated/hashable string. Preserve the existing behavior that a malformed-but-attributable request carrying an exact existing active mission_id may append one SAFE_BLOCK recovery_decision using that mission's canonical stored identity; completely unattributable malformed input must return SAFE_BLOCK without mutating the journal. Add deterministic tests for identity=None, string/list identity, wrong-shape dict, unhashable mission_id, non-dict snapshot and non-dict observation. Assert no exception, exact SAFE_BLOCK result, and byte-identical journal for unattributable cases; also retain the existing changed-field/cross-profile SAFE_BLOCK tests. Run focused M3 tests plus full Python/Node/syntax/manifest/diff gates. Publish one updated immutable M3 final-review descriptor with exact implementation commit/source hashes/results and retain the explicit limitations: the real first Fresh send remains uncertain, full-browser production behavior is not established, OS-reboot and multi-repository behavior remain unmeasured, and cross_repository_scope remains UNMEASURED. Request only final independent review of this same M3 correction; do not access credentials/APIs, install, merge main, or touch Edge/family-fund/old branch.",
+  "actual_checks": {
+    "python_passed": 193,
+    "node_passed": 181,
+    "syntax_files": 27,
+    "manifest": "PASS",
+    "diff": "PASS"
+  },
+  "actual_check_output_refs": "private evidence/checks/m3-fix1",
+  "state": "EXECUTED_REVIEWABLE_CANDIDATE",
+  "arbitrary_reviewer_shell_executed": false
+}

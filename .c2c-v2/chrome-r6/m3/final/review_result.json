@@ -1,0 +1,187 @@
+{
+  "STATE": "REVIEW_RESULT",
+  "ROUND": 3,
+  "REQUEST_ID": "7ca98b10-6d65-46e7-8d99-532a99415130",
+  "CONTROL_ID": "d6b33ef7-dee5-4c5d-ae52-306945d0c26d",
+  "ATTEMPT_ID": 1,
+  "REVIEWED_COMMIT": "d3e1ae5ea38fc8957175930381ca9b1af72a6748",
+  "VERDICT": "CHANGES_REQUIRED",
+  "FINDINGS": [
+    {
+      "severity": "MAJOR",
+      "path": "poc_v2/chrome_r6_synthetic/m3_registry.py",
+      "finding": "recovery() does not satisfy the PLAN's requirement that incomplete or malformed recovery authority deterministically produce SAFE_BLOCK. The protected try/except correctly converts _identity/_snapshot/observation failures to SAFE_BLOCK, but immediately afterward it unconditionally executes identity.get(\"mission_id\"). If identity is None, a string/list or another non-dict value, this raises AttributeError outside the fail-closed block. A dict whose mission_id is an unhashable value can likewise raise TypeError during the subsequent dictionary-membership test. Thus malformed authority can escape without returning any of the three finite recovery decisions."
+    },
+    {
+      "severity": "MAJOR",
+      "path": "poc_v2/chrome_r6_synthetic/test_m3_registry.py",
+      "finding": "Current recovery negatives mutate fields inside an otherwise valid identity and exercise bad observation values, but there is no test for non-dict identity, wrong-shape identity or an unhashable mission_id. The missing coverage is material because those shapes reach the unguarded post-exception identity.get/membership path."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The prior one-use retry defect is corrected. retry_authorized now rejects whenever a retry slot already exists; retry_started marks that slot used; the slot survives restore and is cleared only after the claimed next attempt is successfully bound. A later authorization is rejected while the new attempt is merely bound and becomes eligible only after that latest attempt fails or becomes uncertain."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Focused retry regressions cover the previously missing interleaving and replay authority: after attempt1 failure, ticket1 claim of attempt2 survives reopen; a fresh ticket before attempt2 bind is rejected with unchanged files; attempt2 bind consumes the used slot; attempt2 must fail before ticket2 can authorize attempt3; the new claim is again one-use across restore. A recomputed valid hash-chain/head containing an illegal retry_authorized event is rejected by replay."
+    },
+    {
+      "severity": "INFO",
+      "finding": "M3's immutable workspace identity model remains intact: original_expected_commit is frozen in mission identity, checkpoint progress is stored separately, retry directives retain the original request/control/commit identity, exactly one mission is active, profile path/remote/branch facts are immutable, duplicate targets and cross-profile observations fail closed, and restore performs replay only."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The retained Fresh composer diagnostic extension is bounded and read-only. inspect_draft may return only capped composer-form/button metadata in addition to the established ownership summary; bridge validation requires an exact bounded schema and converts a missing or invalid summary into failed inspection. The diagnostic path returns no raw unknown draft and does not click, send or create request authority."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The retained Fresh composer re-resolution change preserves the send gates: after writing the exact wire, send readiness repeatedly resolves the current visible composer, requires the normalized full wire to remain exact, re-resolves an enabled visible send control, then immediately rechecks native binding, current editor identity, button state and full wire before the click. Tests cover editor replacement with preserved wire and reject a replacement containing a changed draft before any click."
+    },
+    {
+      "severity": "INFO",
+      "finding": "No authentication/readiness/reply weakening was found in the reviewed retained Fresh files. The exact background/locator blobs remain on the established protocol-3/version-0.9.8/build identity; bridge readiness still requires one exact target and matching components; Host/extension-Origin/ephemeral-token gates remain; reply acceptance still requires ready state plus exact native tab and conversation URL."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The real first-send outcome remains explicitly uncertain and must not be promoted into a success claim: fresh_protocol.md records that one new Fresh attempt navigated the original tab to a thread but no binding/result reached the controller before timeout, and explicit retry was rejected before journal write because the thread remained unbound. The bounded R6 evidence therefore does not establish general first-send reliability or production readiness."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The two-worktree integration evidence remains bounded: it reports two same-repository profiles, preserved original commits, Profile-B later checkpoint 73b31983a5635943984d78ede7187b1074ad41e8, cross-profile reply rejection, one-use retry evidence, zero implicit restore operations and byte-stable reopen. cross_repository_scope is explicitly UNMEASURED; M3 documentation also leaves multi-repository and OS-reboot behavior unmeasured, and the observed Chrome exercises are not a general full-browser production qualification."
+    },
+    {
+      "severity": "INFO",
+      "finding": "All twelve independently fetched blobs listed in m3/final/source_hashes.json match their declared Git blob IDs. The final correction commit fc8c3be1b648c978d6beda02dc4586b21453ad92 is one commit after the draft authority and changes only M3 registry/docs/tests plus draft-review evidence; d3e1ae5ea38fc8957175930381ca9b1af72a6748 is one evidence-only commit after it. Reported gates are 191 Python passes, 181 Node passes, 27 syntax files, manifest PASS and diff PASS."
+    }
+  ],
+  "REVIEW_SUMMARY": "The exact incoming authority d3e1ae5ea38fc8957175930381ca9b1af72a6748, all required incoming evidence and every required immutable source/evidence ref were independently reread through the official GitHub connector. The previous one-use retry defect is genuinely fixed and its public/replay regressions are substantive. The retained Fresh diagnostic and composer re-resolution changes are bounded, retain authentication/readiness/reply authority, and do not justify a production-readiness claim; the historical first-send outcome remains uncertain and broader full-browser/OS/multi-repository limits remain bounded or unmeasured. One concrete M3 recovery defect nevertheless remains: malformed identity values can escape recovery() with AttributeError/TypeError after the method has already selected SAFE_BLOCK, violating the PLAN's requirement that incomplete authority return one of the finite recovery decisions. Because that is a real fail-closed contract defect and currently lacks coverage, M3 cannot close yet.",
+  "GITHUB_RESOURCES_READ": [
+    {
+      "path": ".c2c-v2/chrome-r6/m3/final/review_request.json",
+      "ref_commit": "d3e1ae5ea38fc8957175930381ca9b1af72a6748",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/d3e1ae5ea38fc8957175930381ca9b1af72a6748/.c2c-v2/chrome-r6/m3/final/review_request.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"stage\": \"final\", \"implementation_commit\": \"fc8c3be1b648c978d6beda02dc4586b21453ad92\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/owner_scope.json",
+      "ref_commit": "d3e1ae5ea38fc8957175930381ca9b1af72a6748",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/d3e1ae5ea38fc8957175930381ca9b1af72a6748/.c2c-v2/chrome-r6/owner_scope.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"stop_boundary\": \"One final complete independent review package; no general production claim.\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m3/final/test_summary.json",
+      "ref_commit": "d3e1ae5ea38fc8957175930381ca9b1af72a6748",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/d3e1ae5ea38fc8957175930381ca9b1af72a6748/.c2c-v2/chrome-r6/m3/final/test_summary.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"python_passed\": 191, \"node_passed\": 181, \"syntax_files\": 27, \"manifest\": \"PASS\", \"diff\": \"PASS\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m3/final/source_hashes.json",
+      "ref_commit": "d3e1ae5ea38fc8957175930381ca9b1af72a6748",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/d3e1ae5ea38fc8957175930381ca9b1af72a6748/.c2c-v2/chrome-r6/m3/final/source_hashes.json",
+      "read_method": "GitHub fetch_file plus independent Git blob verification",
+      "source_excerpt": "\"path\": \"poc_v2/chrome_r6_synthetic/m3_registry.py\", \"git_blob\": \"99c0962424c91ea0d21088c4b8efb69d9ac5f68d\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m3/final/previous_action.json",
+      "ref_commit": "d3e1ae5ea38fc8957175930381ca9b1af72a6748",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/d3e1ae5ea38fc8957175930381ca9b1af72a6748/.c2c-v2/chrome-r6/m3/final/previous_action.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"implementation_commit\": \"fc8c3be1b648c978d6beda02dc4586b21453ad92\", \"python_passed\": 191"
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/M3_REGISTRY.md",
+      "ref_commit": "fc8c3be1b648c978d6beda02dc4586b21453ad92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/fc8c3be1b648c978d6beda02dc4586b21453ad92/poc_v2/chrome_r6_synthetic/M3_REGISTRY.md",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "An authorization now occupies the derived retry slot even after it is claimed. It is consumed only when the claimed next attempt is successfully bound."
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/m3_registry.py",
+      "ref_commit": "fc8c3be1b648c978d6beda02dc4586b21453ad92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/fc8c3be1b648c978d6beda02dc4586b21453ad92/poc_v2/chrome_r6_synthetic/m3_registry.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "except (ValueError,KeyError,TypeError):decision=\"SAFE_BLOCK\";reason=\"authority_or_lifecycle_unconfirmed\"; if identity.get(\"mission_id\") in self.state[\"missions\"]"
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/test_m3_registry.py",
+      "ref_commit": "fc8c3be1b648c978d6beda02dc4586b21453ad92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/fc8c3be1b648c978d6beda02dc4586b21453ad92/poc_v2/chrome_r6_synthetic/test_m3_registry.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "def test_used_retry_slot_blocks_new_ticket_until_next_attempt_is_bound_and_fails(self):"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_bridge.py",
+      "ref_commit": "fc8c3be1b648c978d6beda02dc4586b21453ad92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/fc8c3be1b648c978d6beda02dc4586b21453ad92/poc_v2/extension_control/bridge/fresh_bridge.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "extended = (set(d) == original_keys | {\"composer_form_present\", \"composer_buttons\"}"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_protocol.md",
+      "ref_commit": "fc8c3be1b648c978d6beda02dc4586b21453ad92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/fc8c3be1b648c978d6beda02dc4586b21453ad92/poc_v2/extension_control/bridge/fresh_protocol.md",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "A single new Fresh attempt navigated the original native tab from root to a new thread, but no binding/result reached the controller before its timeout."
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_content.js",
+      "ref_commit": "fc8c3be1b648c978d6beda02dc4586b21453ad92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/fc8c3be1b648c978d6beda02dc4586b21453ad92/poc_v2/extension_control/chrome_extension/fresh_content.js",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "const current = firstVisible(COMPOSER_RULES); if (Locator.normalizeText(readText(current.element)) !== Locator.normalizeText(request.message)) throw Error(\"composer_text_verification_failed\");"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_background.js",
+      "ref_commit": "fc8c3be1b648c978d6beda02dc4586b21453ad92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/fc8c3be1b648c978d6beda02dc4586b21453ad92/poc_v2/extension_control/chrome_extension/fresh_background.js",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "b?.protocol_version === 3 && b?.host === I.host && b?.port === I.port && b?.extension_id === chrome.runtime.id"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_locator.js",
+      "ref_commit": "fc8c3be1b648c978d6beda02dc4586b21453ad92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/fc8c3be1b648c978d6beda02dc4586b21453ad92/poc_v2/extension_control/chrome_extension/fresh_locator.js",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "[\"data-message-author-role\", '[data-message-author-role]']"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/test_fresh_delivery.py",
+      "ref_commit": "fc8c3be1b648c978d6beda02dc4586b21453ad92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/fc8c3be1b648c978d6beda02dc4586b21453ad92/poc_v2/extension_control/bridge/test_fresh_delivery.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "def test_bounded_extended_composer_metadata_remains_read_only_and_no_missing_summary_success(self):"
+    },
+    {
+      "path": "poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+      "ref_commit": "fc8c3be1b648c978d6beda02dc4586b21453ad92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/fc8c3be1b648c978d6beda02dc4586b21453ad92/poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "test(\"send re-resolves replaced editor and rejects a changed draft before any click\", async () => {"
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m3/integration/result.json",
+      "ref_commit": "fc8c3be1b648c978d6beda02dc4586b21453ad92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/fc8c3be1b648c978d6beda02dc4586b21453ad92/.c2c-v2/chrome-r6/m3/integration/result.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"original_commit_preserved\": true, \"implicit_restore_operations\": 0, \"cross_repository_scope\": \"UNMEASURED\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m3/integration/B_independent_review.json",
+      "ref_commit": "fc8c3be1b648c978d6beda02dc4586b21453ad92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/fc8c3be1b648c978d6beda02dc4586b21453ad92/.c2c-v2/chrome-r6/m3/integration/B_independent_review.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"VERDICT\": \"PASS_CONTINUE\", \"REVIEWED_COMMIT\": \"94048305c8cb9cfd6c8abb003bc601ff25fcf90d\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m3/draft/review_result.json",
+      "ref_commit": "fc8c3be1b648c978d6beda02dc4586b21453ad92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/fc8c3be1b648c978d6beda02dc4586b21453ad92/.c2c-v2/chrome-r6/m3/draft/review_result.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"VERDICT\": \"CHANGES_REQUIRED\""
+    }
+  ],
+  "NEXT_CODEX_INSTRUCTION": "Correct only the M3 recovery fail-closed input boundary and add focused regression; do not change M1/M2 or retained Fresh runtime and do not start another mission. Make recovery() return {decision:\"SAFE_BLOCK\", reason:\"authority_or_lifecycle_unconfirmed\"} for every malformed/incomplete identity, snapshot or observation shape rather than leaking AttributeError/TypeError after the protected decision block. In particular, never call identity.get or dictionary membership unless identity is a dict and mission_id is a validated/hashable string. Preserve the existing behavior that a malformed-but-attributable request carrying an exact existing active mission_id may append one SAFE_BLOCK recovery_decision using that mission's canonical stored identity; completely unattributable malformed input must return SAFE_BLOCK without mutating the journal. Add deterministic tests for identity=None, string/list identity, wrong-shape dict, unhashable mission_id, non-dict snapshot and non-dict observation. Assert no exception, exact SAFE_BLOCK result, and byte-identical journal for unattributable cases; also retain the existing changed-field/cross-profile SAFE_BLOCK tests. Run focused M3 tests plus full Python/Node/syntax/manifest/diff gates. Publish one updated immutable M3 final-review descriptor with exact implementation commit/source hashes/results and retain the explicit limitations: the real first Fresh send remains uncertain, full-browser production behavior is not established, OS-reboot and multi-repository behavior remain unmeasured, and cross_repository_scope remains UNMEASURED. Request only final independent review of this same M3 correction; do not access credentials/APIs, install, merge main, or touch Edge/family-fund/old branch."
+}

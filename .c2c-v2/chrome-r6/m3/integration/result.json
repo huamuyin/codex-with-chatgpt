@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "profiles": 2,
+  "actual_chrome_tasks": [
+    "C2C_V2_CHROME_R6_M3",
+    "C2C_V2_CHROME_R6_M3_SCOPE_B"
+  ],
+  "A_original_commit": "e1b77a83fe28b62c8bfdf6678ae903bb07477ba1",
+  "B_original_commit": "94048305c8cb9cfd6c8abb003bc601ff25fcf90d",
+  "B_later_checkpoint": "73b31983a5635943984d78ede7187b1074ad41e8",
+  "original_commit_preserved": true,
+  "cross_profile_reply_rejected": true,
+  "one_use_retry_permission": true,
+  "actual_B_attempts": 2,
+  "implicit_restore_operations": 0,
+  "registry_byte_stable_after_reopen": true,
+  "same_repo_only": true,
+  "cross_repository_scope": "UNMEASURED",
+  "first_parent_verified": true
+}

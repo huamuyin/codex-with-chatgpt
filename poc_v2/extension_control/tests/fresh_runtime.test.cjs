@@ -99,6 +99,21 @@ test("future thread preparation opens exact frozen URL for a new request only wi
   assert.deepEqual(w.storage, before); assert.deepEqual(w.contentCalls, []); assert.deepEqual(w.forbidden, []);
 });
 
+test("loading target refresh never rebinds or sends and rejects unknown nonce duplicate or pending-other targets", async () => {
+  for (const variant of ["valid", "nonce", "duplicate", "old", "pending", "complete"]) {
+    const id=R.target_tab_id+1,reloads=[],tabs=[{id,url:R.conversation_url,status:"loading"}];
+    if(variant==="duplicate")tabs.push({id:id+1,url:R.conversation_url,status:"loading"});
+    if(variant==="old")tabs.push({id:R.target_tab_id,url:R.conversation_url,status:"complete"});
+    if(variant==="pending")tabs[0].pendingUrl="https://chatgpt.com/c/other";
+    if(variant==="complete")tabs[0].status="complete";
+    const w=worker({tabs,tabReload:async(v)=>reloads.push(v)});await w.call("restore",fixture.checkpoint);const before=clone(w.storage);
+    const request={...R};if(variant==="nonce")request.nonce="bad";
+    await w.call("maintenance",{maintenance_id:R.request_id,action:"refresh_loading_target",request,tab_id:id,url:R.conversation_url,maintenance_only:true});
+    assert.deepEqual(reloads,variant==="valid"?[id]:[],variant);assert.deepEqual(w.storage,before);assert.deepEqual(w.contentCalls,[]);
+    assert.equal(w.sent.some((x)=>x.type==="fresh_result"||x.type==="fresh_review"),false);
+  }
+});
+
 test("future thread preparation rejects ambiguous changed or still present old authority with zero navigation", async () => {
   const id = R.target_tab_id + 1;
   for (const variant of ["unknown", "control", "nonce", "url", "tab", "flag", "old_exists", "duplicate", "loading", "pending_url", "other_url", "running", "mixed"]) {
@@ -451,6 +466,42 @@ test("draft inspection is read only and returns no raw draft while proving exact
   composer.value = "unknown private draft";
   const unknown = c.message({ type: "C2C_FRESH_INSPECT_DRAFT", request: R, candidates: [R] });
   assert.equal(unknown.draft_summary.owned_attempt_id, null); assert.equal(unknown.draft_summary.normalized_owned_attempt_id, null); assert.equal(composer.value, "unknown private draft");
+});
+
+test("owned draft diagnostics report bounded composer button metadata without text contents clicks or sends", () => {
+  const c = content([user()], { allowSend: true }), editor = c.sandbox.document.querySelectorAll("main textarea")[0];
+  editor.value = "unknown private draft";
+  const b = { isConnected: true, disabled: true, getBoundingClientRect: () => ({ width: 20, height: 20 }),
+    getAttribute: (k) => ({ "data-testid": "composer-submit-button", "aria-label": "发送" + "x".repeat(100), type: "button" })[k] || null };
+  editor.closest = () => ({ querySelectorAll: () => Array(15).fill(b) });
+  const answer = c.message({ type: "C2C_FRESH_INSPECT_DRAFT", request: R, candidates: [R] });
+  assert.equal(answer.inspected, true); assert.equal(answer.draft_summary.composer_form_present, true);
+  assert.equal(answer.draft_summary.composer_buttons.length, 12); assert.equal(answer.draft_summary.composer_buttons[0].aria_label.length, 80);
+  assert.equal(answer.draft_summary.composer_buttons[0].disabled, true);
+  assert.equal(JSON.stringify(answer).includes(editor.value), false); assert.equal(c.clicks(), 0); assert.deepEqual(c.sent, []);
+});
+
+test("send re-resolves replaced editor and rejects a changed draft before any click", async () => {
+  for (const changed of [false, true]) {
+    const nodes = [], c = content(nodes, { allowSend: true }), doc = c.sandbox.document;
+    const original = doc.querySelectorAll("main textarea")[0];
+    const replacement = new c.sandbox.HTMLTextAreaElement(); replacement.value = changed ? "other user's draft" : R.message;
+    let replaced = false, clicks = 0;
+    original.dispatchEvent = () => { replaced = true; original.isConnected = false; };
+    const button = { isConnected: true, disabled: false, getBoundingClientRect: () => ({ width: 20, height: 20 }),
+      getAttribute: () => null, click() { clicks++; const u = user(); u.parentElement = doc.querySelector("main"); nodes.push(u, F.assistantMessage("completed after replacement")); } };
+    original.closest = () => ({ querySelectorAll: () => [] }); replacement.closest = () => ({ querySelectorAll: () => [button] });
+    const query = doc.querySelectorAll;
+    doc.querySelectorAll = (selector) => {
+      if (selector.includes("prompt-textarea") || selector === "main textarea") return [replaced ? replacement : original];
+      if (selector.startsWith("button[")) return [];
+      return query.call(doc, selector);
+    };
+    c.message({ type: "C2C_FRESH_REVIEW", request: R, may_send: true }); await c.settle();
+    assert.equal(clicks, changed ? 0 : 1);
+    if (changed) { assert.equal(c.sent.some((x) => x.raw_reply), false); assert.equal(replacement.value, "other user's draft"); }
+    else assert.equal(c.sent.find((x) => x.raw_reply).raw_reply, "completed after replacement");
+  }
 });
 
 test("wire inside an editable draft and its ancestors cannot prove an outgoing transcript turn", () => {

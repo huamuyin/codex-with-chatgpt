@@ -1,0 +1,14 @@
+{
+  "response_sha256": "3b8db9da1ed80cbd4aa72225cc6e2657533b04b17dfa675f458d5da55bfc48b8",
+  "instruction": "Correct only the M3 one-use retry state machine and add focused regression; do not modify M1/M2/Fresh runtime or integration authority and do not start post-M3 work. Prevent a second retry_authorized event after retry_started until the claimed next attempt has actually been bound. A clean implementation is: while m.retry exists, retry_authorized must always reject; attempt_bound for attempt_id>1 must require the existing retry to be used and next_attempt to equal that attempt_id, then consume/clear m.retry only after the bind event is accepted. A later retry authorization is allowed only after that newly bound latest attempt itself reaches failed/uncertain state. Preserve append-only audit history in events even if the derived retry slot is cleared. Add deterministic tests for: attempt1 failed -> authorize ticket1 -> claim attempt2 -> reopen -> authorizing ticket2 for attempt1 before attempt2 bind fails with byte-identical journal; the original claim cannot be re-yielded; binding attempt2 consumes the used retry slot; attempting authorization while attempt2 is merely bound fails; after attempt2 is failed/uncertain, a new ticket can be authorized exactly once and claims attempt3 exactly once across restore. Also add a recomputed-hash replay/tamper case if needed to prove the same transition invariant is enforced by _apply, not only public methods. Keep original_expected_commit unchanged in every directive. Run focused M3 tests and full Python/Node/syntax/manifest/diff gates. Commit only M3 synthetic source/docs/tests and this draft-review evidence, then publish an immutable .c2c-v2/chrome-r6/m3/final review descriptor with exact implementation commit, source hashes and actual results. Request final independent M3 review only; no APIs/credentials/install/main merge/Edge/family-fund/old-branch changes.",
+  "actual_checks": {
+    "python_passed": 191,
+    "node_passed": 181,
+    "syntax_files": 27,
+    "manifest": "PASS",
+    "diff": "PASS"
+  },
+  "actual_check_output_refs": "private evidence/checks/m3-final",
+  "state": "EXECUTED_REVIEWABLE_CANDIDATE",
+  "arbitrary_reviewer_shell_executed": false
+}

@@ -1,0 +1,20 @@
+[
+  {
+    "path": "poc_v2/chrome_r6_synthetic/M1_RECEIPTS.md",
+    "ref_commit": "b94adb92b0858028907a44087fe9939aea3a623e",
+    "sha256": "b82401087a64993042a91ccee9c7d3f34f2ace928c372780b3829e5db6c694c5",
+    "git_blob": "2a1ed22e51c4a24a9b9af9d8f72204aaa7ca7ec0"
+  },
+  {
+    "path": "poc_v2/chrome_r6_synthetic/m1_receipts.py",
+    "ref_commit": "b94adb92b0858028907a44087fe9939aea3a623e",
+    "sha256": "721d7e665d45728f2af7c8264d069c8a3b3f4d5a84148fce0990e15e23a80ca1",
+    "git_blob": "ea88a61d15fb70faa954c0e6d6a4cfaf8b2e66cc"
+  },
+  {
+    "path": "poc_v2/chrome_r6_synthetic/test_m1_receipts.py",
+    "ref_commit": "b94adb92b0858028907a44087fe9939aea3a623e",
+    "sha256": "f075f197c50cd1ddb79c023a2237ed744e1dd0fdd0c39d76bbf0e961988af302",
+    "git_blob": "7733433cbfcf7df1f79195f9da8e438fe4c60653"
+  }
+]

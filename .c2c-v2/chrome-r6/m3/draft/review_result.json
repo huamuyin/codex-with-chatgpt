@@ -1,0 +1,136 @@
+{
+  "STATE": "REVIEW_RESULT",
+  "ROUND": 2,
+  "REQUEST_ID": "57027abe-e428-46f2-8be4-270f974064fc",
+  "CONTROL_ID": "eb9a82b2-a310-4466-a9e8-5fe246826f4d",
+  "ATTEMPT_ID": 2,
+  "REVIEWED_COMMIT": "799641d11071a04b1452ba6a6c8ddb3ce69e61a9",
+  "VERDICT": "CHANGES_REQUIRED",
+  "FINDINGS": [
+    {
+      "severity": "MAJOR",
+      "path": "poc_v2/chrome_r6_synthetic/m3_registry.py",
+      "finding": "The one-use retry authority has a real reauthorization window. retry_authorized rejects an existing retry only when m[\"retry\"] exists and used is false. After claim_retry appends retry_started, used becomes true while the next attempt has not yet been attempt_bound. During that interval authorize_retry for the same failed attempt passes again, replaces m[\"retry\"] with a fresh authorization_id and can yield the same next attempt a second time. That violates the PLAN requirement that claim_retry be one-use across restore/crash boundaries and creates a path to duplicate explicit retry directives."
+    },
+    {
+      "severity": "MAJOR",
+      "path": "poc_v2/chrome_r6_synthetic/test_m3_registry.py",
+      "finding": "The existing retry test proves that the same authorization token is not regranted after claim/restore, but it does not attempt to create a new retry_authorized event after retry_started and before the claimed next attempt is bound. Therefore the current 189-pass suite does not cover the exact duplicate-retry window above."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The rest of the core retry flow is directionally correct: authorization requires the latest bound attempt to be failed/uncertain; retry_started is appended before returning the directive; the directive preserves profile/mission/request/control/original_expected_commit and advances attempt_id; completed replies or receipts block retry; and actual transmission remains outside the registry behind existing Fresh /retry authority."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Immutable review identity is otherwise handled correctly. mission_started freezes original_expected_commit, checkpoint_recorded advances only checkpoint_head, recovery validates the current workspace against the audited checkpoint, and current HEAD is not substituted into reply/retry identity."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The registry implements the major durability/isolation requirements: exactly two immutable profiles, distinct canonical paths/branches, same authorized repository and credential-free allowed remote forms, one globally active mission, global request/control collision checks, sequential attempt binding, duplicate target rejection, deterministic hash-chained events/sealed head, OS single-writer locking and replay-only restore with no Git/Chrome/send callback."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The bounded two-worktree evidence is coherent. integration/result.json reports two profiles, original commits for A and B, B later checkpoint 73b31983a5635943984d78ede7187b1074ad41e8, original_commit_preserved=true, cross_profile_reply_rejected=true, one_use_retry_permission=true and implicit_restore_operations=0. The B checkpoint commit was independently fetched: it is one commit after 94048305c8cb9cfd6c8abb003bc601ff25fcf90d and adds only executed_scope.json, so the GitHub evidence supports the original-commit-preservation claim. That integration success does not eliminate the synthetic registry reauthorization defect because the problematic second-authorization interleaving was not exercised."
+    },
+    {
+      "severity": "INFO",
+      "finding": "All five independently fetched blobs listed in m3/draft/source_hashes.json match their declared Git blob IDs. The implementation commit 94e0091cfbe4b6248f388c620b397ab2ba733b1e is one bounded commit after the M3 PLAN authority, and incoming 799641d11071a04b1452ba6a6c8ddb3ce69e61a9 is one evidence-only commit after the implementation. Reported gates are 189 Python passes, 181 Node passes, 27 syntax files, manifest PASS and diff PASS."
+    }
+  ],
+  "REVIEW_SUMMARY": "The exact incoming authority 799641d11071a04b1452ba6a6c8ddb3ce69e61a9 and every required incoming path/ref were independently read through the official GitHub connector. The M3 draft substantially implements the two-profile workspace authority, immutable-original-commit model, sealed audit state, single-writer locking, safe restore and bounded Chrome integration requested by the PLAN. However, one concrete retry-state defect remains: after a one-use retry has been claimed but before its next attempt is bound, a second retry_authorized event for the same failed attempt can replace the used authorization and yield the same next attempt again. This directly violates the mission's one-use explicit-retry invariant and is not covered by the current tests. CHANGES_REQUIRED is therefore necessary for one bounded state-machine correction plus focused regression, after which the corrected candidate should return for final independent M3 review.",
+  "GITHUB_RESOURCES_READ": [
+    {
+      "path": ".c2c-v2/chrome-r6/m3/draft/review_request.json",
+      "ref_commit": "799641d11071a04b1452ba6a6c8ddb3ce69e61a9",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/799641d11071a04b1452ba6a6c8ddb3ce69e61a9/.c2c-v2/chrome-r6/m3/draft/review_request.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"implementation_commit\": \"94e0091cfbe4b6248f388c620b397ab2ba733b1e\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/owner_scope.json",
+      "ref_commit": "799641d11071a04b1452ba6a6c8ddb3ce69e61a9",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/799641d11071a04b1452ba6a6c8ddb3ce69e61a9/.c2c-v2/chrome-r6/owner_scope.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"synthetic_project\": \"poc_v2/chrome_r6_synthetic\", \"Edge_route_mutation\": false, \"family_fund_mutation\": false"
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m3/draft/test_summary.json",
+      "ref_commit": "799641d11071a04b1452ba6a6c8ddb3ce69e61a9",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/799641d11071a04b1452ba6a6c8ddb3ce69e61a9/.c2c-v2/chrome-r6/m3/draft/test_summary.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"python_passed\": 189, \"node_passed\": 181, \"syntax_files\": 27, \"manifest\": \"PASS\", \"diff\": \"PASS\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m3/draft/source_hashes.json",
+      "ref_commit": "799641d11071a04b1452ba6a6c8ddb3ce69e61a9",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/799641d11071a04b1452ba6a6c8ddb3ce69e61a9/.c2c-v2/chrome-r6/m3/draft/source_hashes.json",
+      "read_method": "GitHub fetch_file plus independent Git blob verification",
+      "source_excerpt": "\"path\": \"poc_v2/chrome_r6_synthetic/m3_registry.py\", \"git_blob\": \"0c6a66869c9e4173bb631271cc4ea6883f7c6e8b\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m3/draft/previous_action.json",
+      "ref_commit": "799641d11071a04b1452ba6a6c8ddb3ce69e61a9",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/799641d11071a04b1452ba6a6c8ddb3ce69e61a9/.c2c-v2/chrome-r6/m3/draft/previous_action.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"implementation_commit\": \"94e0091cfbe4b6248f388c620b397ab2ba733b1e\""
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/M3_REGISTRY.md",
+      "ref_commit": "94e0091cfbe4b6248f388c620b397ab2ba733b1e",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/94e0091cfbe4b6248f388c620b397ab2ba733b1e/poc_v2/chrome_r6_synthetic/M3_REGISTRY.md",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "a separately persisted retry permission can yield one directive after retry_started is durably appended"
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/m3_registry.py",
+      "ref_commit": "94e0091cfbe4b6248f388c620b397ab2ba733b1e",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/94e0091cfbe4b6248f388c620b397ab2ba733b1e/poc_v2/chrome_r6_synthetic/m3_registry.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "or m[\"retry\"] and not m[\"retry\"][\"used\"]:raise ValueError(\"retry_authority\")"
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/test_m3_registry.py",
+      "ref_commit": "94e0091cfbe4b6248f388c620b397ab2ba733b1e",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/94e0091cfbe4b6248f388c620b397ab2ba733b1e/poc_v2/chrome_r6_synthetic/test_m3_registry.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "def test_retry_authorized_once_and_restore_never_regrants(self):"
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m3/integration/result.json",
+      "ref_commit": "94e0091cfbe4b6248f388c620b397ab2ba733b1e",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/94e0091cfbe4b6248f388c620b397ab2ba733b1e/.c2c-v2/chrome-r6/m3/integration/result.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"original_commit_preserved\": true, \"cross_profile_reply_rejected\": true, \"one_use_retry_permission\": true, \"implicit_restore_operations\": 0"
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m3/integration/B_independent_review.json",
+      "ref_commit": "94e0091cfbe4b6248f388c620b397ab2ba733b1e",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/94e0091cfbe4b6248f388c620b397ab2ba733b1e/.c2c-v2/chrome-r6/m3/integration/B_independent_review.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"VERDICT\": \"PASS_CONTINUE\", \"REVIEWED_COMMIT\": \"94048305c8cb9cfd6c8abb003bc601ff25fcf90d\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m3/plan/review_result.json",
+      "ref_commit": "94e0091cfbe4b6248f388c620b397ab2ba733b1e",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/94e0091cfbe4b6248f388c620b397ab2ba733b1e/.c2c-v2/chrome-r6/m3/plan/review_result.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "claim_retry must append retry_started before returning a bounded retry directive containing the same request_id/control_id/original_expected_commit and the next sequential attempt_id. After retry_started, restore must not yield that retry again"
+    },
+    {
+      "path": "commit 73b31983a5635943984d78ede7187b1074ad41e8",
+      "ref_commit": "73b31983a5635943984d78ede7187b1074ad41e8",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/commit/73b31983a5635943984d78ede7187b1074ad41e8",
+      "read_method": "GitHub fetch_commit plus compare_commits against 94048305c8cb9cfd6c8abb003bc601ff25fcf90d",
+      "source_excerpt": "One evidence-only commit after 94048305c8cb9cfd6c8abb003bc601ff25fcf90d; executed_scope.json preserves original_expected_commit at the parent commit."
+    },
+    {
+      "path": "commit 94e0091cfbe4b6248f388c620b397ab2ba733b1e",
+      "ref_commit": "94e0091cfbe4b6248f388c620b397ab2ba733b1e",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/commit/94e0091cfbe4b6248f388c620b397ab2ba733b1e",
+      "read_method": "GitHub fetch_commit and immutable compares",
+      "source_excerpt": "poc: execute Chrome R6 m3 draft development action"
+    }
+  ],
+  "NEXT_CODEX_INSTRUCTION": "Correct only the M3 one-use retry state machine and add focused regression; do not modify M1/M2/Fresh runtime or integration authority and do not start post-M3 work. Prevent a second retry_authorized event after retry_started until the claimed next attempt has actually been bound. A clean implementation is: while m.retry exists, retry_authorized must always reject; attempt_bound for attempt_id>1 must require the existing retry to be used and next_attempt to equal that attempt_id, then consume/clear m.retry only after the bind event is accepted. A later retry authorization is allowed only after that newly bound latest attempt itself reaches failed/uncertain state. Preserve append-only audit history in events even if the derived retry slot is cleared. Add deterministic tests for: attempt1 failed -> authorize ticket1 -> claim attempt2 -> reopen -> authorizing ticket2 for attempt1 before attempt2 bind fails with byte-identical journal; the original claim cannot be re-yielded; binding attempt2 consumes the used retry slot; attempting authorization while attempt2 is merely bound fails; after attempt2 is failed/uncertain, a new ticket can be authorized exactly once and claims attempt3 exactly once across restore. Also add a recomputed-hash replay/tamper case if needed to prove the same transition invariant is enforced by _apply, not only public methods. Keep original_expected_commit unchanged in every directive. Run focused M3 tests and full Python/Node/syntax/manifest/diff gates. Commit only M3 synthetic source/docs/tests and this draft-review evidence, then publish an immutable .c2c-v2/chrome-r6/m3/final review descriptor with exact implementation commit, source hashes and actual results. Request final independent M3 review only; no APIs/credentials/install/main merge/Edge/family-fund/old-branch changes."
+}

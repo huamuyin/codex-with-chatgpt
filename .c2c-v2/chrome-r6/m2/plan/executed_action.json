@@ -1,0 +1,14 @@
+{
+  "response_sha256": "ee90841e3d1b922f7ff86ebf5743be0a58d6c6affe19c85c696c87fde4849a57",
+  "instruction": "Implement only the Chrome R6 M2 reviewable draft; do not modify M1 or existing Fresh runtime. Add poc_v2/chrome_r6_synthetic/m2_jsonl.py, test_m2_jsonl.py and M2_JSONL.md. Implement StrictJsonlReader with caller-required positive non-bool max_record_bytes, max_records and max_total_bytes. Accept bytes chunks only; LF delimits records and one immediately preceding CR is delimiter syntax, with no other normalization. Empty input finalizes successfully with zero records; blank records fail; every nonempty final record must end in LF/CRLF. Bound payload bytes after CR removal and fail oversized pending records as soon as they cannot fit. Maintain a rolling SHA256 and raw byte count over every exact chunk supplied before parsing; on any error freeze a ReaderError containing bounded code/hash/bytes/count/index metadata. Parse completed records with strict UTF-8, duplicate-key rejection at every object level, nonfinite rejection and recursive lone-surrogate rejection; require each top-level record to be an object. Preserve Unicode without normalization. Keep accepted records internal until finalize; successful finalize returns immutable records plus total/per-record byte counts and SHA256 values. After FAILED or FINALIZED, no further feed may mutate state; repeat successful finalize may return the identical result. Add deterministic tests for empty input, multi-record input, long Chinese/emoji split at every byte boundary, split CRLF, valid surrogate pair, NFC/NFD preservation, exact size/count/total boundaries and chunking invariance; and negatives for invalid/split UTF-8, nested/top duplicate keys, nonfinite values, lone surrogates in values/keys, malformed/non-object JSON, blank lines, unfinished final record, each limit+1, feed after finalize, sticky failure and a later-record failure proving no partial successful artifact. Run focused M2 tests plus the existing full Python/Node/syntax/manifest/diff gates. Commit only M2 synthetic source/docs/tests and PLAN evidence, then publish an evidence-only .c2c-v2/chrome-r6/m2/draft review descriptor with exact implementation commit, source hashes, actual test counts/results and explicit remaining independent-review obligations. Do not claim acceptance, start M3, use APIs/credentials, install anything, merge main, or touch Edge/family-fund/old branch.",
+  "actual_checks": {
+    "python_passed": 171,
+    "node_passed": 181,
+    "syntax_files": 25,
+    "manifest": "PASS",
+    "diff": "PASS"
+  },
+  "actual_check_output_refs": "private evidence/checks/m2-draft",
+  "state": "EXECUTED_REVIEWABLE_CANDIDATE",
+  "arbitrary_reviewer_shell_executed": false
+}

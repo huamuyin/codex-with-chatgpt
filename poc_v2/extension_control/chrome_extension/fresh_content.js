@@ -212,9 +212,20 @@
       if (decision === "composer-not-empty") throw new Error("composer_not_empty");
       if (decision !== "send-once") throw new Error("send_decision_invalid");
       setComposer(composer.element, request.message);
-      const send = await waitUntil(() => { verifyBinding(); return firstUsableSend(composer.element); }, 8000, "send_button_not_ready");
+      const send = await waitUntil(() => {
+        verifyBinding();
+        const current = firstVisible(COMPOSER_RULES);
+        if (!current) return null;
+        if (Locator.normalizeText(readText(current.element)) !== Locator.normalizeText(request.message)) throw Error("composer_text_verification_failed");
+        const candidate = firstUsableSend(current.element);
+        return candidate ? { ...candidate, composerElement: current.element } : null;
+      }, 30000, "send_button_not_ready");
       sendStrategy = send.strategy;
       verifyBinding();
+      const current = firstVisible(COMPOSER_RULES);
+      if (!current || current.element !== send.composerElement || !visible(send.element)
+          || send.element.disabled || send.element.getAttribute("aria-disabled") === "true"
+          || Locator.normalizeText(readText(current.element)) !== Locator.normalizeText(request.message)) throw Error("composer_text_verification_failed");
       send.element.click();
       sentThisCall = true;
       userTurn = await waitUntil(findFullUser, 30000, "outgoing_turn_not_confirmed");
@@ -368,10 +379,18 @@
           && a.conversation_url === r.conversation_url);
         const candidates = known.filter((a) => draft === a.message);
         const normalized = known.filter((a) => Locator.normalizeText(draft) === Locator.normalizeText(a.message));
+        const form = found?.element.closest?.("form");
+        const buttons = form ? [...form.querySelectorAll("button")].slice(0, 12).map((b) => ({
+          test_id: String(b.getAttribute("data-testid") || "").slice(0, 64),
+          aria_label: String(b.getAttribute("aria-label") || "").slice(0, 80),
+          type: String(b.getAttribute("type") || "").slice(0, 16),
+          disabled: b.disabled === true, aria_disabled: b.getAttribute("aria-disabled") === "true", visible: visible(b),
+        })) : [];
         respond({ inspected: true, draft_summary: { composer_present: Boolean(found), composer_tag: found?.element.tagName || "",
           contenteditable: found?.element.isContentEditable === true, length: draft.length, empty: !draft.trim(),
           format_only: /^[\p{White_Space}\p{Cf}]*$/u.test(draft), owned_attempt_id: candidates.length === 1 ? candidates[0].attempt_id : null,
-          normalized_owned_attempt_id: normalized.length === 1 ? normalized[0].attempt_id : null } });
+          normalized_owned_attempt_id: normalized.length === 1 ? normalized[0].attempt_id : null,
+          composer_form_present: Boolean(form), composer_buttons: buttons } });
       } catch (e) { respond({ inspected: false, error_code: e.message }); }
       return false;
     }

@@ -316,3 +316,30 @@ does not observe, retry, send, or create a logical request. Its ACK does not mea
 ready: post-navigation component/readiness checks are still required before a
 new logical request may bind the new tab. Existing request recovery gates remain
 unchanged. This action does not apply to legacy smoke.
+# R6 bounded composer diagnostics
+
+Authenticated `inspect_draft` retains the original ownership/length summary and
+may include `composer_form_present` plus at most 12 `composer_buttons`. Each button
+contains only capped `test_id` (64), `aria_label` (80), `type` (16), and boolean
+disabled/aria-disabled/visible flags scoped to the owned composer's form. It never
+returns draft text or changes the editor, click, send, nonce or request history.
+The bridge validates the exact original or extended schema. A missing or invalid
+summary is a failed inspection, never a success ACK. This compatible diagnostic
+extension does not change version/protocol/build or authentication/readiness gates.
+# R6 composer hydration/replacement
+
+Send readiness waits at most 30 seconds and resolves the current visible composer
+on each sample rather than retaining a potentially detached editor's form. The
+entire normalized wire must still match; a changed/unknown draft is rejected.
+Immediately before click the same current editor, visible enabled send control,
+full owned wire and immutable tab/URL binding are rechecked. This adds no fallback
+to an active tab, no automatic resend, and no click on a generation/stop control.
+# R6 loading replacement-tab maintenance
+
+`refresh_loading_target` only refreshes a unique loading native target at a known
+request's exact frozen conversation URL, after both bridge and background verify
+that the original native tab is absent, original identity/nonce is trusted, pending
+URL is empty or exactly equal, and background/manifest/protocol/build match. It
+does not rebind the old attempt, confirm recovery, mark ready, allocate nonce,
+create/retry/observe/send a request, or mutate the journal/mirror. It is an explicit
+authenticated maintenance action; post-load full readiness remains mandatory.

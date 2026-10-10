@@ -1,0 +1,21 @@
+{
+  "mission_id": "C2C_V2_CHROME_R6_M3",
+  "stage": "draft",
+  "iteration": 2,
+  "implementation_commit": "94e0091cfbe4b6248f388c620b397ab2ba733b1e",
+  "required_paths_at_incoming_commit": [
+    ".c2c-v2/chrome-r6/owner_scope.json",
+    ".c2c-v2/chrome-r6/m3/draft/test_summary.json",
+    ".c2c-v2/chrome-r6/m3/draft/source_hashes.json",
+    ".c2c-v2/chrome-r6/m3/draft/previous_action.json"
+  ],
+  "required_refs": {
+    "poc_v2/chrome_r6_synthetic/M3_REGISTRY.md": "94e0091cfbe4b6248f388c620b397ab2ba733b1e",
+    "poc_v2/chrome_r6_synthetic/m3_registry.py": "94e0091cfbe4b6248f388c620b397ab2ba733b1e",
+    "poc_v2/chrome_r6_synthetic/test_m3_registry.py": "94e0091cfbe4b6248f388c620b397ab2ba733b1e",
+    ".c2c-v2/chrome-r6/m3/integration/result.json": "94e0091cfbe4b6248f388c620b397ab2ba733b1e",
+    ".c2c-v2/chrome-r6/m3/integration/B_independent_review.json": "94e0091cfbe4b6248f388c620b397ab2ba733b1e",
+    ".c2c-v2/chrome-r6/m3/plan/review_result.json": "94e0091cfbe4b6248f388c620b397ab2ba733b1e"
+  },
+  "request": "Independently review the actual draft against the substantive PLAN. Find concrete implementation defects and missing required conformance coverage, not stylistic preferences. When a real requirement is missing return CHANGES_REQUIRED with one finite fix; no verdict is predetermined. For a corrected final candidate independently reread exact updated source and tests and decide whether the mission can close. Return a useful bounded NEXT_CODEX_INSTRUCTION; do not start another product or install globally."
+}

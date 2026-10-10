@@ -1,0 +1,124 @@
+{
+  "STATE": "REVIEW_RESULT",
+  "ROUND": 3,
+  "REQUEST_ID": "acadffab-c13f-47de-933f-5b77aaaff92a",
+  "CONTROL_ID": "17284777-6e13-4444-89bd-8e4d6acebabc",
+  "ATTEMPT_ID": 1,
+  "REVIEWED_COMMIT": "052679344225847faad202c62c50b120c7f94082",
+  "VERDICT": "PASS_CONTINUE",
+  "FINDINGS": [
+    {
+      "severity": "INFO",
+      "finding": "The concrete draft-review defect was actually corrected at immutable implementation commit d87a642d598aebb9383b893b27024a793efd8707. StrictJsonlReader.finalize() now catches RecursionError raised during recursive immutable Artifact construction and routes it through the existing sticky _fail(\"json_depth_exceeded\") path rather than leaking a raw exception or leaving the lifecycle OPEN."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The focused regression exercises the corrected finalization boundary after a syntactically valid record is already accepted. Forced immutable-conversion depth exhaustion produces ReaderError/json_depth_exceeded with the exact full-input SHA256 and byte count, accepted_record_count=1 and current_record_index=2; subsequent finalize and feed calls return the same ReaderError/fingerprint without mutation."
+    },
+    {
+      "severity": "INFO",
+      "finding": "A separate practical 40-level nested valid-object test confirms successful finalization still recursively freezes nested mappings and arrays rather than solving the defect by weakening deep immutability."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The substantive M2 PLAN remains satisfied: required positive non-boolean limits; bytes-only chunk input; whole-chunk raw hash/count accounting before parsing; LF framing with one optional immediately preceding delimiter CR; bounded pending payloads; strict UTF-8; nested duplicate-key rejection; NaN/Infinity/-Infinity and overflow rejection; lone-surrogate rejection in values and keys; object-only top-level records; no Unicode normalization; immutable finalized output; sticky terminal failures; no partial successful Artifact after a later-record failure; and repeat-finalize identity after success."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Boundary coverage remains substantive after the correction: long Chinese, emoji and two-byte accented UTF-8 are tested across every byte split and byte-at-a-time feeds; split CRLF and valid escaped surrogate pairs are covered; NFC/NFD-distinct strings remain distinct; exact max_record_bytes/max_records/max_total_bytes boundaries and each limit+1 are covered; malformed JSON, invalid split UTF-8, blank records and unfinished final records fail closed."
+    },
+    {
+      "severity": "INFO",
+      "finding": "All three independently fetched final source blobs match .c2c-v2/chrome-r6/m2/final/source_hashes.json exactly. Reported final gates are 173 Python passes, 181 Node passes, 25 syntax files, manifest PASS and diff PASS."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Authority lineage is bounded and isolated: 7c7124cec4e01b29c10ceeaa8e7976298a74b27c -> d87a642d598aebb9383b893b27024a793efd8707 is one correction commit touching only M2 synthetic source/docs/tests plus M2 draft-review evidence; d87a642d598aebb9383b893b27024a793efd8707 -> 052679344225847faad202c62c50b120c7f94082 is one evidence-only final-review commit. No M1 source, Fresh runtime, Edge, family-fund or old-branch source is changed by this correction."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Remaining statements in M2_JSONL.md are appropriately bounded non-production limits rather than unresolved M2 acceptance defects: arbitrary nesting depth is not promised, explicit byte/record limits remain caller responsibilities, and hashes are not adversarial signatures. I found no remaining concrete defect within the owner-authorized synthetic M2 contract requiring another correction."
+    }
+  ],
+  "REVIEW_SUMMARY": "The exact incoming authority 052679344225847faad202c62c50b120c7f94082 and every required path/ref in its final descriptor were independently read using the official GitHub connector; the substantive PLAN and prior CHANGES_REQUIRED review were also independently reread at immutable refs. The previous review's real finalization/depth defect is corrected at d87a642d598aebb9383b893b27024a793efd8707 with sticky fail-closed RecursionError handling and focused regression coverage, while existing UTF-8, CRLF, byte/count limits, strict JSON semantics, chunking invariance, immutable output and failure-provenance contracts remain intact. Source hashes match, the implementation-to-final delta is evidence-only, and the reported full gates pass. No remaining defect was found within the bounded Chrome R6 M2 synthetic mission, so M2 can close with PASS_CONTINUE.",
+  "GITHUB_RESOURCES_READ": [
+    {
+      "path": ".c2c-v2/chrome-r6/m2/final/review_request.json",
+      "ref_commit": "052679344225847faad202c62c50b120c7f94082",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/052679344225847faad202c62c50b120c7f94082/.c2c-v2/chrome-r6/m2/final/review_request.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"stage\": \"final\", \"implementation_commit\": \"d87a642d598aebb9383b893b27024a793efd8707\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/owner_scope.json",
+      "ref_commit": "052679344225847faad202c62c50b120c7f94082",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/052679344225847faad202c62c50b120c7f94082/.c2c-v2/chrome-r6/owner_scope.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"synthetic_project\": \"poc_v2/chrome_r6_synthetic\", \"global_installation\": false, \"secrets_in_evidence\": false"
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m2/final/test_summary.json",
+      "ref_commit": "052679344225847faad202c62c50b120c7f94082",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/052679344225847faad202c62c50b120c7f94082/.c2c-v2/chrome-r6/m2/final/test_summary.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"python_passed\": 173, \"node_passed\": 181, \"syntax_files\": 25, \"manifest\": \"PASS\", \"diff\": \"PASS\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m2/final/source_hashes.json",
+      "ref_commit": "052679344225847faad202c62c50b120c7f94082",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/052679344225847faad202c62c50b120c7f94082/.c2c-v2/chrome-r6/m2/final/source_hashes.json",
+      "read_method": "GitHub fetch_file plus independent Git blob verification",
+      "source_excerpt": "\"path\": \"poc_v2/chrome_r6_synthetic/m2_jsonl.py\", \"ref_commit\": \"d87a642d598aebb9383b893b27024a793efd8707\", \"git_blob\": \"a2c25ba8951deb3b122e094fd5c98cb33c2d6dec\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m2/final/previous_action.json",
+      "ref_commit": "052679344225847faad202c62c50b120c7f94082",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/052679344225847faad202c62c50b120c7f94082/.c2c-v2/chrome-r6/m2/final/previous_action.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"implementation_commit\": \"d87a642d598aebb9383b893b27024a793efd8707\""
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/M2_JSONL.md",
+      "ref_commit": "d87a642d598aebb9383b893b27024a793efd8707",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/d87a642d598aebb9383b893b27024a793efd8707/poc_v2/chrome_r6_synthetic/M2_JSONL.md",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "Finalize now catches that exhaustion and enters the same sticky `json_depth_exceeded` failure state"
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/m2_jsonl.py",
+      "ref_commit": "d87a642d598aebb9383b893b27024a793efd8707",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/d87a642d598aebb9383b893b27024a793efd8707/poc_v2/chrome_r6_synthetic/m2_jsonl.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "except RecursionError:self._fail(\"json_depth_exceeded\")"
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/test_m2_jsonl.py",
+      "ref_commit": "d87a642d598aebb9383b893b27024a793efd8707",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/d87a642d598aebb9383b893b27024a793efd8707/poc_v2/chrome_r6_synthetic/test_m2_jsonl.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "def test_final_immutable_conversion_depth_failure_is_terminal_sticky_and_preserves_fingerprint(self):"
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m2/draft/review_result.json",
+      "ref_commit": "d87a642d598aebb9383b893b27024a793efd8707",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/d87a642d598aebb9383b893b27024a793efd8707/.c2c-v2/chrome-r6/m2/draft/review_result.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"VERDICT\": \"CHANGES_REQUIRED\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m2/plan/review_result.json",
+      "ref_commit": "d87a642d598aebb9383b893b27024a793efd8707",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/d87a642d598aebb9383b893b27024a793efd8707/.c2c-v2/chrome-r6/m2/plan/review_result.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "Any failure invalidates the whole artifact even if earlier records parsed successfully."
+    },
+    {
+      "path": "commit d87a642d598aebb9383b893b27024a793efd8707",
+      "ref_commit": "d87a642d598aebb9383b893b27024a793efd8707",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/commit/d87a642d598aebb9383b893b27024a793efd8707",
+      "read_method": "GitHub fetch_commit and immutable compare",
+      "source_excerpt": "poc: execute Chrome R6 m2 final development action"
+    }
+  ],
+  "NEXT_CODEX_INSTRUCTION": "Close M2 with evidence only. Persist this exact final REVIEW_RESULT under the Chrome R6 M2 authority and record M2_FINAL_REVIEW=PASS_CONTINUE, REVIEWED_COMMIT=052679344225847faad202c62c50b120c7f94082 and implementation_commit=d87a642d598aebb9383b893b27024a793efd8707, preserving the reviewed 173 Python/181 Node/25 syntax/manifest PASS/diff PASS results and the documented bounded depth/hash/non-production limits. Make no further M2 source changes. Do not merge main, modify M1 or the old PoC branch, access credentials/APIs, install globally, or touch Edge/family-fund. After the M2 closure evidence commit is complete, M2 is finished; any Chrome R6 M3 work must begin from its own separate owner-scoped PLAN/review request and must not be treated as continuation of M2."
+}

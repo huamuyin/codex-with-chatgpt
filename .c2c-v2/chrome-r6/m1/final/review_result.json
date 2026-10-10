@@ -1,0 +1,127 @@
+{
+  "STATE": "REVIEW_RESULT",
+  "ROUND": 3,
+  "REQUEST_ID": "964de203-c060-43ee-a3f3-d50709994b52",
+  "CONTROL_ID": "634b6dbf-9412-4bef-aa8e-8a92aaff64cd",
+  "ATTEMPT_ID": 2,
+  "REVIEWED_COMMIT": "a25a0d0f4c4c20fc93267a4079958b44a5f95643",
+  "VERDICT": "PASS_CONTINUE",
+  "FINDINGS": [
+    {
+      "severity": "INFO",
+      "finding": "The draft-review defects were actually corrected at immutable implementation commit 3ab7648c957ed90ae9180b47961877472990b86d. canonical_review replay now requires an exact six-field schema, exact-int known canonical_attempt_id, an exact logical review shape, reconstruction of ATTEMPT_ID followed by fresh_response.validate_response against stored context, equality between stored instruction and review NEXT_CODEX_INSTRUCTION, and recomputation of review, instruction and deterministic action hashes."
+    },
+    {
+      "severity": "INFO",
+      "finding": "duplicate_review replay now requires exactly attempt_id and review_hash, rejects boolean/non-integer attempt aliases, requires a known opened attempt and exact canonical review hash. action_receipt replay delegates to the same checked_receipt contract as the live API, enforcing exact fields, completed|failed|blocked status, 64-hex result_sha256 and a non-empty string summary bounded to 512 characters."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The new tests directly exercise fully recomputed event hash chains and matching sealed heads rather than only simple byte corruption. They reject canonical_attempt_id=true, extra canonical fields, changed ROUND/REQUEST_ID/CONTROL_ID/REVIEWED_COMMIT, instruction/review mismatch, duplicate_review boolean or extra fields, and malformed receipt status/hash/summary/extra fields while asserting corrupted bytes remain unchanged after failed reopen."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Core M1 semantics remain intact after correction: immutable mission/workspace/round/request/control/commit authority; sequential opened attempts; strict framed response validation; semantic duplicate hashing that excludes only ATTEMPT_ID; late valid completion after preserved failure/uncertain history; changed canonical content fail-closed; one canonical action reservation; action_started persisted before instruction grant; no second grant after restore; idempotent exact receipt replay; deterministic UTF-8 JSON export/reopen; explicit private output path; and credential-field rejection."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The implementation remains isolated to Chrome R6 synthetic scope. The correction commit changes only M1 synthetic source, tests, documentation and M1 evidence; no existing Fresh runtime source was modified. All three final source Git blob IDs independently match final/source_hashes.json."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Final reported gates are 151 Python passes, 179 Node passes, 23 syntax files, manifest PASS and diff PASS. The incoming final-review commit is evidence-only relative to implementation commit 3ab7648c957ed90ae9180b47961877472990b86d."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Remaining limits are explicitly non-production obligations rather than hidden claims: hashes are integrity checks rather than signatures; guaranteed power-loss recovery is not claimed; cross-process or multiple-independent-writer ownership is not attested; effective path/reparse-point hardening and broader lifecycle integration remain future work. The bounded M1 PLAN required a single-ledger threaded concurrency proof, which is present; those broader obligations do not block this synthetic M1 acceptance."
+    }
+  ],
+  "REVIEW_SUMMARY": "The exact incoming authority a25a0d0f4c4c20fc93267a4079958b44a5f95643 and every path/ref required by its final descriptor were independently read through the official GitHub connector. The substantive PLAN was also reread at immutable ref 3ab7648c957ed90ae9180b47961877472990b86d rather than recalled from conversation. The prior independent draft review identified real semantic-replay defects; the final implementation corrects those defects with replay validation equivalent to live contracts and adds the requested recomputed-hash/head tamper coverage. Source blobs match the final hash manifest, the implementation-to-final-authority delta is evidence-only, and the reported full gates pass. I found no remaining defect within the bounded M1 synthetic contract that requires another correction. M1 can therefore close as an accepted Chrome R6 synthetic mission while retaining its explicitly documented non-production locking, crash-recovery and lifecycle limitations.",
+  "GITHUB_RESOURCES_READ": [
+    {
+      "path": ".c2c-v2/chrome-r6/m1/final/review_request.json",
+      "ref_commit": "a25a0d0f4c4c20fc93267a4079958b44a5f95643",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/a25a0d0f4c4c20fc93267a4079958b44a5f95643/.c2c-v2/chrome-r6/m1/final/review_request.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"stage\": \"final\", \"implementation_commit\": \"3ab7648c957ed90ae9180b47961877472990b86d\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/owner_scope.json",
+      "ref_commit": "a25a0d0f4c4c20fc93267a4079958b44a5f95643",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/a25a0d0f4c4c20fc93267a4079958b44a5f95643/.c2c-v2/chrome-r6/owner_scope.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"delivery_semantics\": \"AT_LEAST_ONCE\", \"synthetic_project\": \"poc_v2/chrome_r6_synthetic\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m1/final/test_summary.json",
+      "ref_commit": "a25a0d0f4c4c20fc93267a4079958b44a5f95643",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/a25a0d0f4c4c20fc93267a4079958b44a5f95643/.c2c-v2/chrome-r6/m1/final/test_summary.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"python_passed\": 151, \"node_passed\": 179, \"syntax_files\": 23, \"manifest\": \"PASS\", \"diff\": \"PASS\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m1/final/source_hashes.json",
+      "ref_commit": "a25a0d0f4c4c20fc93267a4079958b44a5f95643",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/a25a0d0f4c4c20fc93267a4079958b44a5f95643/.c2c-v2/chrome-r6/m1/final/source_hashes.json",
+      "read_method": "GitHub fetch_file plus independent Git blob verification",
+      "source_excerpt": "\"path\": \"poc_v2/chrome_r6_synthetic/m1_receipts.py\", \"ref_commit\": \"3ab7648c957ed90ae9180b47961877472990b86d\", \"git_blob\": \"280f9c4f10e68a5f0588e489829947982c7ecb36\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m1/final/previous_action.json",
+      "ref_commit": "a25a0d0f4c4c20fc93267a4079958b44a5f95643",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/a25a0d0f4c4c20fc93267a4079958b44a5f95643/.c2c-v2/chrome-r6/m1/final/previous_action.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"implementation_commit\": \"3ab7648c957ed90ae9180b47961877472990b86d\""
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/M1_RECEIPTS.md",
+      "ref_commit": "3ab7648c957ed90ae9180b47961877472990b86d",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/3ab7648c957ed90ae9180b47961877472990b86d/poc_v2/chrome_r6_synthetic/M1_RECEIPTS.md",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "Canonical events now reconstruct and validate the complete attempt-specific response against stored authority, require exact schemas and require instruction equality."
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/m1_receipts.py",
+      "ref_commit": "3ab7648c957ed90ae9180b47961877472990b86d",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/3ab7648c957ed90ae9180b47961877472990b86d/poc_v2/chrome_r6_synthetic/m1_receipts.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "if set(data) != {\"canonical_attempt_id\", \"review\", \"review_hash\", \"action_id\", \"instruction\", \"instruction_hash\"}: raise ValueError(\"canonical_schema\")"
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/test_m1_receipts.py",
+      "ref_commit": "3ab7648c957ed90ae9180b47961877472990b86d",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/3ab7648c957ed90ae9180b47961877472990b86d/poc_v2/chrome_r6_synthetic/test_m1_receipts.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "def test_recomputed_canonical_boolean_extra_identity_and_instruction_fail_closed(self):"
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m1/draft/review_result.json",
+      "ref_commit": "3ab7648c957ed90ae9180b47961877472990b86d",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/3ab7648c957ed90ae9180b47961877472990b86d/.c2c-v2/chrome-r6/m1/draft/review_result.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "CHANGES_REQUIRED"
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m1/plan/review_result.json",
+      "ref_commit": "3ab7648c957ed90ae9180b47961877472990b86d",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/3ab7648c957ed90ae9180b47961877472990b86d/.c2c-v2/chrome-r6/m1/plan/review_result.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "Serialize all state transitions under one process lock so simultaneous valid replies cannot create two canonical reviews."
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/README.md",
+      "ref_commit": "3ab7648c957ed90ae9180b47961877472990b86d",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/3ab7648c957ed90ae9180b47961877472990b86d/poc_v2/chrome_r6_synthetic/README.md",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "Duplicate and late reviews must never schedule a second business action."
+    },
+    {
+      "path": "commit 3ab7648c957ed90ae9180b47961877472990b86d",
+      "ref_commit": "3ab7648c957ed90ae9180b47961877472990b86d",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/commit/3ab7648c957ed90ae9180b47961877472990b86d",
+      "read_method": "GitHub fetch_commit and immutable compare",
+      "source_excerpt": "poc: execute Chrome R6 m1 final development action"
+    }
+  ],
+  "NEXT_CODEX_INSTRUCTION": "Close M1 with evidence only. Persist this exact final REVIEW_RESULT under the Chrome R6 M1 authority, record M1_FINAL_REVIEW=PASS_CONTINUE, REVIEWED_COMMIT=a25a0d0f4c4c20fc93267a4079958b44a5f95643 and implementation_commit=3ab7648c957ed90ae9180b47961877472990b86d, preserve the reported 151 Python/179 Node/23 syntax/manifest PASS/diff PASS results and the documented non-production obligations, and make no further M1 source changes. Do not merge main, modify the old PoC branch, access credentials/APIs, install globally, or touch Edge/family-fund. After the M1 closure commit/evidence is complete, M1 is finished; any subsequent Chrome R6 M2 work must begin from a separate owner-scoped PLAN/review request rather than being treated as continuation of M1."
+}

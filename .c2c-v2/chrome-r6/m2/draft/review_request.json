@@ -1,0 +1,19 @@
+{
+  "mission_id": "C2C_V2_CHROME_R6_M2",
+  "stage": "draft",
+  "iteration": 2,
+  "implementation_commit": "c266c474318bea2d59fff59eab3b3f823539b1e7",
+  "required_paths_at_incoming_commit": [
+    ".c2c-v2/chrome-r6/owner_scope.json",
+    ".c2c-v2/chrome-r6/m2/draft/test_summary.json",
+    ".c2c-v2/chrome-r6/m2/draft/source_hashes.json",
+    ".c2c-v2/chrome-r6/m2/draft/previous_action.json"
+  ],
+  "required_refs": {
+    "poc_v2/chrome_r6_synthetic/M2_JSONL.md": "c266c474318bea2d59fff59eab3b3f823539b1e7",
+    "poc_v2/chrome_r6_synthetic/m2_jsonl.py": "c266c474318bea2d59fff59eab3b3f823539b1e7",
+    "poc_v2/chrome_r6_synthetic/test_m2_jsonl.py": "c266c474318bea2d59fff59eab3b3f823539b1e7",
+    ".c2c-v2/chrome-r6/m2/plan/review_result.json": "c266c474318bea2d59fff59eab3b3f823539b1e7"
+  },
+  "request": "Independently review the actual draft against the substantive PLAN. Find concrete implementation defects and missing required conformance coverage, not stylistic preferences. When a real requirement is missing return CHANGES_REQUIRED with one finite fix; no verdict is predetermined. For a corrected final candidate independently reread exact updated source and tests and decide whether the mission can close. Return a useful bounded NEXT_CODEX_INSTRUCTION; do not start another product or install globally."
+}

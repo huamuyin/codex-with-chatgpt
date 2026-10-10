@@ -1,0 +1,14 @@
+{
+  "mission_id": "C2C_V2_CHROME_R6_M3",
+  "stage": "PLAN",
+  "iteration": 1,
+  "required_paths_at_incoming_commit": [
+    ".c2c-v2/chrome-r6/owner_scope.json",
+    "poc_v2/chrome_r6_synthetic/README.md",
+    ".c2c-v2/chrome-r6/m2/closure/mission_result.json",
+    "poc_v2/chrome_r6_synthetic/m1_receipts.py",
+    "poc_v2/extension_control/bridge/fresh_protocol.md",
+    "poc_v2/extension_control/bridge/fresh_bridge.py"
+  ],
+  "request": "M1 and M2 are closed. Provide a separate finite substantive M3 PLAN for a two-profile synthetic Git workspace/mission registry and lifecycle recovery decision engine. Require exact local registered worktree/remote/branch/mission/original commit/request/control binding, no current HEAD substitution, duplicate-target and cross-profile rejection, one active mission, explicit retry semantics and no implicit sends on restore. Include durable deterministic state, audit and positive/negative tests. Only two synthetic worktrees of this authorized repository; do not access another actual product or Edge. Actual profile switch will be tested through owned Chrome route using independent synthetic Git branches. Review current Fresh diagnostic/sender protocol changes as retained context; do not weaken Host/Origin/token/component/reply gates. This is a PLAN, not implementation acceptance."
+}

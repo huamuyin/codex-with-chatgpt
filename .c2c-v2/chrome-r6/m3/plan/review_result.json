@@ -1,0 +1,132 @@
+{
+  "STATE": "REVIEW_RESULT",
+  "ROUND": 1,
+  "REQUEST_ID": "08d90a9b-2da1-46e6-b3c6-300a6282005d",
+  "CONTROL_ID": "f1acc3ec-1db7-453c-91b2-2230964a0236",
+  "ATTEMPT_ID": 1,
+  "REVIEWED_COMMIT": "e1b77a83fe28b62c8bfdf6678ae903bb07477ba1",
+  "VERDICT": "PASS_CONTINUE",
+  "FINDINGS": [
+    {
+      "severity": "INFO",
+      "finding": "M1 and M2 are independently closed, and the incoming descriptor is a separate owner-scoped M3 PLAN. M3 must not mutate their source or use their completed missions as mutable authority. The owner scope still restricts work to Chrome R6 synthetic development in this repository with no Edge, family-fund, global installation, secrets in evidence or general production claim."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "Implement M3 as a new synthetic durable WorkspaceMissionRegistry, not as changes to Fresh sender/reply code. Initialize it with exactly two immutable profile registrations. Each profile must bind profile_id, canonical resolved worktree path, authorized repository identity huamuyin/codex-with-chatgpt, exact registered origin remote string, exact branch and an initial observed HEAD. Canonical worktree paths and branches must be distinct; duplicate paths, duplicate branches, unknown repositories, detached branches, credential-bearing remotes and a third profile fail closed."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "Use a small local Git snapshot adapter with subprocess argument arrays and no shell/network operations. For a supplied worktree it may read only local facts such as git rev-parse --show-toplevel, git remote get-url origin, git symbolic-ref --short HEAD and git rev-parse HEAD. The resolved top-level path, exact remote and branch must match the immutable profile registration. Permit only canonical SSH/HTTPS forms for this authorized repository and reject remote URLs containing userinfo or another host/repository."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "A mission activation must freeze profile_id, mission_id, request_id, control_id and original_expected_commit plus initial workspace HEAD. request_id/control_id are globally unique across both profile histories. Exactly one mission may be active globally. Activating the other profile while one mission is active must fail. The immutable original_expected_commit can never be rewritten or derived from a later current HEAD."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "To allow legitimate workspace progress without current-HEAD substitution, maintain a separate append-only authorized_checkpoint_head. Mission start requires the observed local HEAD to equal the original expected commit. Later local HEADs become recognized only through explicit checkpoint_recorded events that bind the same profile/path/remote/branch/mission and previous authorized checkpoint. Recovery compares the actual current HEAD to the latest audited checkpoint, while every reply/retry identity continues to use original_expected_commit. A current HEAD must never silently replace original_expected_commit in any directive."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "Persist state as strict deterministic UTF-8 canonical JSON with an immutable owner/profile manifest plus hash-chained append-only events and sealed head. Reject duplicate JSON keys, nonfinite numbers, lone surrogates, malformed event schemas, sequence/hash/head tampering and truncated writes. Require a nonblocking single-writer OS file lock so two processes cannot independently activate missions in the same registry. Restore is replay-only and must never invoke Git mutation, Chrome navigation, observation, review, retry or send."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "Model mission audit explicitly with bounded events such as mission_started, checkpoint_recorded, attempt_bound, attempt_failed or delivery_uncertain, lifecycle_lost, recovery_observation, retry_authorized, retry_started, recovery_decision, reply_completed, action_receipt and mission_closed. Replay must enforce exact schemas and state transitions. Preserve all prior failures, recovery decisions and completed action receipts; terminal missions remain immutable history."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "Bind every known attempt to exact profile/mission/request/control/original_expected_commit, positive sequential attempt_id and sanitized Fresh target identity such as native tab id and conversation URL when available. A reply/diagnostic associated with another profile, mission, request, control, original commit or attempt is cross-profile/cross-mission evidence and must be rejected. A native tab/conversation target simultaneously claimed by another nonterminal profile/mission is a duplicate target and must fail closed."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "Recovery after controller/process/page loss must produce exactly one of three finite decisions and never perform the action itself: OBSERVE_EXISTING_ATTEMPT, EXPLICIT_RETRY, or SAFE_BLOCK. OBSERVE_EXISTING_ATTEMPT is permitted only when the registered workspace snapshot and Fresh checkpoint/attempt identity match exactly and the existing authenticated Fresh layer reports a unique usable target; its execution must use the existing observation-only Fresh path, which does not send. SAFE_BLOCK is mandatory for unknown or changed workspace/profile identity, unrecognized current HEAD, cross-profile evidence, duplicate targets, mixed/unready Fresh components, terminal missions or incomplete authority."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "EXPLICIT_RETRY must never arise merely from restart. It requires an existing non-complete attempt with durable failed/uncertain state, exact workspace and logical identity, no completed reply/action receipt, and a separately persisted one-use retry_authorized event. claim_retry must append retry_started before returning a bounded retry directive containing the same request_id/control_id/original_expected_commit and the next sequential attempt_id. After retry_started, restore must not yield that retry again; this intentionally prefers possible non-execution over duplicate autonomous sends. Actual transmission remains exclusively through existing Fresh /retry and its AT_LEAST_ONCE rules."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "Do not replicate or weaken Fresh authentication/readiness authority inside M3. M3 stores no control token and does not infer authentication from partial diagnostics. Integration may consume only sanitized observations after the existing Fresh bridge has enforced exact Host, extension Origin, ephemeral token, component identity, native tab/URL and reply gates. Existing Fresh register restores checkpoint state without sending, observe_request does not dispatch a send, and retry is explicitly requested; M3 must preserve those boundaries rather than introduce an alternate sender."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "Completed mission action receipts should use a bounded synthetic schema equivalent in spirit to the already reviewed M1 receipt contract: action_id, completed/failed/blocked status, result hash and bounded summary. Exact duplicate receipt replay is idempotent; conflicting second receipts fail closed. mission_closed records terminal status and clears the sole active-mission slot without deleting any audit history."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "Required positive unit tests include: initialize/reopen exactly two distinct profiles byte-identically; activate profile A; record sequential checkpoints while preserving the frozen original expected commit; bind and observe an existing attempt; persist lifecycle loss then restore with zero implicit operations; derive OBSERVE for an exact live attempt; authorize/claim one explicit retry exactly once and preserve identity across restore; record completion/action receipt; close A then activate/switch to B; and replay all history deterministically."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "Required negative tests include: third profile; duplicate/case-normalized canonical path; duplicate branch; wrong repo/remote/path/branch; credential-bearing remote; detached branch; wrong mission/request/control/original commit; boolean/nonsequential attempt IDs; activating B while A is active; unrecognized current HEAD; attempted replacement of original_expected_commit with current HEAD; duplicate native target; cross-profile reply; retry without authorization; retry authorization on completed or unknown attempt; second retry claim after restore; conflicting action receipt; journal/hash/head tampering; second writer lock acquisition; and restore proving no observer/retry/send/navigation callback is invoked."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "Require one bounded actual profile-switch conformance run after the synthetic unit draft is reviewable: use exactly two synthetic worktrees/branches of huamuyin/codex-with-chatgpt, capture their local Git facts, run profile A through the owned authenticated Fresh Chrome route with only synthetic payloads, close it, switch to profile B and run a distinct synthetic mission. Evidence may contain worktree/profile names, branch names, request/control IDs, commit hashes, counts and sanitized Fresh readiness/attempt identifiers, but no control token, cookies, headers or raw private conversation content."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The most important M3 design hazard is conflating mutable current HEAD with immutable review identity. The registry should audit current/checkpoint HEAD separately but must preserve original_expected_commit in every reply and retry decision. A second major hazard is treating process restore as retry authority; restore must only reconstruct state and require a new explicit observation or persisted one-use retry authorization."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Independent draft-review obligations remain open: inspect exact replay schemas and cross-process locking, test path canonicalization and duplicate targets on the target OS, verify checkpoint lineage cannot rewrite the original commit, verify all cross-profile evidence fails closed, prove retry authorization is one-shot across crashes, inspect actual two-worktree Chrome switch evidence, and confirm no change weakens the existing Fresh Host/Origin/token/component/reply gates. A later verdict is not predetermined."
+    }
+  ],
+  "REVIEW_SUMMARY": "The exact incoming M3 PLAN authority e1b77a83fe28b62c8bfdf6678ae903bb07477ba1 and all six descriptor-required files were independently read through the official GitHub connector. M1 and M2 are closed. The proposed M3 is a separate two-profile durable synthetic registry with immutable worktree/remote/branch/mission/request/control/original-commit authority, audited mutable checkpoint HEADs that can never replace the original expected commit, one globally active mission, strict cross-profile and duplicate-target rejection, deterministic sealed audit state with a single-writer lock, and a recovery engine that can only return observe-existing, one-use explicit-retry or safe-block decisions. Restore itself performs no send or navigation, and actual observe/retry execution remains behind the existing Fresh authentication, readiness, component, native-target and reply gates. The plan includes both deterministic unit coverage and one sanitized actual two-worktree profile-switch exercise through the owned Chrome route before independent draft/correction/final review.",
+  "GITHUB_RESOURCES_READ": [
+    {
+      "path": ".c2c-v2/chrome-r6/m3/plan/review_request.json",
+      "ref_commit": "e1b77a83fe28b62c8bfdf6678ae903bb07477ba1",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/e1b77a83fe28b62c8bfdf6678ae903bb07477ba1/.c2c-v2/chrome-r6/m3/plan/review_request.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"request\": \"M1 and M2 are closed. Provide a separate finite substantive M3 PLAN for a two-profile synthetic Git workspace/mission registry and lifecycle recovery decision engine.\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/owner_scope.json",
+      "ref_commit": "e1b77a83fe28b62c8bfdf6678ae903bb07477ba1",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/e1b77a83fe28b62c8bfdf6678ae903bb07477ba1/.c2c-v2/chrome-r6/owner_scope.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"synthetic_project\": \"poc_v2/chrome_r6_synthetic\", \"old_poc_branch_mutation\": false, \"Edge_route_mutation\": false"
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/README.md",
+      "ref_commit": "e1b77a83fe28b62c8bfdf6678ae903bb07477ba1",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/e1b77a83fe28b62c8bfdf6678ae903bb07477ba1/poc_v2/chrome_r6_synthetic/README.md",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "Derive a finite recovery decision (observe existing attempt, explicit retry or safe block) after process/page lifecycle failure. Restore must never send implicitly."
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m2/closure/mission_result.json",
+      "ref_commit": "e1b77a83fe28b62c8bfdf6678ae903bb07477ba1",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/e1b77a83fe28b62c8bfdf6678ae903bb07477ba1/.c2c-v2/chrome-r6/m2/closure/mission_result.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"mission_complete\": true"
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/m1_receipts.py",
+      "ref_commit": "e1b77a83fe28b62c8bfdf6678ae903bb07477ba1",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/e1b77a83fe28b62c8bfdf6678ae903bb07477ba1/poc_v2/chrome_r6_synthetic/m1_receipts.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "if self.state[\"action_started\"]: return None"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_protocol.md",
+      "ref_commit": "e1b77a83fe28b62c8bfdf6678ae903bb07477ba1",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/e1b77a83fe28b62c8bfdf6678ae903bb07477ba1/poc_v2/extension_control/bridge/fresh_protocol.md",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "`observe_request` requires an explicit known request_id/control_id/attempt_id and exact live target. It can explicitly re-observe a completed modern request to prove duplicate classification; it never dispatches a send."
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_bridge.py",
+      "ref_commit": "e1b77a83fe28b62c8bfdf6678ae903bb07477ba1",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/e1b77a83fe28b62c8bfdf6678ae903bb07477ba1/poc_v2/extension_control/bridge/fresh_bridge.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "# Restoring a mirror never sends or retries a request."
+    }
+  ],
+  "NEXT_CODEX_INSTRUCTION": "Implement only the Chrome R6 M3 reviewable draft; do not modify M1/M2 or existing Fresh runtime. Add poc_v2/chrome_r6_synthetic/m3_registry.py, test_m3_registry.py and M3_REGISTRY.md. Create a strict deterministic append-only sealed WorkspaceMissionRegistry with an OS single-writer lock and exactly two immutable profiles. Bind each profile to canonical resolved worktree path, authorized repo huamuyin/codex-with-chatgpt, exact credential-free registered origin remote and distinct branch. Add a local Git snapshot helper using subprocess argv/no shell/no network for show-toplevel, origin, branch and HEAD. Mission start must freeze profile/mission/request/control/original_expected_commit and require initial HEAD equality; allow later workspace progress only through append-only checkpoint_recorded events while original_expected_commit remains immutable and is the only expected commit used for reply/retry identity. Enforce one active mission globally, globally unique request/control IDs, sequential attempts, exact profile/mission identity, duplicate native target and cross-profile rejection. Persist failure/uncertain/reply/action-receipt/closure audit. Restore must replay only and call no Git mutation, Chrome, observe, retry or send callback. Implement deterministic recovery decisions OBSERVE_EXISTING_ATTEMPT, EXPLICIT_RETRY or SAFE_BLOCK. Retry requires durable failed/uncertain state plus a separately persisted one-use retry_authorized event; claim_retry must append retry_started before yielding a directive with the same request/control/original commit and next attempt, and may never yield again after restore. Actual observation/retry remains through existing Fresh gates; store no token and do not bypass Host/Origin/component/tab/reply checks. Add the positive/negative, tamper, second-writer, current-HEAD-substitution, cross-profile and restore-no-send tests in this PLAN. After unit gates pass, run one bounded sanitized integration using exactly two synthetic worktrees/branches of this repo through the owned Chrome route: complete A, switch to B, prove no cross-profile target/reply acceptance and no implicit restore send. Run full Python/Node/syntax/manifest/diff gates. Commit only M3 synthetic source/docs/tests and PLAN evidence, then publish an evidence-only .c2c-v2/chrome-r6/m3/draft descriptor with exact implementation commit, source hashes, actual test/integration counts and explicit remaining independent-review obligations. Do not claim acceptance, access credentials/APIs, install, merge main, touch Edge/family-fund/old branch, or start any post-M3 work."
+}

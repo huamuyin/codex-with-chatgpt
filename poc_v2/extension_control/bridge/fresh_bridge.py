@@ -77,11 +77,28 @@ class FreshState:
             if self.requests.journal.poisoned:
                 raise transport.RequestError("extension_disconnected", 503)
             action = value.get("action")
-            if action not in ("reload_extension", "sample_status", "prepare_future_thread", "restore_thread", "activate_tab", "inspect_draft", "clear_owned_draft", "reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"):
+            if action not in ("reload_extension", "sample_status", "refresh_loading_target", "prepare_future_thread", "restore_thread", "activate_tab", "inspect_draft", "clear_owned_draft", "reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"):
                 raise transport.RequestError("maintenance_action_invalid")
             if action != "reload_extension" and (self.session is None or self.session.closed):
                 raise transport.RequestError("extension_disconnected", 503)
             message = {"type": "fresh_maintenance", "maintenance_id": str(uuid.uuid4()), "action": action}
+            if action == "refresh_loading_target":
+                rid, cid, aid = value.get("request_id"), value.get("control_id"), value.get("attempt_id")
+                if not isinstance(rid, str) or not isinstance(cid, str) or type(aid) is not int: raise transport.RequestError("maintenance_identity_required", 409)
+                r = self.requests.lookup(rid, control_id=cid)
+                if not 1 <= aid <= len(r["attempts"]): raise transport.RequestError("attempt_unknown", 409)
+                wire = self.requests.wire_request(rid, aid); tid, url = value.get("tab_id"), value.get("url")
+                observed = self.status.get("observed_targets", [])
+                bound = [d for d in self.status.get("bound_tab_diagnostics", []) if d.get("tab_id") == wire["target_tab_id"]]
+                components = self.status.get("components", {})
+                if (type(tid) is not int or tid < 0 or tid == wire["target_tab_id"] or url != wire["conversation_url"]
+                    or not transport.is_conversation_url(url) or len(bound) != 1 or bound[0].get("exists") is not False
+                    or len(observed) != 1 or observed[0].get("tab_id") != tid or observed[0].get("url") != url
+                    or observed[0].get("status") != "loading" or observed[0].get("pending_url", "") not in ("", url)
+                    or time.monotonic() - self.seen_at >= 90
+                    or any(components.get(k) != v for k, v in self.expected_components().items() if k != "content_version")):
+                    raise transport.RequestError("loading_target_unconfirmed", 409)
+                message.update(tab_id=tid, url=url, request=wire, maintenance_only=True)
             if action == "prepare_future_thread":
                 rid, cid, aid = value.get("request_id"), value.get("control_id"), value.get("attempt_id")
                 if not isinstance(rid, str) or not isinstance(cid, str) or type(aid) is not int:
@@ -273,7 +290,15 @@ class FreshState:
                         result["draft_cleared"] = m.get("draft_cleared") is True
                 if pending["message"]["action"] == "inspect_draft" and isinstance(m.get("draft_summary"), dict):
                     d = m["draft_summary"]
-                    if (set(d) == {"composer_present", "composer_tag", "contenteditable", "length", "empty", "format_only", "owned_attempt_id", "normalized_owned_attempt_id"}
+                    original_keys = {"composer_present", "composer_tag", "contenteditable", "length", "empty", "format_only", "owned_attempt_id", "normalized_owned_attempt_id"}
+                    button_keys = {"test_id", "aria_label", "type", "disabled", "aria_disabled", "visible"}
+                    extended = (set(d) == original_keys | {"composer_form_present", "composer_buttons"}
+                        and type(d["composer_form_present"]) is bool and isinstance(d["composer_buttons"], list)
+                        and len(d["composer_buttons"]) <= 12 and all(isinstance(x, dict) and set(x) == button_keys
+                            and all(type(x[k]) is bool for k in ("disabled", "aria_disabled", "visible"))
+                            and all(isinstance(x[k], str) and len(x[k]) <= limit for k, limit in (("test_id", 64), ("aria_label", 80), ("type", 16)))
+                            for x in d["composer_buttons"]))
+                    if ((set(d) == original_keys or extended)
                         and type(d["length"]) is int and 0 <= d["length"] <= 200000
                         and all(type(d[k]) is bool for k in ("composer_present", "contenteditable", "empty", "format_only"))
                         and d["composer_tag"] in ("TEXTAREA", "INPUT", "DIV", "P", "")
@@ -281,6 +306,8 @@ class FreshState:
                              and 1 <= d[k] <= len(self.requests.lookup(pending["message"]["request"]["request_id"])["attempts"])
                              for k in ("owned_attempt_id", "normalized_owned_attempt_id"))):
                         result["draft_summary"] = copy.deepcopy(d)
+                if pending["message"]["action"] == "inspect_draft" and "draft_summary" not in result:
+                    result.update(status="failed", error_code="draft_inspection_unconfirmed")
                 if pending["message"]["action"] == "probe_reply_rejection":
                     if m.get("field") == pending["message"]["field"]: result["field"] = m["field"]
                     code = m.get("rejection_code")

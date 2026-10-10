@@ -1,0 +1,90 @@
+{
+  "STATE": "REVIEW_RESULT",
+  "ROUND": 1,
+  "REQUEST_ID": "d8626daa-8f65-4af2-9260-ca04aa3a62ff",
+  "CONTROL_ID": "78af0db2-c8ca-4f49-83ff-707fdaec812b",
+  "ATTEMPT_ID": 1,
+  "REVIEWED_COMMIT": "9843e25d45d3b19176c1812d0c3df5cef0e65d8f",
+  "VERDICT": "PASS_CONTINUE",
+  "FINDINGS": [
+    {
+      "severity": "INFO",
+      "finding": "The incoming descriptor is a PLAN-stage request, not an implementation acceptance. Owner scope independently authorizes an isolated Chrome R6 synthetic project on branch codex/c2c-v2-chrome-r6 with AT_LEAST_ONCE delivery, no old PoC branch mutation, no Edge/family-fund/global installation, no secrets in evidence, and a final independent review boundary."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "Implement M1 only under poc_v2/chrome_r6_synthetic as a dedicated Python ReceiptLedger rather than modifying Fresh runtime. Bind immutable logical identity as mission_id, workspace_id, round_no, request_id, control_id and reviewed_commit; require strict patterns, integer round, UUID request/control identities and an exact 40-hex commit. Each review attempt additionally has a positive integer attempt_id and must be explicitly opened before failure or result events can reference it."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "Use deterministic UTF-8 canonical JSON serialization with sorted keys, compact separators and allow_nan=false. Strict decoding must reject duplicate keys, nonfinite values and isolated Unicode surrogates. Persist an append-only synthetic event journal plus sealed head in an explicit caller-supplied absolute private directory outside the Git repository; never select a default runtime directory and never persist control_token, cookies, headers, browser credentials, real product data or raw unrelated transcripts. Exported derived state must serialize byte-identically before and after reopen."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "Reuse fresh_response.parse_response and validate_response as the framed-review validation boundary, but do not use a naive full-object hash for duplicate classification. ATTEMPT_ID is transport-attempt identity and legitimately differs across at-least-once attempts. After validating each reply against its actual attempt, derive the canonical logical review from STATE, ROUND, REQUEST_ID, CONTROL_ID, REVIEWED_COMMIT, VERDICT, FINDINGS, REVIEW_SUMMARY, GITHUB_RESOURCES_READ and NEXT_CODEX_INSTRUCTION while excluding ATTEMPT_ID from the semantic hash; store canonical_attempt_id separately. The first valid logical review becomes canonical. A later semantically identical review from any known attempt is a duplicate and cannot reserve another action; a later substantively different review for the same logical identity fails closed without replacing canonical authority."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "Preserve failed and uncertain review-attempt events independently of canonical completion. A timeout/failure on attempt 1 must remain in history while a later valid reply from attempt 1 or another known attempt may still become canonical if no canonical review exists. Once canonical exists, late identical replies are audit duplicates and late conflicting replies are rejected. Serialize all state transitions under one process lock so simultaneous valid replies cannot create two canonical reviews."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "Reserve the finite Codex action atomically inside the canonical-review event itself. Derive action_id deterministically from immutable logical identity plus canonical review hash and bind it to the validated NEXT_CODEX_INSTRUCTION and its SHA256. Expose claim_action(action_id) so the instruction is yielded only once; claiming appends action_started. A second claim must return no executable instruction. This deliberately prefers fail-closed possible non-execution after a crash over duplicate business execution. record_action_receipt must accept one bounded synthetic receipt with action_id, completed/failed/blocked status, result_sha256 and bounded summary; an exact duplicate is idempotent with no append, while a conflicting second receipt fails closed."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "Required positive tests: create/open/export/reopen byte equality; first valid review reserves exactly one action; attempt-1 timeout followed by late valid canonical review preserves failure; retry attempt with the same semantic review but a different ATTEMPT_ID becomes duplicate; canonical result followed by exact duplicate after action receipt remains one action; claim_action yields instruction once; exact receipt replay is idempotent; Chinese/emoji review fields survive deterministic serialization."
+    },
+    {
+      "severity": "PLAN",
+      "finding": "Required negative tests: wrong mission/workspace/round/request/control/commit, unknown or boolean attempt IDs, result for unopened attempt, duplicate attempt creation, changed canonical VERDICT/FINDINGS/SUMMARY/resources/instruction, malformed framed response, oversized NEXT_CODEX_INSTRUCTION through the existing validator, duplicate JSON keys/nonfinite/surrogate text in ledger input, second claim after action_started, conflicting receipt, journal/hash/head tampering, truncated final record, implicit/default/in-repository output directory and any credential-like extra field. Every rejected case must prove no second action reservation or executable instruction."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The important design hazard exposed by the existing sources is cross-attempt duplicate normalization: Fresh response validation correctly binds ATTEMPT_ID to each transport attempt, so hashing the complete validated object would incorrectly classify otherwise identical at-least-once replies from different attempts as conflicting canonical reviews. The M1 draft must implement and test logical-review hashing that excludes only ATTEMPT_ID while retaining all logical identity and substantive review fields."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Independent review obligations after the draft remain open: verify exact event/replay schemas and crash boundaries; independently test concurrent first-result races; confirm action_started can never yield a second instruction after restore; inspect deterministic export and tamper failures; verify the private output root cannot resolve inside Git; verify evidence contains only synthetic identities/hashes/counts; and independently decide whether any discovered defect requires correction before M1 final review. No future verdict is predetermined."
+    }
+  ],
+  "REVIEW_SUMMARY": "All four descriptor-required paths were independently read at the exact incoming commit 9843e25d45d3b19176c1812d0c3df5cef0e65d8f. The requested M1 can proceed as a new isolated synthetic ReceiptLedger without modifying Fresh runtime. The plan binds immutable logical review identity, validates each attempt-specific framed reply with the existing strict response boundary, normalizes only ATTEMPT_ID out of the canonical semantic review so at-least-once duplicates across attempts are classified correctly, preserves timeout/failure history, atomically reserves one deterministic finite action with the first canonical review, yields that action at most once, records one idempotent action receipt, and exports/restores deterministic sealed state from a caller-provided private directory outside Git. The draft must include concrete positive/negative and concurrency/tamper coverage and an immutable review package; independent review and any required correction remain mandatory.",
+  "GITHUB_RESOURCES_READ": [
+    {
+      "path": ".c2c-v2/chrome-r6/m1/plan/review_request.json",
+      "ref_commit": "9843e25d45d3b19176c1812d0c3df5cef0e65d8f",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/9843e25d45d3b19176c1812d0c3df5cef0e65d8f/.c2c-v2/chrome-r6/m1/plan/review_request.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"request\": \"Propose one substantive finite implementation PLAN for M1 review action receipts.\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/owner_scope.json",
+      "ref_commit": "9843e25d45d3b19176c1812d0c3df5cef0e65d8f",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/9843e25d45d3b19176c1812d0c3df5cef0e65d8f/.c2c-v2/chrome-r6/owner_scope.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"delivery_semantics\": \"AT_LEAST_ONCE\", \"secrets_in_evidence\": false"
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/README.md",
+      "ref_commit": "9843e25d45d3b19176c1812d0c3df5cef0e65d8f",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/9843e25d45d3b19176c1812d0c3df5cef0e65d8f/poc_v2/chrome_r6_synthetic/README.md",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "Duplicate and late reviews must never schedule a second business action. Conflicting identity or changed canonical reply must fail closed."
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_delivery.py",
+      "ref_commit": "9843e25d45d3b19176c1812d0c3df5cef0e65d8f",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/9843e25d45d3b19176c1812d0c3df5cef0e65d8f/poc_v2/extension_control/bridge/fresh_delivery.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "if attempt[\"status\"] != \"complete\": attempt[\"status\"] = \"failed\"; attempt[\"error_code\"] = d[\"error_code\"]"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_response.py",
+      "ref_commit": "9843e25d45d3b19176c1812d0c3df5cef0e65d8f",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/9843e25d45d3b19176c1812d0c3df5cef0e65d8f/poc_v2/extension_control/bridge/fresh_response.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "expected = {\"STATE\": \"REVIEW_RESULT\", \"ROUND\": round_no, \"REQUEST_ID\": request_id, \"CONTROL_ID\": control_id, \"ATTEMPT_ID\": attempt_id, \"REVIEWED_COMMIT\": commit}"
+    }
+  ],
+  "NEXT_CODEX_INSTRUCTION": "Implement the M1 reviewable draft exactly within Chrome R6 synthetic scope. Add poc_v2/chrome_r6_synthetic/m1_receipts.py, test_m1_receipts.py and M1_RECEIPTS.md; do not modify existing Fresh runtime files. Implement a strict append-only ReceiptLedger in an explicit caller-supplied absolute private directory outside the repo. Bind mission_id/workspace_id/round_no/request_id/control_id/reviewed_commit plus sequential attempt_id. Reuse fresh_response parse/validate for each raw framed review. Canonicalize the validated logical review excluding only ATTEMPT_ID from its semantic hash while retaining all substantive review fields; store canonical_attempt_id separately. Preserve attempt_failed/delivery_uncertain history; permit a late valid known attempt to become canonical only before canonicalization; classify later semantic equality as duplicate and reject changed canonical content. Put deterministic action_id, bounded NEXT_CODEX_INSTRUCTION and instruction hash in the canonical event so action reservation is atomic. claim_action must append action_started and yield the instruction once only; after started or receipt it must never yield again, including after restore. Record one bounded completed/failed/blocked receipt; exact replay is idempotent, conflicting receipt fails closed. Use deterministic UTF-8 sorted compact JSON, strict duplicate-key/nonfinite/surrogate rejection, hash-chained events and sealed head; export/reopen must be byte-stable. Add all positive/negative/concurrency/tamper/path/credential-exclusion tests specified by this PLAN using only synthetic IDs and a caller-provided private test root. Run focused M1 tests, syntax/compile checks and git diff --check. Then commit the reviewable draft and publish an evidence-only .c2c-v2/chrome-r6/m1/draft review package containing exact implementation commit, source hashes, actual test counts/results and explicitly remaining independent-review obligations. Do not claim acceptance, access credentials or APIs, touch Edge/family-fund/old branch/main, install anything or start M2."
+}
