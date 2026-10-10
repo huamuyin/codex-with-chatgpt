@@ -1,0 +1,12 @@
+{
+  "mission_id": "C2C_V2_CHROME_R6_M3_SCOPE_B",
+  "stage": "BOUNDED_TWO_WORKTREE_CHROME_INTEGRATION",
+  "iteration": 1,
+  "required_paths_at_incoming_commit": [
+    ".c2c-v2/chrome-r6/m3/closure/profile_scope.json",
+    ".c2c-v2/chrome-r6/owner_scope.json",
+    ".c2c-v2/chrome-r6/m1/closure/mission_result.json",
+    ".c2c-v2/chrome-r6/m2/closure/mission_result.json"
+  ],
+  "request": "This is a substantive GitHub authority/isolation conformance decision, not an echo. Independently read exact incoming commit and listed files; verify the closed M1/M2 decisions and scopeB repo/branch/profile separation. Return CHANGES_REQUIRED for actual mismatch. If correct, NEXT_CODEX_INSTRUCTION should request only one bounded evidence action confirming original expected commit remains immutable during profile B closure; no source implementation or another review request."
+}
