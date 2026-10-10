@@ -1,0 +1,13 @@
+{
+  "previous_phase": "m3-fix1",
+  "reply_sha256": "0793523d81b8aaf726ae89c8a5aa2129ce3abaa87c4887f127af85c31d8e36d4",
+  "implementation_commit": "13bfa1609b72d1d1b6aea6f3c07fdf9ac05be8b3",
+  "reviewer_instruction": "Correct only the remaining M3 bounded action-receipt contract; do not modify M1/M2, retained Fresh runtime, or the two-worktree integration evidence, and do not start another mission. In M3 replay/public receipt handling, supplement checked_receipt with an M3-specific action_id invariant: action_id must be a lowercase 64-hex SHA-256 string. Reject booleans, numbers, null, arrays/objects, non-hex strings and lengths other than 64 before any append/state mutation. Apply the same invariant inside _apply so recomputed hash-chain/head replay cannot admit a receipt the public API would reject. Preserve current exact-duplicate idempotency and conflicting-second-receipt behavior. Add focused tests after a valid reply for malformed action_id values including True, [], {}, 63/65-character strings, uppercase/non-hex text and a very large string; assert ValueError and byte-identical journal. Add a recomputed valid event hash/head case with an invalid action_id and require reopen to fail without rewriting bytes. Retain the valid 64-hex receipt/closure path, recovery SAFE_BLOCK regressions, one-use retry regressions and all Fresh tests. Run focused M3 plus full Python/Node/syntax/manifest/diff gates. Publish one immutable same-M3 correction review descriptor with exact implementation commit, source hashes and actual results. Preserve explicit limitations: observed first Fresh send remains uncertain; no production-readiness claim; full-browser general behavior is not established; OS-reboot and multi-repository behavior remain unmeasured; cross_repository_scope remains UNMEASURED. Request only final independent review of this M3 correction; no credentials/APIs/install/main merge/Edge/family-fund/old-branch changes.",
+  "actual_tests": {
+    "python_passed": 195,
+    "node_passed": 181,
+    "syntax_files": 27,
+    "manifest": "PASS",
+    "diff": "PASS"
+  }
+}
