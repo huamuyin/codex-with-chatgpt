@@ -1,0 +1,74 @@
+[
+  {
+    "path": "poc_v2/chrome_r6_synthetic/M3_REGISTRY.md",
+    "ref_commit": "fc8c3be1b648c978d6beda02dc4586b21453ad92",
+    "sha256": "0e8ec3fe519838994c893e56fe86ceaa162da9f251294587a89c4ff630c6f2da",
+    "git_blob": "5a986f600945e751aabc1ff5e2d41642823699b4"
+  },
+  {
+    "path": "poc_v2/chrome_r6_synthetic/m3_registry.py",
+    "ref_commit": "fc8c3be1b648c978d6beda02dc4586b21453ad92",
+    "sha256": "f749c621ae9522bc276668e47f77206b1f614d15115ca09cf9b846de9417be7f",
+    "git_blob": "99c0962424c91ea0d21088c4b8efb69d9ac5f68d"
+  },
+  {
+    "path": "poc_v2/chrome_r6_synthetic/test_m3_registry.py",
+    "ref_commit": "fc8c3be1b648c978d6beda02dc4586b21453ad92",
+    "sha256": "fb68f762559013629f5472ff2eff13030ec9a64fde072e4112befff4a49746c4",
+    "git_blob": "7b5a76f36df897674575f884ecfc62946fdeec69"
+  },
+  {
+    "path": "poc_v2/extension_control/bridge/fresh_bridge.py",
+    "ref_commit": "fc8c3be1b648c978d6beda02dc4586b21453ad92",
+    "sha256": "89c8d3423dbb92a9a2f04f19511cae5748c91ba109a3f161fc21de6a0c9dddba",
+    "git_blob": "199a5cff9f0f0627b6bde77d41207545c765f9e3"
+  },
+  {
+    "path": "poc_v2/extension_control/bridge/fresh_protocol.md",
+    "ref_commit": "fc8c3be1b648c978d6beda02dc4586b21453ad92",
+    "sha256": "f41224feec00151a01705cff57aa454b2cb46f8fccd3871f7a12a7e5f96dc2d7",
+    "git_blob": "acee968123cd52cec570053e8e9761b4af3b00e6"
+  },
+  {
+    "path": "poc_v2/extension_control/chrome_extension/fresh_content.js",
+    "ref_commit": "fc8c3be1b648c978d6beda02dc4586b21453ad92",
+    "sha256": "5ca6fc841ef6547eac11ee7dc13b5ee192c0ba7dcc36b9828073e34bbbe63228",
+    "git_blob": "d4416f98315569afb083218cf49b25faf4566b36"
+  },
+  {
+    "path": "poc_v2/extension_control/chrome_extension/fresh_background.js",
+    "ref_commit": "fc8c3be1b648c978d6beda02dc4586b21453ad92",
+    "sha256": "442dee990573fe9be815b6668b222def8f87ff00b9bd23c89f63f68f14ded0a0",
+    "git_blob": "b393cbab8806048edd4e8228883c17d0e2b1f3ec"
+  },
+  {
+    "path": "poc_v2/extension_control/chrome_extension/fresh_locator.js",
+    "ref_commit": "fc8c3be1b648c978d6beda02dc4586b21453ad92",
+    "sha256": "9f90f445d21b835cef15baed71b1cc2f63fa652a96b622fba874b0b2263ff594",
+    "git_blob": "043ae4c30c0ffcda833edf699ff7d394efbfd56c"
+  },
+  {
+    "path": "poc_v2/extension_control/bridge/test_fresh_delivery.py",
+    "ref_commit": "fc8c3be1b648c978d6beda02dc4586b21453ad92",
+    "sha256": "523949097adb2a7be78b1c9ebcce8911aeb8467059d3bb4a285f089f977f50c2",
+    "git_blob": "8767a6f85f03cc0f63fff8334ecccaafb8099afb"
+  },
+  {
+    "path": "poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+    "ref_commit": "fc8c3be1b648c978d6beda02dc4586b21453ad92",
+    "sha256": "44d34025aaa9e335bda0933db10dc795eae5a6703fabd27a9d27ef23ac2d9c23",
+    "git_blob": "7934ea4b1688cdc7e58d5638e37fea8f9c41b794"
+  },
+  {
+    "path": ".c2c-v2/chrome-r6/m3/integration/result.json",
+    "ref_commit": "fc8c3be1b648c978d6beda02dc4586b21453ad92",
+    "sha256": "158fa8ab91a5d6bb3eec996c1fe11420050a0c58841a44ed83cac8a5f584cc2b",
+    "git_blob": "f14a00fdaaca5f078838dc6d11afff5562983e34"
+  },
+  {
+    "path": ".c2c-v2/chrome-r6/m3/integration/B_independent_review.json",
+    "ref_commit": "fc8c3be1b648c978d6beda02dc4586b21453ad92",
+    "sha256": "07d50287f6d88fd2cfb7e766419902891cfba3a0e7f99a12d8e6221e72ff2b12",
+    "git_blob": "206aa9bc7d1d71fc8a9867bbebf55f40154dc845"
+  }
+]
