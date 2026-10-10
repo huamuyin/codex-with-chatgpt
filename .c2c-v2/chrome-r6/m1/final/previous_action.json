@@ -1,0 +1,13 @@
+{
+  "previous_phase": "m1-draft",
+  "reply_sha256": "ff36980bbe2d26d65ee902f60a30d2b34600034a0166e70f61ccbfc4a51a4287",
+  "implementation_commit": "3ab7648c957ed90ae9180b47961877472990b86d",
+  "reviewer_instruction": "Correct only M1 semantic replay validation and its tests/docs; do not start M2 or modify Fresh runtime. In ReceiptLedger._apply require an exact schema for every event kind. For canonical_review require exactly canonical_attempt_id, review, review_hash, action_id, instruction and instruction_hash; require canonical_attempt_id to be type int and a known opened attempt; require review to contain exactly REVIEW_KEYS minus ATTEMPT_ID; reconstruct {**review, ATTEMPT_ID: canonical_attempt_id} and run validate_response against the stored context; require instruction == review[\"NEXT_CODEX_INSTRUCTION\"]; then verify review_hash, instruction_hash and action_id. For duplicate_review require exact keys, type(attempt_id) is int, known attempt and matching canonical review hash. For action_receipt require exactly action_id/status/result_sha256/summary and replay the same completed|failed|blocked, 64-hex hash and 1..512 string-summary contract used by record_action_receipt. Keep action_started exact and fail closed. Add focused tamper tests that first create a valid ledger, then rewrite events with a fully recomputed event hash chain and matching head while injecting: canonical_attempt_id=true, wrong canonical identity/ROUND/control/commit, extra canonical field, instruction differing from review NEXT_CODEX_INSTRUCTION, duplicate_review attempt_id=true/extra field, and receipts with bad status/hash/summary/extra field. Every reopen must fail while preserving bytes. Also keep existing API-level tests and rerun full Python/Node/syntax/manifest/diff gates. Commit the bounded correction, publish an immutable M1 final-review descriptor with exact source hashes and actual results, explicitly retain unresolved non-M1-production obligations such as multi-process locking/power-loss guarantees, and request final independent M1 review only.",
+  "actual_tests": {
+    "python_passed": 151,
+    "node_passed": 179,
+    "syntax_files": 23,
+    "manifest": "PASS",
+    "diff": "PASS"
+  }
+}
