@@ -152,3 +152,18 @@ class RegistryTests(unittest.TestCase):
             self.assertEqual(self.r.recovery(identity,snapshot,observation),expected);self.assertEqual(len(self.r.events),count+1)
             self.assertTrue((self.path/'events.jsonl').read_bytes().startswith(prefix));last=self.r.events[-1]
             self.assertEqual(last['kind'],'recovery_decision');self.assertEqual(last['data']['identity'],self.i)
+
+    def test_receipt_action_id_must_be_bounded_lowercase_sha256_before_append(self):
+        self.bind();self.r.event('reply_completed',self.i,attempt_id=1,reply_sha256='f'*64);base=dict(action_id='a'*64,status='completed',result_sha256='b'*64,summary='fixture');before=self.files()
+        for value in [True,1,None,[],{},'a'*63,'a'*65,'A'*64,'g'*64,'x'*100000]:
+            with self.subTest(kind=type(value).__name__),self.assertRaisesRegex(ValueError,'action_id_digest_required'):self.r.event('action_receipt',self.i,receipt={**base,'action_id':value})
+            self.assertEqual(self.files(),before)
+        self.r.event('action_receipt',self.i,receipt=base);self.r.event('mission_closed',self.i,status='completed')
+
+    def test_recomputed_receipt_invalid_action_id_fails_reopen_without_rewrite(self):
+        self.bind();self.r.event('reply_completed',self.i,attempt_id=1,reply_sha256='f'*64);self.r.close();head=json.loads((self.path/'head.json').read_bytes())
+        event=dict(sequence=head['sequence']+1,previous_hash=head['hash'],kind='action_receipt',data=dict(identity=self.i,receipt=dict(action_id=True,status='completed',result_sha256='a'*64,summary='fixture')));digest=hashlib.sha256(encoded(event)).hexdigest()
+        with (self.path/'events.jsonl').open('ab') as f:f.write(encoded(dict(event=event,hash=digest))+b'\n')
+        (self.path/'head.json').write_bytes(encoded(dict(sequence=event['sequence'],hash=digest))+b'\n');before=self.files()
+        with self.assertRaisesRegex(ValueError,'action_id_digest_required'):WorkspaceMissionRegistry(self.path,self.profiles,private_root=self.root)
+        self.assertEqual(self.files(),before)

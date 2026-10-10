@@ -31,3 +31,8 @@ Non-dict or malformed identity/snapshot/observation now returns exactly SAFE_BLO
 Only a valid string mission_id identifying an active stored mission can attribute
 one canonical blocking audit event; unhashable or unattributable input leaves all
 journal bytes unchanged. No observer/retry/send action is invoked by this path.
+
+M3 action receipts additionally require action_id to be a lowercase 64-hex SHA-256
+string. API and replay use the same bounded invariant before mutation. Invalid
+types, length, case and non-hex values fail closed even with recomputed journal
+hashes; valid receipt replay remains idempotent. M1 and M2 contracts are unchanged.

@@ -1,0 +1,205 @@
+{
+  "STATE": "REVIEW_RESULT",
+  "ROUND": 4,
+  "REQUEST_ID": "b5d12521-c70f-4564-8c87-7f9c50f0e53b",
+  "CONTROL_ID": "358c5d7c-465e-439e-8da7-3ed2ecaaa4d2",
+  "ATTEMPT_ID": 1,
+  "REVIEWED_COMMIT": "549b8f7b58c2387f89881bc303124f5d1421a5f4",
+  "VERDICT": "CHANGES_REQUIRED",
+  "FINDINGS": [
+    {
+      "severity": "INFO",
+      "finding": "The recovery fail-closed defect from the previous independent review is corrected at c74edc491e4520f686cc1604bb8141bf177b4f92. recovery() now derives mid only when identity is a dict, requires name(mid) before dictionary membership, returns SAFE_BLOCK for malformed/unattributable authority and appends a canonical SAFE_BLOCK audit event only when a valid string mission_id identifies an existing nonterminal mission."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Focused recovery regression now covers identity=None, string/list/empty dict, unhashable list/dict mission_id, null/unknown mission_id, wrong-shape attributable identity, non-dict snapshot and non-dict observation. Unattributable malformed inputs return the exact SAFE_BLOCK result with byte-identical journal state; attributable malformed inputs append exactly one canonical recovery_decision."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The earlier one-use retry correction also remains intact: an authorization occupies the retry slot through claim and restore, no second authorization is possible before the claimed next attempt is bound, binding consumes that used slot, and a new ticket becomes possible only after the newly bound latest attempt subsequently fails or becomes uncertain."
+    },
+    {
+      "severity": "MAJOR",
+      "path": "poc_v2/chrome_r6_synthetic/m3_registry.py",
+      "finding": "M3 action_receipt still does not implement the PLAN's bounded receipt schema for action_id. The branch calls imported checked_receipt() and then stores the receipt, but checked_receipt validates only exact keys, status, result_sha256 and bounded summary; it imposes no type, format or length constraint on action_id. Consequently an action_id may be a boolean, list, object or arbitrarily large string and still be durably accepted. This violates the independently reread M3 PLAN requirement for a bounded synthetic action-receipt schema."
+    },
+    {
+      "severity": "MAJOR",
+      "path": "poc_v2/chrome_r6_synthetic/m3_registry.py",
+      "finding": "Importing the M1 helper does not provide the missing M3 protection. In M1, action_id is separately required to equal the deterministic canonical SHA-256 action identity before a receipt is accepted. M3 has no corresponding equality or format check, so the helper alone is insufficient. The existing M3 valid fixture happens to use a 64-hex action_id but no implementation invariant enforces that representation."
+    },
+    {
+      "severity": "MAJOR",
+      "path": "poc_v2/chrome_r6_synthetic/test_m3_registry.py",
+      "finding": "The action-receipt tests cover exact duplicate idempotency and a conflicting status, but do not reject malformed or unbounded action_id values and do not prove replay rejects a recomputed hash-chain/head containing such a receipt. This leaves a concrete required bounded-schema/replay conformance gap."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The retained Fresh runtime files are byte-identical to the previously reviewed fc8c3be1b648c978d6beda02dc4586b21453ad92 versions; the fix1 implementation delta contains no Fresh source modification. The bounded inspect_draft metadata, composer re-resolution, Host/Origin/token/component readiness checks and exact tab/URL reply gates therefore remain unchanged."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The retained Fresh evidence remains deliberately limited. fresh_protocol.md still records the observed first-send uncertainty: the native tab navigated to a new thread but no binding/result reached the controller before timeout and no retry send was written. Nothing in fix1 converts that observation into a successful first-send or production-readiness claim."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The integration limitations are still explicit: cross_repository_scope is UNMEASURED, M3 documentation leaves multi-repository and OS-reboot behavior unmeasured, and the bounded two-worktree Chrome evidence is not a full-browser or general production qualification."
+    },
+    {
+      "severity": "INFO",
+      "finding": "All twelve independently fetched files listed by m3/fix1/source_hashes.json match their declared Git blob IDs. d3e1ae5ea38fc8957175930381ca9b1af72a6748 -> c74edc491e4520f686cc1604bb8141bf177b4f92 is one bounded correction commit touching only M3 source/docs/tests plus prior-review evidence; c74edc491e4520f686cc1604bb8141bf177b4f92 -> 549b8f7b58c2387f89881bc303124f5d1421a5f4 is one evidence-only commit. Reported gates are 193 Python passes, 181 Node passes, 27 syntax files, manifest PASS and diff PASS."
+    }
+  ],
+  "REVIEW_SUMMARY": "The exact incoming authority 549b8f7b58c2387f89881bc303124f5d1421a5f4, every required incoming path and every required immutable ref were independently read through the official GitHub connector. The iteration-3 recovery input-boundary defect is genuinely fixed, with substantive malformed-authority regressions, and the prior one-use retry correction remains sound. Retained Fresh runtime blobs are unchanged and continue to preserve their bounded diagnostic/auth/readiness/reply contracts and explicit first-send uncertainty. One separate substantive M3 PLAN defect remains: action_receipt is described as a bounded synthetic receipt but M3 never validates action_id at all; unlike M1, there is no canonical-action equality check to supply that constraint. Malformed or arbitrarily large action_id values can therefore enter the sealed M3 journal, and current tests do not cover public or replay rejection. M3 cannot close until that bounded receipt invariant is enforced.",
+  "GITHUB_RESOURCES_READ": [
+    {
+      "path": ".c2c-v2/chrome-r6/m3/fix1/review_request.json",
+      "ref_commit": "549b8f7b58c2387f89881bc303124f5d1421a5f4",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/549b8f7b58c2387f89881bc303124f5d1421a5f4/.c2c-v2/chrome-r6/m3/fix1/review_request.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"stage\": \"fix1\", \"implementation_commit\": \"c74edc491e4520f686cc1604bb8141bf177b4f92\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/owner_scope.json",
+      "ref_commit": "549b8f7b58c2387f89881bc303124f5d1421a5f4",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/549b8f7b58c2387f89881bc303124f5d1421a5f4/.c2c-v2/chrome-r6/owner_scope.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"stop_boundary\": \"One final complete independent review package; no general production claim.\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m3/fix1/test_summary.json",
+      "ref_commit": "549b8f7b58c2387f89881bc303124f5d1421a5f4",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/549b8f7b58c2387f89881bc303124f5d1421a5f4/.c2c-v2/chrome-r6/m3/fix1/test_summary.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"python_passed\": 193, \"node_passed\": 181, \"syntax_files\": 27, \"manifest\": \"PASS\", \"diff\": \"PASS\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m3/fix1/source_hashes.json",
+      "ref_commit": "549b8f7b58c2387f89881bc303124f5d1421a5f4",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/549b8f7b58c2387f89881bc303124f5d1421a5f4/.c2c-v2/chrome-r6/m3/fix1/source_hashes.json",
+      "read_method": "GitHub fetch_file plus independent Git blob verification",
+      "source_excerpt": "\"path\": \"poc_v2/chrome_r6_synthetic/m3_registry.py\", \"git_blob\": \"2e226bbabbdbf87dfb1334bf2a3b1eb85862b9d5\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m3/fix1/previous_action.json",
+      "ref_commit": "549b8f7b58c2387f89881bc303124f5d1421a5f4",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/549b8f7b58c2387f89881bc303124f5d1421a5f4/.c2c-v2/chrome-r6/m3/fix1/previous_action.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"implementation_commit\": \"c74edc491e4520f686cc1604bb8141bf177b4f92\", \"python_passed\": 193"
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/M3_REGISTRY.md",
+      "ref_commit": "c74edc491e4520f686cc1604bb8141bf177b4f92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/c74edc491e4520f686cc1604bb8141bf177b4f92/poc_v2/chrome_r6_synthetic/M3_REGISTRY.md",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "Non-dict or malformed identity/snapshot/observation now returns exactly SAFE_BLOCK."
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/m3_registry.py",
+      "ref_commit": "c74edc491e4520f686cc1604bb8141bf177b4f92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/c74edc491e4520f686cc1604bb8141bf177b4f92/poc_v2/chrome_r6_synthetic/m3_registry.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "elif kind==\"action_receipt\": checked_receipt(d[\"receipt\"]); if not m[\"reply\"] or m[\"receipt\"] and m[\"receipt\"]!=d[\"receipt\"]:raise ValueError(\"receipt_conflict\")"
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/test_m3_registry.py",
+      "ref_commit": "c74edc491e4520f686cc1604bb8141bf177b4f92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/c74edc491e4520f686cc1604bb8141bf177b4f92/poc_v2/chrome_r6_synthetic/test_m3_registry.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "r=dict(action_id='c'*64,status='completed',result_sha256='d'*64,summary='fixture')"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_bridge.py",
+      "ref_commit": "c74edc491e4520f686cc1604bb8141bf177b4f92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/c74edc491e4520f686cc1604bb8141bf177b4f92/poc_v2/extension_control/bridge/fresh_bridge.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "extended = (set(d) == original_keys | {\"composer_form_present\", \"composer_buttons\"}"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/fresh_protocol.md",
+      "ref_commit": "c74edc491e4520f686cc1604bb8141bf177b4f92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/c74edc491e4520f686cc1604bb8141bf177b4f92/poc_v2/extension_control/bridge/fresh_protocol.md",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "A single new Fresh attempt navigated the original native tab from root to a new thread, but no binding/result reached the controller before its timeout."
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_content.js",
+      "ref_commit": "c74edc491e4520f686cc1604bb8141bf177b4f92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/c74edc491e4520f686cc1604bb8141bf177b4f92/poc_v2/extension_control/chrome_extension/fresh_content.js",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "if (!current || current.element !== send.composerElement || !visible(send.element) || send.element.disabled || send.element.getAttribute(\"aria-disabled\") === \"true\")"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_background.js",
+      "ref_commit": "c74edc491e4520f686cc1604bb8141bf177b4f92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/c74edc491e4520f686cc1604bb8141bf177b4f92/poc_v2/extension_control/chrome_extension/fresh_background.js",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "b?.protocol_version === 3 && b?.host === I.host && b?.port === I.port && b?.extension_id === chrome.runtime.id"
+    },
+    {
+      "path": "poc_v2/extension_control/chrome_extension/fresh_locator.js",
+      "ref_commit": "c74edc491e4520f686cc1604bb8141bf177b4f92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/c74edc491e4520f686cc1604bb8141bf177b4f92/poc_v2/extension_control/chrome_extension/fresh_locator.js",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "[\"data-message-author-role\", '[data-message-author-role]']"
+    },
+    {
+      "path": "poc_v2/extension_control/bridge/test_fresh_delivery.py",
+      "ref_commit": "c74edc491e4520f686cc1604bb8141bf177b4f92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/c74edc491e4520f686cc1604bb8141bf177b4f92/poc_v2/extension_control/bridge/test_fresh_delivery.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "def test_bounded_extended_composer_metadata_remains_read_only_and_no_missing_summary_success(self):"
+    },
+    {
+      "path": "poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+      "ref_commit": "c74edc491e4520f686cc1604bb8141bf177b4f92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/c74edc491e4520f686cc1604bb8141bf177b4f92/poc_v2/extension_control/tests/fresh_runtime.test.cjs",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "test(\"send re-resolves replaced editor and rejects a changed draft before any click\", async () => {"
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m3/integration/result.json",
+      "ref_commit": "c74edc491e4520f686cc1604bb8141bf177b4f92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/c74edc491e4520f686cc1604bb8141bf177b4f92/.c2c-v2/chrome-r6/m3/integration/result.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"original_commit_preserved\": true, \"implicit_restore_operations\": 0, \"cross_repository_scope\": \"UNMEASURED\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m3/integration/B_independent_review.json",
+      "ref_commit": "c74edc491e4520f686cc1604bb8141bf177b4f92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/c74edc491e4520f686cc1604bb8141bf177b4f92/.c2c-v2/chrome-r6/m3/integration/B_independent_review.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"VERDICT\": \"PASS_CONTINUE\", \"REVIEWED_COMMIT\": \"94048305c8cb9cfd6c8abb003bc601ff25fcf90d\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m3/final/review_result.json",
+      "ref_commit": "c74edc491e4520f686cc1604bb8141bf177b4f92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/c74edc491e4520f686cc1604bb8141bf177b4f92/.c2c-v2/chrome-r6/m3/final/review_result.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"VERDICT\": \"CHANGES_REQUIRED\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m3/plan/review_result.json",
+      "ref_commit": "c74edc491e4520f686cc1604bb8141bf177b4f92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/c74edc491e4520f686cc1604bb8141bf177b4f92/.c2c-v2/chrome-r6/m3/plan/review_result.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "Completed mission action receipts should use a bounded synthetic schema equivalent in spirit to the already reviewed M1 receipt contract"
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/m1_receipts.py",
+      "ref_commit": "c74edc491e4520f686cc1604bb8141bf177b4f92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/c74edc491e4520f686cc1604bb8141bf177b4f92/poc_v2/chrome_r6_synthetic/m1_receipts.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "if not s[\"action_started\"] or s[\"receipt\"] is not None or data[\"action_id\"] != s[\"canonical\"][\"action_id\"]: raise ValueError(\"receipt_conflict\")"
+    },
+    {
+      "path": "commit c74edc491e4520f686cc1604bb8141bf177b4f92",
+      "ref_commit": "c74edc491e4520f686cc1604bb8141bf177b4f92",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/commit/c74edc491e4520f686cc1604bb8141bf177b4f92",
+      "read_method": "GitHub fetch_commit and immutable compare",
+      "source_excerpt": "poc: execute Chrome R6 m3 fix1 development action"
+    }
+  ],
+  "NEXT_CODEX_INSTRUCTION": "Correct only the remaining M3 bounded action-receipt contract; do not modify M1/M2, retained Fresh runtime, or the two-worktree integration evidence, and do not start another mission. In M3 replay/public receipt handling, supplement checked_receipt with an M3-specific action_id invariant: action_id must be a lowercase 64-hex SHA-256 string. Reject booleans, numbers, null, arrays/objects, non-hex strings and lengths other than 64 before any append/state mutation. Apply the same invariant inside _apply so recomputed hash-chain/head replay cannot admit a receipt the public API would reject. Preserve current exact-duplicate idempotency and conflicting-second-receipt behavior. Add focused tests after a valid reply for malformed action_id values including True, [], {}, 63/65-character strings, uppercase/non-hex text and a very large string; assert ValueError and byte-identical journal. Add a recomputed valid event hash/head case with an invalid action_id and require reopen to fail without rewriting bytes. Retain the valid 64-hex receipt/closure path, recovery SAFE_BLOCK regressions, one-use retry regressions and all Fresh tests. Run focused M3 plus full Python/Node/syntax/manifest/diff gates. Publish one immutable same-M3 correction review descriptor with exact implementation commit, source hashes and actual results. Preserve explicit limitations: observed first Fresh send remains uncertain; no production-readiness claim; full-browser general behavior is not established; OS-reboot and multi-repository behavior remain unmeasured; cross_repository_scope remains UNMEASURED. Request only final independent review of this M3 correction; no credentials/APIs/install/main merge/Edge/family-fund/old-branch changes."
+}

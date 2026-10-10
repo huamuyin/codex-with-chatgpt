@@ -19,6 +19,9 @@ def name(v):return isinstance(v,str) and re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]{0,
 def commit(v):return isinstance(v,str) and bool(HEX.fullmatch(v))
 def uuid(v):return isinstance(v,str) and bool(UUID.fullmatch(v))
 def positive(v):return type(v) is int and v>0
+def checked_m3_receipt(v):
+    if not isinstance(v,dict) or not isinstance(v.get("action_id"),str) or not re.fullmatch(r"[a-f0-9]{64}",v["action_id"]):raise ValueError("action_id_digest_required")
+    checked_receipt(v)
 def git_snapshot(path):
     p=Path(path)
     if not p.is_absolute() or p.resolve()!=p.absolute():raise ValueError("canonical_worktree_required")
@@ -113,7 +116,7 @@ class WorkspaceMissionRegistry:
             if m["reply"] and m["reply"]!=d:raise ValueError("reply_conflict")
             m["reply"]=copy.deepcopy(d);m["attempts"][d["attempt_id"]-1]["status"]="complete"
         elif kind=="action_receipt":
-            checked_receipt(d["receipt"])
+            checked_m3_receipt(d["receipt"])
             if not m["reply"] or m["receipt"] and m["receipt"]!=d["receipt"]:raise ValueError("receipt_conflict")
             m["receipt"]=copy.deepcopy(d["receipt"])
         elif kind=="mission_closed":
@@ -153,6 +156,7 @@ class WorkspaceMissionRegistry:
     def event(self,kind,identity,**fields):
         with self.lock:
             self._load();m=self._identity(self.state,identity)
+            if kind=="action_receipt":checked_m3_receipt(fields.get("receipt"))
             if kind=="action_receipt" and m["receipt"]==fields.get("receipt"):return False
             self._append(kind,dict(identity=identity,**fields));return True
     def recovery(self,identity,snapshot,observation):
