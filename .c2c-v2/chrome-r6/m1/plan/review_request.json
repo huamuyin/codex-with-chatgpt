@@ -1,0 +1,12 @@
+{
+  "mission_id": "C2C_V2_CHROME_R6_M1",
+  "stage": "PLAN",
+  "iteration": 1,
+  "required_paths_at_incoming_commit": [
+    ".c2c-v2/chrome-r6/owner_scope.json",
+    "poc_v2/chrome_r6_synthetic/README.md",
+    "poc_v2/extension_control/bridge/fresh_delivery.py",
+    "poc_v2/extension_control/bridge/fresh_response.py"
+  ],
+  "request": "Propose one substantive finite implementation PLAN for M1 review action receipts. Define identity, deterministic serialization, duplicate/late result handling and action deduplication with concrete positive/negative tests. Use no runtime credentials or real product data. Specify a reviewable draft and remaining conformance obligations for independent review, without predetermining the review verdict."
+}

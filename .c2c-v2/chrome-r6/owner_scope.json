@@ -1,0 +1,17 @@
+{
+  "mission": "C2C_V2_CHROME_R6",
+  "owner_authorization": "Independent Chrome stability and long-use candidate; at least three substantive autonomous development missions with PLAN, code, tests, independent GitHub review, correction and final review.",
+  "accepted_base": "1a9c65d76a29253ea6093edd75b7070ab8f580a1",
+  "repo": "huamuyin/codex-with-chatgpt",
+  "branch": "codex/c2c-v2-chrome-r6",
+  "route": "Codex -> owned localhost Fresh bridge -> owned Fresh Chrome extension -> ordinary subscription high-reasoning Chat -> GitHub -> framed reply -> Codex",
+  "delivery_semantics": "AT_LEAST_ONCE",
+  "synthetic_project": "poc_v2/chrome_r6_synthetic",
+  "old_poc_branch_mutation": false,
+  "Edge_route_mutation": false,
+  "family_fund_mutation": false,
+  "global_installation": false,
+  "secrets_in_evidence": false,
+  "metrics_policy": "Measure actual observed counts and durations; unknown metrics are UNMEASURED, never fabricated zero.",
+  "stop_boundary": "One final complete independent review package; no general production claim."
+}
