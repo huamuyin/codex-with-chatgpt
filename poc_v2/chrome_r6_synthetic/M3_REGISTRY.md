@@ -17,3 +17,11 @@ This synthetic draft is not production acceptance. Independent review must inspe
 full event/replay schemas, OS locking, path canonicalization, checkpoint lineage,
 retry lifetime and actual two-worktree Chrome evidence. Hashes are not signatures;
 power-loss repair is not guaranteed. Multi-repository/OS-reboot behavior is unmeasured.
+
+The independent draft review found a retry-slot lifetime defect. An authorization
+now occupies the derived retry slot even after it is claimed. It is consumed only
+when the claimed next attempt is successfully bound; only a subsequent failure of
+that latest bound attempt can authorize another ticket. Every grant/claim/bind
+remains in immutable events. Replay enforces the same invariant, including fully
+recomputed hash/head tampering. Original request/control/commit identities remain
+unchanged through every directive. This correction awaits final independent review.

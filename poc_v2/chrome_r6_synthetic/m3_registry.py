@@ -91,6 +91,7 @@ class WorkspaceMissionRegistry:
             if d["attempt_id"]>1 and not (m["retry"] and m["retry"]["used"] and m["retry"]["next_attempt"]==d["attempt_id"]):raise ValueError("retry_not_claimed")
             if any(not other["closed"] and other is not m and any(a["tab_id"]==d["tab_id"] or a["url"]==d["url"] for a in other["attempts"]) for other in s["missions"].values()):raise ValueError("duplicate_target")
             m["attempts"].append(dict(attempt_id=d["attempt_id"],tab_id=d["tab_id"],url=d["url"],status="bound"))
+            if d["attempt_id"]>1:m["retry"]=None
         elif kind=="attempt_failed":
             if not positive(d["attempt_id"]) or d["attempt_id"]>len(m["attempts"]) or not isinstance(d["error"],str) or not 1<=len(d["error"])<=128 or type(d["uncertain"]) is not bool:raise ValueError("failure_identity")
             m["failures"].append(copy.deepcopy(d))
@@ -99,7 +100,7 @@ class WorkspaceMissionRegistry:
             if d["reason"] not in ("page_refresh","worker_restart","bridge_restart","controller_restart"):raise ValueError("lifecycle_reason")
             m["lifecycle"].append(d["reason"])
         elif kind=="retry_authorized":
-            if not positive(d["attempt_id"]) or d["attempt_id"]!=len(m["attempts"]) or m["reply"] or m["receipt"] or not uuid(d["authorization_id"]) or m["attempts"][-1]["status"] not in ("failed","uncertain") or m["retry"] and not m["retry"]["used"]:raise ValueError("retry_authority")
+            if not positive(d["attempt_id"]) or d["attempt_id"]!=len(m["attempts"]) or m["reply"] or m["receipt"] or not uuid(d["authorization_id"]) or m["attempts"][-1]["status"] not in ("failed","uncertain") or m["retry"] is not None:raise ValueError("retry_authority")
             m["retry"]=dict(authorization_id=d["authorization_id"],used=False,next_attempt=d["attempt_id"]+1)
         elif kind=="retry_started":
             if m["reply"] or m["receipt"] or not positive(d["attempt_id"]) or not m["retry"] or m["retry"]["used"] or d["authorization_id"]!=m["retry"]["authorization_id"] or d["attempt_id"]!=m["retry"]["next_attempt"]:raise ValueError("retry_already_claimed")

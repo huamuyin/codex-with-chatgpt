@@ -115,3 +115,25 @@ class RegistryTests(unittest.TestCase):
         head['sequence']=True;(self.path/'head.json').write_bytes(encoded(head)+b'\n');before=self.files()
         with self.assertRaises(ValueError):WorkspaceMissionRegistry(self.path,self.profiles,private_root=self.root)
         self.assertEqual(self.files(),before)
+
+    def test_used_retry_slot_blocks_new_ticket_until_next_attempt_is_bound_and_fails(self):
+        self.bind();self.r.event('attempt_failed',self.i,attempt_id=1,error='uncertain',uncertain=True);ticket1=str(uuid.uuid4())
+        self.r.authorize_retry(self.i,1,ticket1,self.snapshot());d1=self.r.claim_retry(self.i,ticket1,self.snapshot());self.assertEqual(d1,{**self.i,'attempt_id':2});self.reopen();before=self.files()
+        with self.assertRaises(ValueError):self.r.authorize_retry(self.i,1,str(uuid.uuid4()),self.snapshot())
+        self.assertEqual(self.files(),before);self.assertIsNone(self.r.claim_retry(self.i,ticket1,self.snapshot()))
+        self.r.event('attempt_bound',self.i,attempt_id=2,tab_id=7,url='https://chatgpt.com/c/mock-a');self.assertIsNone(json.loads(self.r.export())['missions']['MOCK_A']['retry'])
+        with self.assertRaises(ValueError):self.r.authorize_retry(self.i,2,str(uuid.uuid4()),self.snapshot())
+        self.r.event('attempt_failed',self.i,attempt_id=2,error='timeout',uncertain=False);ticket2=str(uuid.uuid4());self.r.authorize_retry(self.i,2,ticket2,self.snapshot())
+        with self.assertRaises(ValueError):self.r.authorize_retry(self.i,2,str(uuid.uuid4()),self.snapshot())
+        d2=self.r.claim_retry(self.i,ticket2,self.snapshot());self.assertEqual(d2,{**self.i,'attempt_id':3});self.reopen();self.assertIsNone(self.r.claim_retry(self.i,ticket2,self.snapshot()))
+        with self.assertRaises(ValueError):self.r.authorize_retry(self.i,2,str(uuid.uuid4()),self.snapshot())
+        self.r.event('attempt_bound',self.i,attempt_id=3,tab_id=7,url='https://chatgpt.com/c/mock-a')
+
+    def test_recomputed_replay_cannot_authorize_again_before_claimed_attempt_bind(self):
+        self.bind();self.r.event('attempt_failed',self.i,attempt_id=1,error='timeout',uncertain=False);ticket=str(uuid.uuid4());self.r.authorize_retry(self.i,1,ticket,self.snapshot());self.r.claim_retry(self.i,ticket,self.snapshot());self.r.close()
+        head=json.loads((self.path/'head.json').read_bytes());event=dict(sequence=head['sequence']+1,previous_hash=head['hash'],kind='retry_authorized',data=dict(identity=self.i,attempt_id=1,authorization_id=str(uuid.uuid4())))
+        digest=hashlib.sha256(encoded(event)).hexdigest()
+        with (self.path/'events.jsonl').open('ab') as f:f.write(encoded(dict(event=event,hash=digest))+b'\n')
+        (self.path/'head.json').write_bytes(encoded(dict(sequence=event['sequence'],hash=digest))+b'\n');before=self.files()
+        with self.assertRaisesRegex(ValueError,'retry_authority'):WorkspaceMissionRegistry(self.path,self.profiles,private_root=self.root)
+        self.assertEqual(self.files(),before)
