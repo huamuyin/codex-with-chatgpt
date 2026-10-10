@@ -25,3 +25,9 @@ that latest bound attempt can authorize another ticket. Every grant/claim/bind
 remains in immutable events. Replay enforces the same invariant, including fully
 recomputed hash/head tampering. Original request/control/commit identities remain
 unchanged through every directive. This correction awaits final independent review.
+
+A further independent review required a total fail-closed recovery input boundary.
+Non-dict or malformed identity/snapshot/observation now returns exactly SAFE_BLOCK.
+Only a valid string mission_id identifying an active stored mission can attribute
+one canonical blocking audit event; unhashable or unattributable input leaves all
+journal bytes unchanged. No observer/retry/send action is invoked by this path.

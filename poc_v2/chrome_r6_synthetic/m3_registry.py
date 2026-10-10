@@ -166,8 +166,9 @@ class WorkspaceMissionRegistry:
                 if not isinstance(observation,dict) or any(observation.get(k)!=v or type(observation.get(k)) is not type(v) for k,v in expected.items()) or any(observation.get(k) is not True for k in ("authenticated","components_verified","ready","unique_target")):raise ValueError("fresh_authority_unconfirmed")
                 decision="EXPLICIT_RETRY" if m["retry"] and not m["retry"]["used"] else "OBSERVE_EXISTING_ATTEMPT";reason="exact_authority"
             except (ValueError,KeyError,TypeError):decision="SAFE_BLOCK";reason="authority_or_lifecycle_unconfirmed"
-            if identity.get("mission_id") in self.state["missions"] and not self.state["missions"][identity["mission_id"]]["closed"]:
-                canonical=self.state["missions"][identity["mission_id"]]["identity"];self._append("recovery_decision",dict(identity=canonical,decision=decision,reason=reason))
+            mid=identity.get("mission_id") if isinstance(identity,dict) else None
+            if name(mid) and mid in self.state["missions"] and not self.state["missions"][mid]["closed"]:
+                canonical=self.state["missions"][mid]["identity"];self._append("recovery_decision",dict(identity=canonical,decision=decision,reason=reason))
             return dict(decision=decision,reason=reason)
     def authorize_retry(self,identity,attempt_id,authorization_id,snapshot):
         with self.lock:

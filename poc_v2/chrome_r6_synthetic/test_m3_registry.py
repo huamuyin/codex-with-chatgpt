@@ -137,3 +137,18 @@ class RegistryTests(unittest.TestCase):
         (self.path/'head.json').write_bytes(encoded(dict(sequence=event['sequence'],hash=digest))+b'\n');before=self.files()
         with self.assertRaisesRegex(ValueError,'retry_authority'):WorkspaceMissionRegistry(self.path,self.profiles,private_root=self.root)
         self.assertEqual(self.files(),before)
+
+    def test_malformed_unattributable_recovery_inputs_safely_block_without_journal_change(self):
+        self.bind();before=self.files();expected=dict(decision='SAFE_BLOCK',reason='authority_or_lifecycle_unconfirmed')
+        for identity in [None,'string',[],{},dict(mission_id=[]),dict(mission_id={}),dict(mission_id=None),dict(mission_id='UNKNOWN')]:
+            with self.subTest(identity=identity):self.assertEqual(self.r.recovery(identity,self.snapshot(),self.observe()),expected)
+            self.assertEqual(self.files(),before)
+
+    def test_malformed_attributable_identity_snapshot_observation_append_only_canonical_safe_block(self):
+        self.bind();expected=dict(decision='SAFE_BLOCK',reason='authority_or_lifecycle_unconfirmed')
+        cases=[(dict(mission_id='MOCK_A'),self.snapshot(),self.observe()),(self.i,None,self.observe()),(self.i,[],self.observe()),(self.i,'snapshot',self.observe()),(self.i,self.snapshot(),None),(self.i,self.snapshot(),[]),(self.i,self.snapshot(),'observation')]
+        for identity,snapshot,observation in cases:
+            prefix=(self.path/'events.jsonl').read_bytes();count=len(self.r.events)
+            self.assertEqual(self.r.recovery(identity,snapshot,observation),expected);self.assertEqual(len(self.r.events),count+1)
+            self.assertTrue((self.path/'events.jsonl').read_bytes().startswith(prefix));last=self.r.events[-1]
+            self.assertEqual(last['kind'],'recovery_decision');self.assertEqual(last['data']['identity'],self.i)
