@@ -19,6 +19,27 @@ EXTENSION = "a" * 32
 
 
 class FreshTests(unittest.TestCase):
+    def test_loading_target_refresh_preserves_original_request_and_refuses_ambiguous_authority(self):
+        r=self.send();wire=self.s.requests.wire_request(r["request_id"],1);raw=(self.path/"events.jsonl").read_bytes();records=copy.deepcopy(self.s.requests.records)
+        status={**self.s.status,"connected":False,"candidate_count":1,"tab_id":8,"url":URL,
+            "bound_tab_diagnostics":[dict(tab_id=7,exists=False,status="missing",url="")],
+            "observed_targets":[dict(tab_id=8,url=URL,status="loading",pending_url="")]}
+        value=dict(action="refresh_loading_target",request_id=r["request_id"],control_id=r["control_id"],attempt_id=1,tab_id=8,url=URL)
+        self.s.status=copy.deepcopy(status);self.s.maintenance(value);self.assertEqual(self.ws.messages[-1]["request"],wire);self.assertTrue(self.ws.messages[-1]["maintenance_only"])
+        count=len(self.ws.messages)
+        for case in ("duplicate","old_exists","wrong_url","pending_other","complete","stale","mixed"):
+            self.s.status=copy.deepcopy(status);self.s.seen_at=f.time.monotonic()
+            if case=="duplicate":self.s.status["observed_targets"].append(dict(tab_id=9,url=URL,status="loading"))
+            if case=="old_exists":self.s.status["bound_tab_diagnostics"][0]["exists"]=True
+            if case=="wrong_url":self.s.status["observed_targets"][0]["url"]="https://chatgpt.com/c/other"
+            if case=="pending_other":self.s.status["observed_targets"][0]["pending_url"]="https://chatgpt.com/c/other"
+            if case=="complete":self.s.status["observed_targets"][0]["status"]="complete"
+            if case=="stale":self.s.seen_at-=91
+            if case=="mixed":self.s.status["components"]["background_version"]="0.8.1"
+            with self.subTest(case=case),self.assertRaises(b.RequestError):self.s.maintenance(value)
+            self.assertEqual(len(self.ws.messages),count)
+        self.assertEqual((self.path/"events.jsonl").read_bytes(),raw);self.assertEqual(self.s.requests.records,records);self.assertFalse(self.s.ready())
+
     def test_bounded_extended_composer_metadata_remains_read_only_and_no_missing_summary_success(self):
         r = self.send(); before = (self.path / "events.jsonl").read_bytes()
         value = dict(action="inspect_draft", request_id=r["request_id"], control_id=r["control_id"], attempt_id=1, tab_id=7, url=URL)

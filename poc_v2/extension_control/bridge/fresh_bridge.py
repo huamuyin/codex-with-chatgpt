@@ -77,11 +77,28 @@ class FreshState:
             if self.requests.journal.poisoned:
                 raise transport.RequestError("extension_disconnected", 503)
             action = value.get("action")
-            if action not in ("reload_extension", "sample_status", "prepare_future_thread", "restore_thread", "activate_tab", "inspect_draft", "clear_owned_draft", "reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"):
+            if action not in ("reload_extension", "sample_status", "refresh_loading_target", "prepare_future_thread", "restore_thread", "activate_tab", "inspect_draft", "clear_owned_draft", "reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"):
                 raise transport.RequestError("maintenance_action_invalid")
             if action != "reload_extension" and (self.session is None or self.session.closed):
                 raise transport.RequestError("extension_disconnected", 503)
             message = {"type": "fresh_maintenance", "maintenance_id": str(uuid.uuid4()), "action": action}
+            if action == "refresh_loading_target":
+                rid, cid, aid = value.get("request_id"), value.get("control_id"), value.get("attempt_id")
+                if not isinstance(rid, str) or not isinstance(cid, str) or type(aid) is not int: raise transport.RequestError("maintenance_identity_required", 409)
+                r = self.requests.lookup(rid, control_id=cid)
+                if not 1 <= aid <= len(r["attempts"]): raise transport.RequestError("attempt_unknown", 409)
+                wire = self.requests.wire_request(rid, aid); tid, url = value.get("tab_id"), value.get("url")
+                observed = self.status.get("observed_targets", [])
+                bound = [d for d in self.status.get("bound_tab_diagnostics", []) if d.get("tab_id") == wire["target_tab_id"]]
+                components = self.status.get("components", {})
+                if (type(tid) is not int or tid < 0 or tid == wire["target_tab_id"] or url != wire["conversation_url"]
+                    or not transport.is_conversation_url(url) or len(bound) != 1 or bound[0].get("exists") is not False
+                    or len(observed) != 1 or observed[0].get("tab_id") != tid or observed[0].get("url") != url
+                    or observed[0].get("status") != "loading" or observed[0].get("pending_url", "") not in ("", url)
+                    or time.monotonic() - self.seen_at >= 90
+                    or any(components.get(k) != v for k, v in self.expected_components().items() if k != "content_version")):
+                    raise transport.RequestError("loading_target_unconfirmed", 409)
+                message.update(tab_id=tid, url=url, request=wire, maintenance_only=True)
             if action == "prepare_future_thread":
                 rid, cid, aid = value.get("request_id"), value.get("control_id"), value.get("attempt_id")
                 if not isinstance(rid, str) or not isinstance(cid, str) or type(aid) is not int:

@@ -99,6 +99,21 @@ test("future thread preparation opens exact frozen URL for a new request only wi
   assert.deepEqual(w.storage, before); assert.deepEqual(w.contentCalls, []); assert.deepEqual(w.forbidden, []);
 });
 
+test("loading target refresh never rebinds or sends and rejects unknown nonce duplicate or pending-other targets", async () => {
+  for (const variant of ["valid", "nonce", "duplicate", "old", "pending", "complete"]) {
+    const id=R.target_tab_id+1,reloads=[],tabs=[{id,url:R.conversation_url,status:"loading"}];
+    if(variant==="duplicate")tabs.push({id:id+1,url:R.conversation_url,status:"loading"});
+    if(variant==="old")tabs.push({id:R.target_tab_id,url:R.conversation_url,status:"complete"});
+    if(variant==="pending")tabs[0].pendingUrl="https://chatgpt.com/c/other";
+    if(variant==="complete")tabs[0].status="complete";
+    const w=worker({tabs,tabReload:async(v)=>reloads.push(v)});await w.call("restore",fixture.checkpoint);const before=clone(w.storage);
+    const request={...R};if(variant==="nonce")request.nonce="bad";
+    await w.call("maintenance",{maintenance_id:R.request_id,action:"refresh_loading_target",request,tab_id:id,url:R.conversation_url,maintenance_only:true});
+    assert.deepEqual(reloads,variant==="valid"?[id]:[],variant);assert.deepEqual(w.storage,before);assert.deepEqual(w.contentCalls,[]);
+    assert.equal(w.sent.some((x)=>x.type==="fresh_result"||x.type==="fresh_review"),false);
+  }
+});
+
 test("future thread preparation rejects ambiguous changed or still present old authority with zero navigation", async () => {
   const id = R.target_tab_id + 1;
   for (const variant of ["unknown", "control", "nonce", "url", "tab", "flag", "old_exists", "duplicate", "loading", "pending_url", "other_url", "running", "mixed"]) {

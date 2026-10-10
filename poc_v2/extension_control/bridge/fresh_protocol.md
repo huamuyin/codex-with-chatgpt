@@ -334,3 +334,12 @@ entire normalized wire must still match; a changed/unknown draft is rejected.
 Immediately before click the same current editor, visible enabled send control,
 full owned wire and immutable tab/URL binding are rechecked. This adds no fallback
 to an active tab, no automatic resend, and no click on a generation/stop control.
+# R6 loading replacement-tab maintenance
+
+`refresh_loading_target` only refreshes a unique loading native target at a known
+request's exact frozen conversation URL, after both bridge and background verify
+that the original native tab is absent, original identity/nonce is trusted, pending
+URL is empty or exactly equal, and background/manifest/protocol/build match. It
+does not rebind the old attempt, confirm recovery, mark ready, allocate nonce,
+create/retry/observe/send a request, or mutate the journal/mirror. It is an explicit
+authenticated maintenance action; post-load full readiness remains mandatory.
