@@ -112,11 +112,14 @@ async function maintenance(m) {
       const known = attempts.get(C.key(m.request || {}));
       if (m.maintenance_only !== true || !known || !C.validRequest(m.request) || !C.sameAttempt(known, m.request)
           || !Number.isSafeInteger(m.tab_id) || m.tab_id < 0 || m.tab_id === known.target_tab_id
-          || m.url !== known.conversation_url || !C.isConversationUrl(m.url)) throw Error("loading_target_unconfirmed");
+          || m.url !== known.conversation_url || !C.isConversationUrl(m.url)) throw Error("loading_attempt_unconfirmed");
       const tabs = await chrome.tabs.query({ url: "https://chatgpt.com/*" });
       const old = await chrome.tabs.get(known.target_tab_id).catch(() => null);
-      if (old || tabs.length !== 1 || tabs[0].id !== m.tab_id || tabs[0].url !== m.url || tabs[0].status !== "loading"
-          || tabs[0].pendingUrl && tabs[0].pendingUrl !== m.url) throw Error("loading_target_unconfirmed");
+      if (old) throw Error("loading_old_tab_exists");
+      if (tabs.length !== 1) throw Error("loading_target_ambiguous");
+      if (tabs[0].id !== m.tab_id || tabs[0].url !== m.url) throw Error("loading_target_identity_changed");
+      if (tabs[0].status !== "loading") throw Error("loading_state_changed");
+      if (tabs[0].pendingUrl && tabs[0].pendingUrl !== m.url) throw Error("loading_pending_url_changed");
       await chrome.tabs.reload(m.tab_id);
       send({ type: "fresh_maintenance_result", maintenance_id: m.maintenance_id, action: m.action,
         complete: true, maintenance_only: true }); return;
