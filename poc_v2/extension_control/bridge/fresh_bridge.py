@@ -273,7 +273,15 @@ class FreshState:
                         result["draft_cleared"] = m.get("draft_cleared") is True
                 if pending["message"]["action"] == "inspect_draft" and isinstance(m.get("draft_summary"), dict):
                     d = m["draft_summary"]
-                    if (set(d) == {"composer_present", "composer_tag", "contenteditable", "length", "empty", "format_only", "owned_attempt_id", "normalized_owned_attempt_id"}
+                    original_keys = {"composer_present", "composer_tag", "contenteditable", "length", "empty", "format_only", "owned_attempt_id", "normalized_owned_attempt_id"}
+                    button_keys = {"test_id", "aria_label", "type", "disabled", "aria_disabled", "visible"}
+                    extended = (set(d) == original_keys | {"composer_form_present", "composer_buttons"}
+                        and type(d["composer_form_present"]) is bool and isinstance(d["composer_buttons"], list)
+                        and len(d["composer_buttons"]) <= 12 and all(isinstance(x, dict) and set(x) == button_keys
+                            and all(type(x[k]) is bool for k in ("disabled", "aria_disabled", "visible"))
+                            and all(isinstance(x[k], str) and len(x[k]) <= limit for k, limit in (("test_id", 64), ("aria_label", 80), ("type", 16)))
+                            for x in d["composer_buttons"]))
+                    if ((set(d) == original_keys or extended)
                         and type(d["length"]) is int and 0 <= d["length"] <= 200000
                         and all(type(d[k]) is bool for k in ("composer_present", "contenteditable", "empty", "format_only"))
                         and d["composer_tag"] in ("TEXTAREA", "INPUT", "DIV", "P", "")
@@ -281,6 +289,8 @@ class FreshState:
                              and 1 <= d[k] <= len(self.requests.lookup(pending["message"]["request"]["request_id"])["attempts"])
                              for k in ("owned_attempt_id", "normalized_owned_attempt_id"))):
                         result["draft_summary"] = copy.deepcopy(d)
+                if pending["message"]["action"] == "inspect_draft" and "draft_summary" not in result:
+                    result.update(status="failed", error_code="draft_inspection_unconfirmed")
                 if pending["message"]["action"] == "probe_reply_rejection":
                     if m.get("field") == pending["message"]["field"]: result["field"] = m["field"]
                     code = m.get("rejection_code")

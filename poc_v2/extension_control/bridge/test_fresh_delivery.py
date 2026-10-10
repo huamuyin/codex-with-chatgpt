@@ -19,6 +19,24 @@ EXTENSION = "a" * 32
 
 
 class FreshTests(unittest.TestCase):
+    def test_bounded_extended_composer_metadata_remains_read_only_and_no_missing_summary_success(self):
+        r = self.send(); before = (self.path / "events.jsonl").read_bytes()
+        value = dict(action="inspect_draft", request_id=r["request_id"], control_id=r["control_id"], attempt_id=1, tab_id=7, url=URL)
+        summary = dict(composer_present=True,composer_tag="DIV",contenteditable=True,length=12,empty=False,format_only=False,
+                       owned_attempt_id=None,normalized_owned_attempt_id=1,composer_form_present=True,
+                       composer_buttons=[dict(test_id="composer-submit-button",aria_label="发送",type="button",disabled=True,aria_disabled=False,visible=True)])
+        for variant in ("valid", "missing", "oversize", "extra", "bad_boolean"):
+            mid, _ = self.s.maintenance(value); payload = copy.deepcopy(summary)
+            if variant == "oversize": payload["composer_buttons"] *= 13
+            if variant == "extra": payload["composer_buttons"][0]["raw_draft"] = "must not pass"
+            if variant == "bad_boolean": payload["composer_buttons"][0]["disabled"] = 1
+            m = dict(type="fresh_maintenance_result", maintenance_id=mid, action="inspect_draft", complete=True)
+            if variant != "missing": m["draft_summary"] = payload
+            self.s.message(self.ws, m); result = self.s.maintenance_commands[mid]["result"]
+            self.assertEqual(result["status"], "complete" if variant == "valid" else "failed")
+            self.assertEqual("draft_summary" in result, variant == "valid")
+            self.assertEqual((self.path / "events.jsonl").read_bytes(), before)
+
     def future_setup_fixture(self):
         r = self.send(); self.s.message(self.ws, self.msg(r))
         self.s.status.update(connected=False, candidate_count=0, tab_id=None, url="",

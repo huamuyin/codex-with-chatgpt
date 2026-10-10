@@ -316,3 +316,13 @@ does not observe, retry, send, or create a logical request. Its ACK does not mea
 ready: post-navigation component/readiness checks are still required before a
 new logical request may bind the new tab. Existing request recovery gates remain
 unchanged. This action does not apply to legacy smoke.
+# R6 bounded composer diagnostics
+
+Authenticated `inspect_draft` retains the original ownership/length summary and
+may include `composer_form_present` plus at most 12 `composer_buttons`. Each button
+contains only capped `test_id` (64), `aria_label` (80), `type` (16), and boolean
+disabled/aria-disabled/visible flags scoped to the owned composer's form. It never
+returns draft text or changes the editor, click, send, nonce or request history.
+The bridge validates the exact original or extended schema. A missing or invalid
+summary is a failed inspection, never a success ACK. This compatible diagnostic
+extension does not change version/protocol/build or authentication/readiness gates.
