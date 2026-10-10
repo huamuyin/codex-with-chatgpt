@@ -109,3 +109,39 @@ class ReceiptTests(unittest.TestCase):
         self.canonical()
         for raw in self.files().values():
             self.assertNotIn(b'control_token',raw);self.assertNotIn(b'cookies',raw);self.assertNotIn(b'authorization',raw)
+
+    def semantic_rewrite(self, kind, mutate):
+        envelopes=[json.loads(x) for x in (self.path/'events.jsonl').read_bytes().splitlines()]
+        target=next(x['event']['data'] for x in envelopes if x['event']['kind']==kind);mutate(target)
+        previous='0'*64;rows=[]
+        for x in envelopes:
+            e=x['event'];e['previous_hash']=previous;previous=hashlib.sha256(encoded(e)).hexdigest();rows.append(encoded(dict(event=e,hash=previous))+b'\n')
+        (self.path/'events.jsonl').write_bytes(b''.join(rows));(self.path/'head.json').write_bytes(encoded(dict(sequence=len(rows),hash=previous))+b'\n')
+        corrupted=self.files()
+        with self.assertRaises(ValueError):ReceiptLedger(self.path,self.context,private_root=self.root)
+        self.assertEqual(self.files(),corrupted)
+
+    def test_recomputed_canonical_boolean_extra_identity_and_instruction_fail_closed(self):
+        self.canonical();valid=self.files()
+        mutations=[lambda d:d.update(canonical_attempt_id=True),lambda d:d.update(extra='unknown')]
+        for k,v in [('ROUND',2),('CONTROL_ID',str(uuid.uuid4())),('REQUEST_ID',str(uuid.uuid4())),('REVIEWED_COMMIT','b'*40)]:
+            def change(d,k=k,v=v):
+                d['review'][k]=v;d['review_hash']=hashlib.sha256(encoded(d['review'])).hexdigest();d['action_id']=hashlib.sha256(encoded(dict(context=self.context,review_hash=d['review_hash']))).hexdigest()
+            mutations.append(change)
+        def wrong_instruction(d):d['instruction']='different executable action';d['instruction_hash']=hashlib.sha256(d['instruction'].encode()).hexdigest()
+        mutations.append(wrong_instruction)
+        for change in mutations:
+            for n,b in valid.items():(self.path/n).write_bytes(b)
+            self.semantic_rewrite('canonical_review',change)
+
+    def test_recomputed_duplicate_boolean_and_extra_field_fail_closed(self):
+        self.canonical();self.l.accept_review(self.raw(),1);valid=self.files()
+        for change in [lambda d:d.update(attempt_id=True),lambda d:d.update(extra='unknown')]:
+            for n,b in valid.items():(self.path/n).write_bytes(b)
+            self.semantic_rewrite('duplicate_review',change)
+
+    def test_recomputed_receipt_bad_status_hash_summary_and_extra_fail_closed(self):
+        a=self.canonical();self.l.claim_action(a);self.l.record_action_receipt(self.receipt(a));valid=self.files()
+        for field,value in [('status','unknown'),('result_sha256','bad'),('summary',''),('summary','x'*513),('summary',True),('extra','unknown')]:
+            for n,b in valid.items():(self.path/n).write_bytes(b)
+            self.semantic_rewrite('action_receipt',lambda d,field=field,value=value:d.update({field:value}))

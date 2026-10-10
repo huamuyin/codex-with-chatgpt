@@ -14,8 +14,12 @@ they are not signatures against a local attacker. Interrupted event/head writes
 fail closed; they are never silently reset. Failed/blocked action outcomes need
 explicit owner policy rather than an automatic second business execution.
 
-This is a draft awaiting independent GitHub review. Open review obligations include
-semantic replay schema completeness, cross-process writer ownership, durable write
+The independent draft review required full semantic replay validation. Canonical
+events now reconstruct and validate the complete attempt-specific response against
+stored authority, require exact schemas and require instruction equality. Duplicate
+attempt booleans and invalid receipt contracts are rejected during replay, even
+with recomputed hashes and a matching head. The corrected candidate awaits final
+independent review. Open non-production obligations include cross-process writer ownership, durable write
 crash boundaries, effective path and reparse-point checks, and broader lifecycle
 integration. The initial concurrency proof uses a single ledger instance with
 multiple threads. It does not attest multiple independent writer processes.

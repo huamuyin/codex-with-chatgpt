@@ -1,0 +1,116 @@
+{
+  "STATE": "REVIEW_RESULT",
+  "ROUND": 2,
+  "REQUEST_ID": "8013a0f1-897a-48f0-b275-2c2600dfbdc7",
+  "CONTROL_ID": "6a1feab1-a6bd-416f-a7fa-f8d21c5482e8",
+  "ATTEMPT_ID": 1,
+  "REVIEWED_COMMIT": "5c521c0af119aa474f93702255263b4341df8aa6",
+  "VERDICT": "CHANGES_REQUIRED",
+  "FINDINGS": [
+    {
+      "severity": "MAJOR",
+      "path": "poc_v2/chrome_r6_synthetic/m1_receipts.py",
+      "finding": "Replay validation is materially weaker than live-write validation. _apply() accepts canonical_review without requiring an exact data schema, without reconstructing and validating the stored logical review against the ledger context, without requiring instruction == review.NEXT_CODEX_INSTRUCTION, and without requiring canonical_attempt_id to be an exact int. Because Python bool compares equal to integer 1, canonical_attempt_id=True is accepted when attempt 1 exists. A recomputed event hash/head containing an arbitrary review object plus a separately hashed instruction can therefore reopen and expose an action that could never have passed accept_review()."
+    },
+    {
+      "severity": "MAJOR",
+      "path": "poc_v2/chrome_r6_synthetic/m1_receipts.py",
+      "finding": "action_receipt replay also omits the live receipt contract. _apply() checks only that action_started is true, no prior receipt exists, and action_id matches; it does not require the exact four receipt keys, allowed status, 64-hex result_sha256, string summary, or the 1..512 summary bound. A journal whose event hashes and sealed head are recomputed around an invalid receipt is accepted on reopen, violating the PLAN requirement for strict semantic replay and allowing derived state that record_action_receipt() itself would reject."
+    },
+    {
+      "severity": "MAJOR",
+      "path": "poc_v2/chrome_r6_synthetic/m1_receipts.py",
+      "finding": "duplicate_review replay has the same schema gap: it does not require attempt_id to be type int, so True aliases attempt 1, and it does not reject extra fields. This is not merely an attacker-resistance issue; the ledger explicitly treats replay as its restore authority, so every persisted event must be revalidated to the same semantic contract that governs creation."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The draft correctly implements several core PLAN requirements: framed responses use fresh_response parse/validate; logical semantic hashing excludes only ATTEMPT_ID; cross-attempt equivalent replies become duplicates; conflicting canonical content fails closed; failed/uncertain attempt history is retained; canonical action reservation is atomic with canonical_review; action_started is appended before yielding an instruction; exact receipt replay through the public API is idempotent; and a single-ledger threaded race yields one canonical review and one action claim."
+    },
+    {
+      "severity": "INFO",
+      "finding": "Path and evidence scope are appropriately synthetic and bounded for this draft. The implementation requires explicit absolute directory/private_root values, rejects obvious repository-root/private-root misuse and symlink-resolved paths, and recursively rejects named credential fields. The draft documentation correctly leaves cross-process writer ownership, durable crash boundaries and broader lifecycle integration as review obligations rather than claiming production acceptance."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The immutable review package is structurally coherent: implementation b94adb92b0858028907a44087fe9939aea3a623e is one commit after the PLAN authority and changes only M1 synthetic source/docs/tests plus PLAN evidence; incoming 5c521c0af119aa474f93702255263b4341df8aa6 is one evidence-only commit after that implementation. All three source Git blob IDs independently match source_hashes.json. Reported checks are 148 Python passes, 179 Node passes, 23 syntax files, manifest PASS and diff PASS."
+    },
+    {
+      "severity": "INFO",
+      "finding": "The draft itself explicitly lists semantic replay schema completeness as an unresolved independent-review obligation. The concrete replay defects above satisfy that obligation and require correction before M1 can receive final independent acceptance."
+    }
+  ],
+  "REVIEW_SUMMARY": "The exact incoming authority 5c521c0af119aa474f93702255263b4341df8aa6 and every required path/ref in its descriptor were independently read. The implementation substantially follows the approved M1 PLAN and correctly solves the important cross-attempt ATTEMPT_ID normalization and one-action reservation problem. However, the durable restore authority does not enforce the same semantic contracts as live writes: canonical_review, duplicate_review and action_receipt can be reopened with recomputed valid event hashes/head while containing data that their public creation APIs would reject. In particular an arbitrary canonical review/instruction pair, boolean attempt alias or malformed receipt can survive replay. Because deterministic restore and strict replay schemas are core M1 requirements, this is a real implementation defect rather than deferred production hardening. CHANGES_REQUIRED is therefore required with one bounded semantic-replay correction and focused recomputed-hash tamper coverage before final M1 review.",
+  "GITHUB_RESOURCES_READ": [
+    {
+      "path": ".c2c-v2/chrome-r6/m1/draft/review_request.json",
+      "ref_commit": "5c521c0af119aa474f93702255263b4341df8aa6",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c521c0af119aa474f93702255263b4341df8aa6/.c2c-v2/chrome-r6/m1/draft/review_request.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"request\": \"Independently review the actual draft against the substantive PLAN. Find concrete implementation defects and missing required conformance coverage\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/owner_scope.json",
+      "ref_commit": "5c521c0af119aa474f93702255263b4341df8aa6",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c521c0af119aa474f93702255263b4341df8aa6/.c2c-v2/chrome-r6/owner_scope.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"delivery_semantics\": \"AT_LEAST_ONCE\", \"synthetic_project\": \"poc_v2/chrome_r6_synthetic\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m1/draft/test_summary.json",
+      "ref_commit": "5c521c0af119aa474f93702255263b4341df8aa6",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c521c0af119aa474f93702255263b4341df8aa6/.c2c-v2/chrome-r6/m1/draft/test_summary.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"python_passed\": 148, \"node_passed\": 179, \"syntax_files\": 23, \"manifest\": \"PASS\", \"diff\": \"PASS\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m1/draft/source_hashes.json",
+      "ref_commit": "5c521c0af119aa474f93702255263b4341df8aa6",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c521c0af119aa474f93702255263b4341df8aa6/.c2c-v2/chrome-r6/m1/draft/source_hashes.json",
+      "read_method": "GitHub fetch_file plus independent Git blob verification",
+      "source_excerpt": "\"path\": \"poc_v2/chrome_r6_synthetic/m1_receipts.py\", \"ref_commit\": \"b94adb92b0858028907a44087fe9939aea3a623e\", \"git_blob\": \"ea88a61d15fb70faa954c0e6d6a4cfaf8b2e66cc\""
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m1/draft/previous_action.json",
+      "ref_commit": "5c521c0af119aa474f93702255263b4341df8aa6",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/5c521c0af119aa474f93702255263b4341df8aa6/.c2c-v2/chrome-r6/m1/draft/previous_action.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "\"implementation_commit\": \"b94adb92b0858028907a44087fe9939aea3a623e\""
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/M1_RECEIPTS.md",
+      "ref_commit": "b94adb92b0858028907a44087fe9939aea3a623e",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b94adb92b0858028907a44087fe9939aea3a623e/poc_v2/chrome_r6_synthetic/M1_RECEIPTS.md",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "Open review obligations include semantic replay schema completeness, cross-process writer ownership, durable write crash boundaries, effective path and reparse-point checks"
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/m1_receipts.py",
+      "ref_commit": "b94adb92b0858028907a44087fe9939aea3a623e",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b94adb92b0858028907a44087fe9939aea3a623e/poc_v2/chrome_r6_synthetic/m1_receipts.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "elif kind == \"canonical_review\": if s[\"canonical\"] is not None or data[\"canonical_attempt_id\"] not in s[\"attempts\"]: raise ValueError(\"canonical_conflict\")"
+    },
+    {
+      "path": "poc_v2/chrome_r6_synthetic/test_m1_receipts.py",
+      "ref_commit": "b94adb92b0858028907a44087fe9939aea3a623e",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b94adb92b0858028907a44087fe9939aea3a623e/poc_v2/chrome_r6_synthetic/test_m1_receipts.py",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "def test_hash_head_or_truncated_tail_fail_closed_and_preserve_corruption(self):"
+    },
+    {
+      "path": ".c2c-v2/chrome-r6/m1/plan/review_result.json",
+      "ref_commit": "b94adb92b0858028907a44087fe9939aea3a623e",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/blob/b94adb92b0858028907a44087fe9939aea3a623e/.c2c-v2/chrome-r6/m1/plan/review_result.json",
+      "read_method": "GitHub fetch_file",
+      "source_excerpt": "Independent review obligations after the draft remain open: verify exact event/replay schemas and crash boundaries"
+    },
+    {
+      "path": "commit b94adb92b0858028907a44087fe9939aea3a623e",
+      "ref_commit": "b94adb92b0858028907a44087fe9939aea3a623e",
+      "github_url": "https://github.com/huamuyin/codex-with-chatgpt/commit/b94adb92b0858028907a44087fe9939aea3a623e",
+      "read_method": "GitHub fetch_commit and immutable compare",
+      "source_excerpt": "poc: execute Chrome R6 m1 draft development action"
+    }
+  ],
+  "NEXT_CODEX_INSTRUCTION": "Correct only M1 semantic replay validation and its tests/docs; do not start M2 or modify Fresh runtime. In ReceiptLedger._apply require an exact schema for every event kind. For canonical_review require exactly canonical_attempt_id, review, review_hash, action_id, instruction and instruction_hash; require canonical_attempt_id to be type int and a known opened attempt; require review to contain exactly REVIEW_KEYS minus ATTEMPT_ID; reconstruct {**review, ATTEMPT_ID: canonical_attempt_id} and run validate_response against the stored context; require instruction == review[\"NEXT_CODEX_INSTRUCTION\"]; then verify review_hash, instruction_hash and action_id. For duplicate_review require exact keys, type(attempt_id) is int, known attempt and matching canonical review hash. For action_receipt require exactly action_id/status/result_sha256/summary and replay the same completed|failed|blocked, 64-hex hash and 1..512 string-summary contract used by record_action_receipt. Keep action_started exact and fail closed. Add focused tamper tests that first create a valid ledger, then rewrite events with a fully recomputed event hash chain and matching head while injecting: canonical_attempt_id=true, wrong canonical identity/ROUND/control/commit, extra canonical field, instruction differing from review NEXT_CODEX_INSTRUCTION, duplicate_review attempt_id=true/extra field, and receipts with bad status/hash/summary/extra field. Every reopen must fail while preserving bytes. Also keep existing API-level tests and rerun full Python/Node/syntax/manifest/diff gates. Commit the bounded correction, publish an immutable M1 final-review descriptor with exact source hashes and actual results, explicitly retain unresolved non-M1-production obligations such as multi-process locking/power-loss guarantees, and request final independent M1 review only."
+}

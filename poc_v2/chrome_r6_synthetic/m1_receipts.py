@@ -50,6 +50,11 @@ def checked_context(v):
     if not isinstance(v["reviewed_commit"], str) or not re.fullmatch(r"[a-f0-9]{40}", v["reviewed_commit"]): raise ValueError("context_commit")
     return copy.deepcopy(v)
 
+def checked_receipt(receipt):
+    clean(receipt)
+    if not isinstance(receipt, dict) or set(receipt) != {"action_id", "status", "result_sha256", "summary"}: raise ValueError("receipt_shape")
+    if receipt["status"] not in ("completed", "failed", "blocked") or not isinstance(receipt["result_sha256"], str) or not re.fullmatch(r"[a-f0-9]{64}", receipt["result_sha256"]) or not isinstance(receipt["summary"], str) or not 1 <= len(receipt["summary"]) <= 512: raise ValueError("receipt_invalid")
+
 class ReceiptLedger:
     def __init__(self, directory, context, *, private_root, initialize=False):
         if directory is None or private_root is None: raise ValueError("explicit_private_directory_required")
@@ -90,6 +95,7 @@ class ReceiptLedger:
 
     @staticmethod
     def _apply(s, kind, data):
+        if not isinstance(data, dict): raise ValueError("event_data_shape")
         if kind == "attempt_opened":
             if set(data) != {"attempt_id"} or type(data["attempt_id"]) is not int or data["attempt_id"] != len(s["attempts"]) + 1: raise ValueError("attempt_sequence")
             s["attempts"].append(data["attempt_id"])
@@ -97,16 +103,22 @@ class ReceiptLedger:
             if set(data) != {"attempt_id", "error", "uncertain"} or data["attempt_id"] not in s["attempts"] or type(data["attempt_id"]) is not int or type(data["uncertain"]) is not bool or not isinstance(data["error"], str) or not 1 <= len(data["error"]) <= 128: raise ValueError("failure_invalid")
             s["history"].append(copy.deepcopy(data))
         elif kind == "canonical_review":
-            if s["canonical"] is not None or data["canonical_attempt_id"] not in s["attempts"]: raise ValueError("canonical_conflict")
+            if set(data) != {"canonical_attempt_id", "review", "review_hash", "action_id", "instruction", "instruction_hash"}: raise ValueError("canonical_schema")
+            if s["canonical"] is not None or type(data["canonical_attempt_id"]) is not int or data["canonical_attempt_id"] not in s["attempts"]: raise ValueError("canonical_conflict")
+            review = data["review"]; c = s["context"]
+            if not isinstance(review, dict) or set(review) != REVIEW_KEYS - {"ATTEMPT_ID"}: raise ValueError("canonical_review_schema")
+            validate_response({**review, "ATTEMPT_ID": data["canonical_attempt_id"]}, round_no=c["round_no"], request_id=c["request_id"], control_id=c["control_id"], attempt_id=data["canonical_attempt_id"], commit=c["reviewed_commit"])
+            if data["instruction"] != review["NEXT_CODEX_INSTRUCTION"]: raise ValueError("canonical_instruction_mismatch")
             if digest(data["review"]) != data["review_hash"] or hashlib.sha256(data["instruction"].encode()).hexdigest() != data["instruction_hash"]: raise ValueError("canonical_hash")
             if data["action_id"] != digest({"context": s["context"], "review_hash": data["review_hash"]}): raise ValueError("action_identity")
             s["canonical"] = copy.deepcopy(data)
         elif kind == "duplicate_review":
-            if set(data) != {"attempt_id", "review_hash"} or data["attempt_id"] not in s["attempts"] or s["canonical"] is None or data["review_hash"] != s["canonical"]["review_hash"]: raise ValueError("duplicate_conflict")
+            if set(data) != {"attempt_id", "review_hash"} or type(data["attempt_id"]) is not int or data["attempt_id"] not in s["attempts"] or s["canonical"] is None or data["review_hash"] != s["canonical"]["review_hash"]: raise ValueError("duplicate_conflict")
         elif kind == "action_started":
             if s["canonical"] is None or data != {"action_id": s["canonical"]["action_id"]} or s["action_started"]: raise ValueError("action_started_conflict")
             s["action_started"] = True
         elif kind == "action_receipt":
+            checked_receipt(data)
             if not s["action_started"] or s["receipt"] is not None or data["action_id"] != s["canonical"]["action_id"]: raise ValueError("receipt_conflict")
             s["receipt"] = copy.deepcopy(data)
         else: raise ValueError("unknown_event")
@@ -156,9 +168,7 @@ class ReceiptLedger:
 
     def record_action_receipt(self, receipt):
         with self.lock:
-            self._load(); clean(receipt)
-            if not isinstance(receipt, dict) or set(receipt) != {"action_id", "status", "result_sha256", "summary"}: raise ValueError("receipt_shape")
-            if receipt["status"] not in ("completed", "failed", "blocked") or not isinstance(receipt["result_sha256"], str) or not re.fullmatch(r"[a-f0-9]{64}", receipt["result_sha256"]) or not isinstance(receipt["summary"], str) or not 1 <= len(receipt["summary"]) <= 512: raise ValueError("receipt_invalid")
+            self._load(); checked_receipt(receipt)
             if self.state["receipt"]:
                 if receipt != self.state["receipt"]: raise ValueError("receipt_conflict")
                 return False
