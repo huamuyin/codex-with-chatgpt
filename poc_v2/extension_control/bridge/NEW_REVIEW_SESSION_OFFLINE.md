@@ -58,6 +58,18 @@ with the same core version cannot create or report scoped readiness without this
 capability and the exact new binding proof. Full source/build file hashes are
 part of offline evidence; version strings alone are not binary attestation.
 
+When this dedicated scope exists, maintenance allows only `create_review_session`
+and read-only `sample_status`. Both the bridge and background reject every
+inherited maintenance action with `new_review_maintenance_forbidden`, before
+queuing a command or accessing a browser mutation API. This includes
+`prepare_future_thread`, `refresh_loading_target`, restoration, activation,
+draft inspection/clearing, content/tab/extension reload, observation commands
+and rejection probes, even when their target is the owned tab or readiness is
+true. These old recovery capabilities are unnecessary for the single-review
+scope. Losing its owned native tab blocks it; no replacement tab is adopted.
+Status sampling still uses the pinned selection and never pings an unowned tab.
+Ordinary Fresh namespaces keep their existing maintenance behavior unchanged.
+
 A scoped worker only selects the newly created native ID. It rejects historic
 checkpoints and out-of-scope requests. The bridge requires exact setup proof,
 native ID and the existing content/background/manifest/protocol checks before

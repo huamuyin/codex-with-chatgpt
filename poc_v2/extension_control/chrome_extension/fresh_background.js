@@ -117,6 +117,10 @@ async function status() {
 async function maintenance(m) {
   if (!mirrorReady || !bridgeMatches(bridge) || !/^[a-f0-9-]{36}$/u.test(m.maintenance_id || "")) return;
   try {
+    // Enforce the scope even if a stale bridge supplies an inherited command.
+    if (reviewSessionScope && !["create_review_session", "sample_status"].includes(m.action)) {
+      throw Error("new_review_maintenance_forbidden");
+    }
     let contentGenerationForAck = null;
     if (m.action === "create_review_session") {
       if (!reviewSessionScope || attempts.size || running.size) throw Error("new_review_history_not_empty");

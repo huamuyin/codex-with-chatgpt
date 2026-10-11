@@ -168,3 +168,76 @@ class ReviewSessionTests(unittest.TestCase):
             scoped_request=self.s.requests.wire_request(r["request_id"],1))
         raw=d.encoded(v);self.assertFalse(self.s.control_token.encode() in raw)
         (self.root/"new-review-session-cross-language.json").write_bytes(raw+b"\n")
+
+    def completed_review(self):
+        self.bind(); r = self.s.send(self.p)
+        url = "https://chatgpt.com/c/new-owned-review"
+        self.s.status["url"] = url
+        wire = self.s.requests.wire_request(r["request_id"], 1)
+        identity = {k: wire[k] for k in
+            ("request_id", "control_id", "attempt_id", "task_id", "iteration", "repo", "branch", "expected_commit")}
+        self.s.message(self.ws, {"type": "fresh_bound", **identity, "tab_id": 99, "conversation_url": url})
+        self.s.message(self.ws, {"type": "fresh_result", **identity,
+            "tab_id": 99, "conversation_url": url, "raw_reply": "Offline completed review",
+            "assistant_generation_complete": True,
+            "content_identity": {"protocol_version": d.PROTOCOL, "version": d.VERSION, "build_id": d.BUILD_ID}})
+        self.assertEqual(self.s.requests.lookup(r["request_id"])["status"], "complete"); self.assertIsNone(self.s.active)
+        return dict(request_id=r["request_id"], control_id=r["control_id"], attempt_id=1, url=url)
+
+    def assert_scoped_maintenance_denied(self, value):
+        durable = self.durable_bytes()
+        records = copy.deepcopy(self.s.requests.records); scope = copy.deepcopy(self.s.review_setup.scope())
+        messages = copy.deepcopy(self.ws.messages); commands = set(self.s.maintenance_commands)
+        boundaries = copy.deepcopy(self.s.boundaries); status = copy.deepcopy(self.s.status)
+        with self.assertRaises(f.transport.RequestError) as error:
+            self.s.maintenance(value)
+        self.assertEqual(str(error.exception), "new_review_maintenance_forbidden")
+        self.assertEqual(error.exception.status, 409)
+        self.assertEqual(durable, self.durable_bytes())
+        self.assertEqual(self.s.requests.records, records); self.assertEqual(self.s.review_setup.scope(), scope)
+        self.assertEqual(self.ws.messages, messages); self.assertEqual(set(self.s.maintenance_commands), commands)
+        self.assertEqual(self.s.boundaries, boundaries); self.assertEqual(self.s.status, status)
+
+    def test_scoped_completed_missing_owned_tab_cannot_prepare_unowned_root(self):
+        identity = self.completed_review()
+        self.s.status.update(connected=False, candidate_count=0, tab_id=None, url="",
+            bound_tab_diagnostics=[dict(tab_id=99, exists=False, status="missing", url="")],
+            observed_targets=[dict(tab_id=100, url=entry.ROOT, status="complete", pending_url="")])
+        self.assertFalse(self.s.ready())
+        self.assert_scoped_maintenance_denied(dict(action="prepare_future_thread", tab_id=100, **identity))
+
+    def test_scoped_completed_missing_owned_tab_cannot_refresh_unowned_loading_url(self):
+        identity = self.completed_review()
+        self.s.status.update(connected=False, candidate_count=0, tab_id=None, url="",
+            bound_tab_diagnostics=[dict(tab_id=99, exists=False, status="missing", url="")],
+            observed_targets=[dict(tab_id=100, url=identity["url"], status="loading", pending_url="")])
+        self.assertFalse(self.s.ready())
+        self.assert_scoped_maintenance_denied(dict(action="refresh_loading_target", tab_id=100, **identity))
+
+    def test_scoped_all_old_maintenance_denied_before_binding_and_on_ready_owned_tab(self):
+        actions = ("prepare_future_thread", "refresh_loading_target", "restore_thread", "activate_tab",
+            "inspect_draft", "clear_owned_draft", "reload_content", "reload_tab", "observe_attempt",
+            "observe_request", "probe_reply_rejection", "reload_extension")
+        for action in actions:
+            with self.subTest(stage="unbound", action=action):
+                self.assert_scoped_maintenance_denied(dict(action=action, tab_id=100, url=entry.ROOT))
+        self.bind(); self.assertTrue(self.s.ready()); r = self.s.send(self.p)
+        for action in actions:
+            with self.subTest(stage="owned_ready", action=action):
+                self.assert_scoped_maintenance_denied(dict(action=action, tab_id=99, url=entry.ROOT,
+                    request_id=r["request_id"], control_id=r["control_id"], attempt_id=1))
+        self.s.unregister(self.ws)
+        self.assert_scoped_maintenance_denied(dict(action="reload_extension"))
+
+    def test_scoped_status_sampling_does_not_create_send_or_change_durable_state(self):
+        self.bind(); before = self.durable_bytes()
+        count = len(self.ws.messages); mid, _ = self.s.maintenance(dict(action="sample_status"))
+        self.assertEqual(self.ws.messages[count:][0]["action"], "sample_status")
+        self.s.message(self.ws, dict(type="fresh_maintenance_result", maintenance_id=mid,
+            action="sample_status", complete=True))
+        self.assertEqual(self.s.requests.records, {}); self.assertIsNone(self.s.active)
+        self.assertEqual(before, self.durable_bytes())
+
+    def durable_bytes(self):
+        names = ("owner.json", "events.jsonl", "head.json", "review-open-intent.json", "review-native-binding.json")
+        return {n: (self.path/n).read_bytes() for n in names if (self.path/n).exists()}

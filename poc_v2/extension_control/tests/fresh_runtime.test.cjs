@@ -155,6 +155,80 @@ test("future thread preparation opens exact frozen URL for a new request only wi
   assert.deepEqual(w.storage, before); assert.deepEqual(w.contentCalls, []); assert.deepEqual(w.forbidden, []);
 });
 
+async function completedScopedWorker() {
+  const setup=JSON.parse(fs.readFileSync(path.join(process.env.C2C_V2_TEST_DATA_ROOT,"new-review-session-cross-language.json"),"utf8"));
+  const url="https://chatgpt.com/c/new-owned-review",tabs=[{id:99,url:"https://chatgpt.com/",status:"complete"}];
+  const mutations=[],timers=[],record=op=>async(...args)=>mutations.push({op,args:clone(args)});
+  const w=worker({tabs,timers,tabCreate:record("create"),tabUpdate:record("update"),tabReload:record("reload"),
+    executeScript:record("inject"),runtimeReload:record("extension_reload")});
+  await w.call("wire",JSON.stringify({type:"fresh_welcome",bridge_identity:setup.bridge_identity,
+    checkpoint:setup.empty_checkpoint,review_session_setup:setup.scope}));
+  await w.call("dispatch",setup.scoped_request);tabs[0].url=url;
+  await w.call("content",result(setup.scoped_request,{conversation_url:url}),
+    {id:setup.bridge_identity.extension_id,tab:{id:99},url});
+  assert.equal(w.sent.at(-1).type,"fresh_result");
+  await w.call("wire",JSON.stringify({type:"fresh_result_ack",...setup.scoped_request,classification:"canonical_result"}));
+  assert.equal(w.run("running.size"),0);
+  return {w,setup,url,tabs,mutations,timers,request:clone(w.run("[...attempts.values()][0]"))};
+}
+async function assertScopedMaintenanceDenied(ctx,action,tabId=100) {
+  const {w,request,url,mutations,timers}=ctx;
+  const before={storage:clone(w.storage),attempts:clone(w.run("[...attempts.values()]")),
+    scope:clone(w.run("reviewSessionScope")),calls:w.contentCalls.length,sent:w.sent.length,timers:timers.slice()};
+  await w.call("maintenance",{maintenance_id:R.request_id,action,tab_id:tabId,url,request,
+    future_only:true,maintenance_only:true,field:"control_id"});
+  assert.deepEqual(w.sent.slice(before.sent),[{type:"fresh_maintenance_result",maintenance_id:R.request_id,
+    action,complete:false,error_code:"new_review_maintenance_forbidden"}]);
+  assert.deepEqual(mutations,[]);assert.deepEqual(timers,before.timers);assert.deepEqual(w.forbidden,[]);
+  assert.equal(w.contentCalls.length,before.calls);assert.deepEqual(w.storage,before.storage);
+  assert.deepEqual(clone(w.run("[...attempts.values()]")),before.attempts);
+  assert.deepEqual(clone(w.run("reviewSessionScope")),before.scope);
+  assert.equal(w.run("running.size"),0);assert.equal(w.run("pendingProbes.size"),0);
+}
+test("scoped completed owned tab missing rejects preparation of unowned root without navigation",async()=>{
+  const ctx=await completedScopedWorker();ctx.tabs.splice(0,1,{id:100,url:"https://chatgpt.com/",status:"complete"});
+  await ctx.w.call("status");assert.equal(ctx.w.sent.at(-1).connected,false);
+  await assertScopedMaintenanceDenied(ctx,"prepare_future_thread");
+});
+test("scoped completed owned tab missing rejects unowned same URL loading refresh",async()=>{
+  const ctx=await completedScopedWorker();ctx.tabs.splice(0,1,{id:100,url:ctx.url,status:"loading"});
+  await ctx.w.call("status");assert.equal(ctx.w.sent.at(-1).connected,false);
+  await assertScopedMaintenanceDenied(ctx,"refresh_loading_target");
+});
+test("scoped all inherited maintenance denied on owned ready tab and unowned root or loading tab",async()=>{
+  const ctx=await completedScopedWorker(),actions=["prepare_future_thread","refresh_loading_target","restore_thread",
+    "activate_tab","inspect_draft","clear_owned_draft","reload_content","reload_tab","observe_attempt",
+    "observe_request","probe_reply_rejection","reload_extension"];
+  for(const target of [{id:99,url:ctx.url,status:"complete"},{id:100,url:"https://chatgpt.com/",status:"complete"},
+      {id:100,url:ctx.url,status:"loading"}]) {
+    ctx.tabs.splice(0,1,target);await ctx.w.call("status");
+    for(const action of actions)await assertScopedMaintenanceDenied(ctx,action,target.id);
+  }
+});
+test("scoped read only sample never contacts unowned page or changes mirror or identity",async()=>{
+  const ctx=await completedScopedWorker(),before=clone(ctx.w.storage),scope=clone(ctx.w.run("reviewSessionScope"));
+  ctx.tabs.splice(0,1,{id:100,url:ctx.url,status:"complete"});const calls=ctx.w.contentCalls.length;
+  await ctx.w.call("maintenance",{maintenance_id:R.request_id,action:"sample_status"});
+  assert.equal(ctx.w.sent.at(-1).complete,true);assert.equal(ctx.w.contentCalls.length,calls);
+  assert.deepEqual(ctx.w.storage,before);assert.deepEqual(clone(ctx.w.run("reviewSessionScope")),scope);
+  assert.equal(ctx.w.run("target"),null);assert.deepEqual(ctx.mutations,[]);assert.deepEqual(ctx.w.forbidden,[]);
+});
+test("scoped unbound entry rejects inherited maintenance before touching root tab",async()=>{
+  const setup=JSON.parse(fs.readFileSync(path.join(process.env.C2C_V2_TEST_DATA_ROOT,"new-review-session-cross-language.json"),"utf8"));
+  const w=worker({tabs:[{id:100,url:"https://chatgpt.com/",status:"complete"}]});
+  await w.call("wire",JSON.stringify({type:"fresh_welcome",bridge_identity:setup.bridge_identity,
+    checkpoint:setup.empty_checkpoint,review_session_setup:{...setup.scope,intent:null,binding:null}}));
+  const before=clone(w.storage),scope=clone(w.run("reviewSessionScope"));
+  for(const action of ["prepare_future_thread","refresh_loading_target","restore_thread","activate_tab",
+      "inspect_draft","clear_owned_draft","reload_content","reload_tab","observe_attempt","observe_request",
+      "probe_reply_rejection","reload_extension"]) {
+    await w.call("maintenance",{maintenance_id:R.request_id,action,tab_id:100,url:"https://chatgpt.com/"});
+    assert.equal(w.sent.at(-1).error_code,"new_review_maintenance_forbidden");assert.equal(w.sent.at(-1).complete,false);
+  }
+  assert.deepEqual(w.storage,before);assert.deepEqual(clone(w.run("reviewSessionScope")),scope);
+  assert.deepEqual(w.contentCalls,[]);assert.deepEqual(w.forbidden,[]);assert.equal(w.run("attempts.size"),0);
+});
+
 test("loading target refresh never rebinds or sends and rejects unknown nonce duplicate or pending-other targets", async () => {
   for (const variant of ["valid", "nonce", "duplicate", "old", "pending", "complete"]) {
     const id=R.target_tab_id+1,reloads=[],tabs=[{id,url:R.conversation_url,status:"loading"}];

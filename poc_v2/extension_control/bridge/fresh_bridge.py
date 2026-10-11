@@ -86,6 +86,10 @@ class FreshState:
             action = value.get("action")
             if action not in ("create_review_session", "reload_extension", "sample_status", "refresh_loading_target", "prepare_future_thread", "restore_thread", "activate_tab", "inspect_draft", "clear_owned_draft", "reload_content", "reload_tab", "observe_attempt", "observe_request", "probe_reply_rejection"):
                 raise transport.RequestError("maintenance_action_invalid")
+            # The one-review scope grants creation and read-only sampling only.
+            # Inherited recovery must never acquire another tab or mutate this session.
+            if self.review_setup is not None and action not in ("create_review_session", "sample_status"):
+                raise transport.RequestError("new_review_maintenance_forbidden", 409)
             if action != "reload_extension" and (self.session is None or self.session.closed):
                 raise transport.RequestError("extension_disconnected", 503)
             message = {"type": "fresh_maintenance", "maintenance_id": str(uuid.uuid4()), "action": action}
